@@ -416,7 +416,7 @@ def get_default_prompts() -> List[Dict]:
         },
         {
             'name': '测试用例执行',
-            'content': '''你是一个专业的UI自动化测试执行工程师。请使用浏览器工具严格按照以下测试用例执行测试。
+            'content': '''你是一个专业的UI自动化测试执行工程师。你当前要执行的是 WHartTest 平台中的功能测试用例，请严格使用当前系统真正可用的 builtin skills，不要混用 MCP 名称、旧链路名称或占位路径。
 
 ## 测试用例信息
 - **项目ID**: $project_id
@@ -427,13 +427,40 @@ def get_default_prompts() -> List[Dict]:
 ## 测试步骤
 $steps
 
+## 强制工具分工
+1. 平台数据读取/写回只能使用 `whart-test` skill。
+2. 浏览器操作只能使用 `playwright-skill`，命令格式必须是 `node run.js "..."`。
+3. 同一个用例的所有浏览器步骤必须复用完全相同的 `session_id`，格式固定为 `case_$testcase_id`。
+4. 截图必须先保存到 `process.env.SCREENSHOT_DIR`，再调用 `whart-test` 的 `upload_screenshot` 或 `upload_screenshots` 上传。
+
+## 推荐执行顺序
+1. 先用 `whart-test` 获取用例详情：
+   `python whart_tools.py --action get_testcase_detail --project_id $project_id --case_id $testcase_id`
+2. 如需确认模块，可用：
+   `python whart_tools.py --action get_modules --project_id $project_id`
+   或
+   `python whart_tools.py --action get_module_id --project_id $project_id --module_name "<模块名>"`
+3. 用 `playwright-skill` 执行浏览器步骤。打开页面后，第一时间调用 `helpers.describePageForAI(page)`，再根据返回的真实选择器操作元素。
+4. 每个关键步骤后截图，文件名使用 `case_$testcase_id_step{n}.png`。
+5. 用 `whart-test` 上传真实截图文件名，例如：
+   `python whart_tools.py --action upload_screenshot --project_id $project_id --case_id $testcase_id --file_path "case_$testcase_id_step1.png" --title "步骤1截图" --step_number 1`
+6. 如需查看最近一次执行记录，可调用：
+   `python whart_tools.py --action get_test_result --project_id $project_id --case_id $testcase_id`
+
+## 严禁使用以下错误名称或错误方式
+- `browser_navigate`
+- `browser_snapshot`
+- `browser_take_screenshot`
+- `save_operation_screenshots_to_the_application_case`
+- `python playwright_script.py --action execute_test_case`
+- 把 `/path/to/screenshot1.png` 这类占位路径当成真实截图
+- 把 `get_case_details` 当成主流程动作名（兼容存在，但优先使用 `get_testcase_detail`）
+
 ## 执行要求
-1. 使用 browser_navigate 工具打开目标页面
-2. 使用 browser_snapshot 工具获取页面快照，确认页面元素
-3. 严格按照上述测试步骤顺序执行每个操作
-4. 每个步骤执行后验证预期结果
-5. 如遇到错误，记录具体错误信息但继续执行后续步骤
-6. 在每个步骤都需要使用 browser_take_screenshot 工具截图，截图完成后必须调用 save_operation_screenshots_to_the_application_case 工具将截图上传到当前测试用例（project_id使用上述项目ID，case_id使用上述用例ID）
+1. 严格按照上述测试步骤顺序执行每个操作。
+2. 每步都要校验预期结果；如遇错误，记录具体错误并尽量继续后续步骤。
+3. 浏览器定位必须基于当前页面结构，不允许凭空猜测选择器。
+4. 截图上传前必须确认文件已真实保存在 `SCREENSHOT_DIR`。
 
 ## 输出格式
 执行完成后，请输出以下JSON格式的测试结果：

@@ -74,8 +74,13 @@ class _PersistentSessionEntry:
             self.session = None
             self._closed_event.set()
 
-    async def get_session(self):
-        await self._ready_event.wait()
+    async def get_session(self, timeout: float = 30.0):
+        try:
+            await asyncio.wait_for(self._ready_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            raise ConnectionError(
+                f"MCP 服务 [{self.server_name}] 连接超时（{timeout}s），请检查服务是否正常运行"
+            )
         if self._error is not None:
             raise self._error
         if self.session is None:

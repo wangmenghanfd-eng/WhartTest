@@ -7,13 +7,13 @@
     @cancel="handleClose"
   >
     <template #footer>
-      <a-space>
-        <a-button @click="handleClose">取消</a-button>
-        <a-button type="primary" :loading="submitting" @click="handleSubmit">
-          {{ isEditing ? '保存' : '保存，默认未启用' }}
-        </a-button>
-      </a-space>
-    </template>
+        <a-space>
+          <a-button @click="handleClose">取消</a-button>
+          <a-button type="primary" :loading="submitting" @click="handleSubmit">
+          {{ isEditing ? '保存' : '保存并启用' }}
+          </a-button>
+        </a-space>
+      </template>
 
     <div class="form-scroll-area">
       <a-form :model="form" layout="vertical" ref="formRef" size="small">
@@ -92,6 +92,10 @@
           </a-form-item>
         </div>
 
+        <div v-if="form.module === 'ui_automation'" class="form-tip">
+          UI 自动化定时任务依赖所选执行器保持在线。若执行器页面断开，或连接没有落在当前处理调度的后端进程，任务可能提示“执行器不在线”。
+        </div>
+
         <!-- 非UI自动化模块：调度策略 + 执行时间 同行 -->
         <div v-if="form.module !== 'ui_automation'" class="form-row">
           <a-form-item label="调度策略" field="schedule_type" :rules="[{ required: true, message: '请选择' }]">
@@ -114,6 +118,30 @@
             </a-input-number>
           </a-form-item>
         </div>
+
+        <div v-if="form.schedule_type === 'once'" class="form-tip">
+          “仅一次”适合验证任务是否会准点触发。请设置未来 2 到 3 分钟的时间，到点执行后任务会自动停用。
+        </div>
+
+        <div v-if="form.schedule_type === 'daily' || form.schedule_type === 'weekly' || form.schedule_type === 'hourly'" class="form-row">
+          <a-form-item label="时区" field="task_timezone">
+            <a-select v-model="form.task_timezone" placeholder="请选择时区">
+              <a-option value="Asia/Shanghai">Asia/Shanghai (UTC+8)</a-option>
+              <a-option value="Asia/Dubai">Asia/Dubai (UTC+4)</a-option>
+              <a-option value="Asia/Kolkata">Asia/Kolkata (UTC+5:30)</a-option>
+              <a-option value="Europe/London">Europe/London (UTC+0/+1)</a-option>
+              <a-option value="Europe/Berlin">Europe/Berlin (UTC+1/+2)</a-option>
+              <a-option value="America/New_York">America/New_York (UTC-5/-4)</a-option>
+              <a-option value="America/Los_Angeles">America/Los_Angeles (UTC-8/-7)</a-option>
+              <a-option value="UTC">UTC (UTC+0)</a-option>
+            </a-select>
+          </a-form-item>
+        </div>
+
+        <div v-if="form.schedule_type === 'daily' || form.schedule_type === 'weekly'" class="form-tip">
+          执行时间按所选时区解释。若当前时间已过今天的时刻，下次从下一个周期开始执行。
+        </div>
+
         <!-- 每周额外显示星期选择和时间 -->
         <template v-if="form.schedule_type === 'weekly'">
           <a-form-item label="选择星期" field="weekly_days" :rules="[{ required: true, message: '请至少选一天' }]">
@@ -198,6 +226,7 @@ const defaultForm = (): TaskFormData => ({
   weekly_days: [],
   weekly_time: null,
   hourly_minute: null,
+  task_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai',
   retry_enabled: false,
   retry_count: 3,
   retry_interval: 2,
@@ -257,6 +286,70 @@ const resetForm = () => {
   Object.assign(form, defaultForm());
 };
 
+const normalizeOnceDateTime = (value: unknown): string | null => {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString();
+  }
+
+  if (typeof value === 'object') {
+    const candidate = value as {
+      toDate?: () => Date;
+      toISOString?: () => string;
+      valueOf?: () => number;
+    };
+
+    if (typeof candidate.toDate === 'function') {
+      const date = candidate.toDate();
+      return Number.isNaN(date.getTime()) ? null : date.toISOString();
+    }
+
+    if (typeof candidate.toISOString === 'function') {
+      try {
+        return candidate.toISOString();
+      } catch {
+        // ignore and continue to fallback parsing
+      }
+    }
+
+    if (typeof candidate.valueOf === 'function') {
+      const ts = candidate.valueOf();
+      if (typeof ts === 'number' && !Number.isNaN(ts)) {
+        const date = new Date(ts);
+        return Number.isNaN(date.getTime()) ? null : date.toISOString();
+      }
+    }
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+    const date = new Date(normalized);
+    return Number.isNaN(date.getTime()) ? value : date.toISOString();
+  }
+
+  return null;
+};
+
+const buildSubmitPayload = (): TaskFormData => ({
+  ...form,
+  once_datetime: normalizeOnceDateTime(form.once_datetime),
+});
+
+const extractErrorMessage = (error: any): string => {
+  const responseData = error.response?.data;
+  if (responseData?.errors && typeof responseData.errors === 'object') {
+    const firstFieldError = Object.values(responseData.errors)
+      .flat()
+      .find((item) => typeof item === 'string');
+    if (typeof firstFieldError === 'string') {
+      return firstFieldError;
+    }
+  }
+
+  return responseData?.detail || responseData?.error || responseData?.message || '操作失败';
+};
+
 const openCaseSelectModal = () => {
   caseSelectModal.value?.open(form.ui_testcase_ids);
 };
@@ -282,6 +375,7 @@ const open = (task?: ScheduledTask) => {
       weekly_days: task.weekly_days || [],
       weekly_time: task.weekly_time,
       hourly_minute: task.hourly_minute,
+      task_timezone: task.task_timezone || 'Asia/Shanghai',
       retry_enabled: task.retry_enabled,
       retry_count: task.retry_count,
       retry_interval: task.retry_interval,
@@ -302,17 +396,18 @@ const handleSubmit = async () => {
 
   submitting.value = true;
   try {
+    const payload = buildSubmitPayload();
     if (isEditing.value && editingId.value) {
-      await updateTask(props.projectId, editingId.value, { ...form });
+      await updateTask(props.projectId, editingId.value, payload);
       Message.success('任务已更新');
     } else {
-      await createTask(props.projectId, { ...form });
-      Message.success('任务已创建');
+      await createTask(props.projectId, payload);
+      Message.success('任务已创建并启用');
     }
     visible.value = false;
     emit('success');
   } catch (error: any) {
-    const msg = error.response?.data?.detail || error.response?.data?.error || '操作失败';
+    const msg = extractErrorMessage(error);
     Message.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
   } finally {
     submitting.value = false;
@@ -366,5 +461,15 @@ defineExpose({ open });
 
 .form-scroll-area :deep(.arco-form-item) {
   margin-bottom: 12px;
+}
+
+.form-tip {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text-2);
+  background: var(--color-fill-1);
+  border-radius: 8px;
 }
 </style>

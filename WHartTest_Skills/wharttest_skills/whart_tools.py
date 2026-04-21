@@ -21,12 +21,34 @@ except ImportError:
     pass
 
 # 配置
-BASE_URL = "http://127.0.0.1:8000"
-API_KEY = "wharttest-default-mcp-key-2025"
+BASE_URL = (os.getenv("WHARTTEST_BACKEND_URL") or "http://127.0.0.1:8000").rstrip("/")
+API_KEY = os.getenv("WHARTTEST_API_KEY") or "wharttest-default-mcp-key-2025"
 HEADERS = {
     "accept": "application/json, text/plain,*/*",
     "X-API-Key": API_KEY
 }
+
+
+def _resolve_screenshot_path(file_path: str) -> str:
+    if not file_path:
+        return file_path
+
+    if os.path.exists(file_path):
+        return file_path
+
+    screenshot_dir = os.environ.get('SCREENSHOT_DIR', '')
+    if not screenshot_dir:
+        return file_path
+
+    basename = os.path.basename(file_path)
+    if not basename:
+        return file_path
+
+    fallback_path = os.path.join(screenshot_dir, basename)
+    if os.path.exists(fallback_path):
+        return fallback_path
+
+    return file_path
 
 
 def _extract_tree(nodes_list, id_key, name_key):
@@ -67,6 +89,38 @@ def get_modules(project_id: int):
         return {"error": str(e)}
 
 
+def get_module_id(project_id: int, module_name: str):
+    """根据模块名称获取模块ID，优先精确匹配，其次包含匹配"""
+    modules = get_modules(project_id)
+    if isinstance(modules, dict) and "error" in modules:
+        return modules
+
+    if not module_name:
+        return {"error": "module_name 不能为空"}
+
+    normalized_target = "".join(str(module_name).strip().lower().split())
+    exact_match = None
+    fuzzy_match = None
+
+    for item in modules:
+        name = item.get("module_name", "")
+        normalized_name = "".join(str(name).strip().lower().split())
+        if normalized_name == normalized_target:
+            exact_match = item
+            break
+        if normalized_target in normalized_name or normalized_name in normalized_target:
+            fuzzy_match = item
+
+    matched = exact_match or fuzzy_match
+    if matched:
+        return matched
+
+    return {
+        "error": f"未找到模块: {module_name}",
+        "available_modules": modules,
+    }
+
+
 def get_levels():
     """获取用例等级"""
     return ["P0", "P1", "P2", "P3"]
@@ -93,6 +147,63 @@ def get_testcase_detail(project_id: int, case_id: int):
         return resp.json().get("data", {})
     except Exception as e:
         return {"error": str(e)}
+
+
+def get_case_details(project_id: int, case_id: int):
+    """兼容旧动作名，等价于 get_testcase_detail"""
+    return get_testcase_detail(project_id, case_id)
+
+
+def get_test_result(project_id: int, case_id: int):
+    """获取指定用例最近一次执行结果"""
+    url = f"{BASE_URL}/api/projects/{project_id}/test-executions/?page=1&page_size=50"
+    try:
+        resp = requests.get(url, headers=HEADERS)
+        resp.raise_for_status()
+        executions = resp.json().get("data", [])
+        for execution in executions:
+            for result in execution.get("results", []) or []:
+                if result.get("testcase") == case_id:
+                    return {
+                        "execution_id": execution.get("id"),
+                        "execution_status": execution.get("status"),
+                        "case_id": case_id,
+                        "result_id": result.get("id"),
+                        "result_status": result.get("status"),
+                        "error_message": result.get("error_message"),
+                        "screenshots": result.get("screenshots", []),
+                        "started_at": result.get("started_at"),
+                        "completed_at": result.get("completed_at"),
+                        "execution_time": result.get("execution_time"),
+                        "execution_log": result.get("execution_log"),
+                    }
+        return {
+            "message": f"未找到用例 {case_id} 的历史执行结果",
+            "case_id": case_id,
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def execute_test_case(project_id: int, case_id: int, module_id: int = None):
+    """
+    兼容旧动作名，返回正确执行链路指引，避免模型把浏览器执行错误地交给 whart_tools.py。
+    """
+    testcase = get_testcase_detail(project_id, case_id)
+    return {
+        "success": False,
+        "warning": "whart_tools.py 不负责浏览器执行。请改用 playwright-skill 执行页面操作，再用 upload_screenshot 或 upload_screenshots 上传真实截图。",
+        "recommended_sequence": [
+            "1. 使用 get_testcase_detail 获取测试步骤",
+            "2. 使用 playwright-skill 执行浏览器操作，命令格式为 node run.js \"...\"",
+            "3. 截图必须保存到 SCREENSHOT_DIR，再通过 upload_screenshot 或 upload_screenshots 上传",
+            "4. 如需查询历史执行结果，再调用 get_test_result",
+        ],
+        "project_id": project_id,
+        "case_id": case_id,
+        "module_id": module_id,
+        "testcase": testcase,
+    }
 
 
 def add_testcase(project_id: int, module_id: int, name: str, level: str = "P1",
@@ -168,9 +279,25 @@ def upload_screenshot(project_id: int, case_id: int, file_path: str, title: str,
         screenshot_dir = os.environ.get('SCREENSHOT_DIR', '')
         if screenshot_dir:
             file_path = os.path.join(screenshot_dir, file_path)
+    else:
+        file_path = _resolve_screenshot_path(file_path)
 
     if not os.path.exists(file_path):
-        return {"error": f"文件不存在: {file_path}"}
+        screenshot_dir = os.environ.get('SCREENSHOT_DIR', '')
+        available_files = []
+        if screenshot_dir and os.path.isdir(screenshot_dir):
+            try:
+                available_files = sorted(
+                    name for name in os.listdir(screenshot_dir)
+                    if not name.startswith('.')
+                )[:20]
+            except OSError:
+                available_files = []
+        return {
+            "error": f"文件不存在: {file_path}",
+            "screenshot_dir": screenshot_dir,
+            "available_files": available_files,
+        }
 
     url = f"{BASE_URL}/api/projects/{project_id}/testcases/{case_id}/upload-screenshots/"
     mime_types = {'.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif'}
@@ -206,8 +333,23 @@ def upload_screenshots(project_id: int, case_id: int, file_paths: str, title: st
     for fp in paths:
         if os.sep not in fp and '/' not in fp and screenshot_dir:
             fp = os.path.join(screenshot_dir, fp)
+        else:
+            fp = _resolve_screenshot_path(fp)
         if not os.path.exists(fp):
-            return {"error": f"文件不存在: {fp}"}
+            available_files = []
+            if screenshot_dir and os.path.isdir(screenshot_dir):
+                try:
+                    available_files = sorted(
+                        name for name in os.listdir(screenshot_dir)
+                        if not name.startswith('.')
+                    )[:20]
+                except OSError:
+                    available_files = []
+            return {
+                "error": f"文件不存在: {fp}",
+                "screenshot_dir": screenshot_dir,
+                "available_files": available_files,
+            }
         resolved_paths.append(fp)
 
     url = f"{BASE_URL}/api/projects/{project_id}/testcases/{case_id}/upload-screenshots/"
@@ -283,9 +425,13 @@ def _parse_steps(steps_str):
 ACTIONS = {
     "get_projects": lambda args: get_projects(),
     "get_modules": lambda args: get_modules(args.project_id),
+    "get_module_id": lambda args: get_module_id(args.project_id, args.module_name),
     "get_levels": lambda args: get_levels(),
     "get_testcases": lambda args: get_testcases(args.project_id, args.module_id),
     "get_testcase_detail": lambda args: get_testcase_detail(args.project_id, args.case_id),
+    "get_case_details": lambda args: get_case_details(args.project_id, args.case_id),
+    "get_test_result": lambda args: get_test_result(args.project_id, args.case_id),
+    "execute_test_case": lambda args: execute_test_case(args.project_id, args.case_id, args.module_id),
     "add_testcase": lambda args: (
         _parse_steps(args.steps) if isinstance(_parse_steps(args.steps), dict) else
         add_testcase(
@@ -303,11 +449,11 @@ ACTIONS = {
         )
     ),
     "upload_screenshot": lambda args: upload_screenshot(
-        args.project_id, args.case_id, args.file_path, args.title,
+        args.project_id, args.case_id, args.file_path or args.screenshot_path, args.title,
         args.description or "", args.step_number, args.page_url or ""
     ),
     "upload_screenshots": lambda args: upload_screenshots(
-        args.project_id, args.case_id, args.file_paths, args.title,
+        args.project_id, args.case_id, args.file_paths or args.screenshot_paths, args.title,
         args.description or "", args.step_number, args.page_url or ""
     ),
 }
@@ -318,6 +464,7 @@ def main():
     parser.add_argument("--action", required=True, choices=ACTIONS.keys(), help="要执行的操作")
     parser.add_argument("--project_id", type=int, help="项目ID")
     parser.add_argument("--module_id", type=int, help="模块ID")
+    parser.add_argument("--module_name", help="模块名称")
     parser.add_argument("--case_id", type=int, help="用例ID")
     parser.add_argument("--name", help="用例名称")
     parser.add_argument("--level", help="用例等级 (P0/P1/P2/P3)")
@@ -325,7 +472,9 @@ def main():
     parser.add_argument("--steps", help="用例步骤 (JSON格式)")
     parser.add_argument("--notes", help="备注")
     parser.add_argument("--file_path", help="文件路径（单张上传）")
+    parser.add_argument("--screenshot_path", help="兼容旧参数名，等价于 --file_path")
     parser.add_argument("--file_paths", help="文件路径列表（批量上传，逗号分隔）")
+    parser.add_argument("--screenshot_paths", help="兼容旧参数名，等价于 --file_paths")
     parser.add_argument("--title", help="标题")
     parser.add_argument("--description", help="描述")
     parser.add_argument("--step_number", type=int, help="步骤编号")

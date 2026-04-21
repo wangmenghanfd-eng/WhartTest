@@ -6,6 +6,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from projects.models import Project
 from testcases.models import TestSuite
 from ui_automation.models import UiTestCase
+from .utils import format_duration_value
 
 
 class ScheduledTask(models.Model):
@@ -74,6 +75,12 @@ class ScheduledTask(models.Model):
     hourly_minute = models.PositiveSmallIntegerField(
         _('每小时第几分钟'), null=True, blank=True,
         validators=[MinValueValidator(0), MaxValueValidator(59)]
+    )
+
+    # 时区
+    task_timezone = models.CharField(
+        _('时区'), max_length=64, default='Asia/Shanghai',
+        help_text=_('定时任务调度使用的时区，填写标准时区名称如 Asia/Shanghai、Asia/Dubai、UTC')
     )
 
     # 重试策略
@@ -195,11 +202,4 @@ class TaskExecution(models.Model):
         if not self.finished_at or not self.started_at:
             return '—'
         delta = self.finished_at - self.started_at
-        total_seconds = int(delta.total_seconds())
-        if total_seconds < 60:
-            return f"{total_seconds}s"
-        minutes, seconds = divmod(total_seconds, 60)
-        if minutes < 60:
-            return f"{minutes}m {seconds}s"
-        hours, minutes = divmod(minutes, 60)
-        return f"{hours}h {minutes}m {seconds}s"
+        return format_duration_value(delta.total_seconds())

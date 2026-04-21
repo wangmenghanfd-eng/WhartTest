@@ -552,13 +552,27 @@ const handleExecuteConfirm = (options: { generatePlaywrightScript: boolean }) =>
 
   const message = `
 执行ID为 ${testCase.id} 的测试用例。
-你是一名UI自动化测试人员，需要按照用户的指令执行和验证用例。
-请调用工具完成以下任务：
-1. 读取该测试用例所属项目（ID：${currentProjectId.value}）及模块，定位完整的测试用例定义。
-2. 调用工具执行测试用例，并验证相应的断言。
-3. 每一步执行后截图，可以单张上传，也可以批量上传。
-4. 必须上传截图以供查看。
-5. 执行结束后告知用户本次测试是否通过，并总结。
+你是一名 UI 自动化测试人员，需要按照用户指令执行和验证该用例。
+
+请严格使用当前系统真实可用的技能和动作，不要混用旧工具名：
+1. 平台数据读取与截图上传使用 whart-test skill：
+   - get_testcase_detail
+   - get_modules / get_module_id
+   - upload_screenshot / upload_screenshots
+2. 浏览器操作使用 playwright-skill，命令只能是 node run.js "..."。
+3. 同一条用例的浏览器步骤必须复用同一个 session_id，建议使用 case_${testCase.id}。
+4. 打开页面后先调用 helpers.describePageForAI(page)，再根据真实选择器操作元素。
+5. 每个关键步骤后截图，截图必须真实保存在 SCREENSHOT_DIR，再上传到当前测试用例。
+6. 执行结束后告知用户本次测试是否通过，并给出总结。
+7. node run.js 双引号里的内容必须是可执行 JavaScript，比如 await page.goto('https://practice.expandtesting.com/login');，不能写成“输入用户名和密码”这种自然语言。
+
+禁止使用以下错误名称或错误方式：
+- get_case_details 作为主流程动作名
+- execute_test_case
+- browser_navigate / browser_snapshot / browser_take_screenshot
+- save_operation_screenshots_to_the_application_case
+- python playwright_script.py --action execute_test_case
+- /path/to/screenshot1.png
 
 附加信息：
 - 测试用例名称：${testCase.name}

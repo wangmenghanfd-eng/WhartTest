@@ -104,7 +104,7 @@ services:
       - wharttest-network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/')" ]
+      test: [ "CMD", "python", "-c", "import socket; s=socket.create_connection(('localhost',8000),timeout=5); s.close()" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -172,6 +172,7 @@ services:
     image: ${DOCKER_PLAYWRIGHT_MCP_IMAGE:-mcr.microsoft.com/playwright/mcp}
     container_name: wharttest-playwright-mcp
     user: root # 以 root 用户运行,确保有权限写入挂载目录
+    working_dir: /app
     entrypoint: node
     command: [ "cli.js", "--no-sandbox", "--host", "0.0.0.0", "--allowed-hosts", "*", "--config", "/app/playwright-mcp-config.json" ]
     ports:

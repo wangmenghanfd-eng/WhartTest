@@ -12,6 +12,7 @@ from projects.models import Project
 from .models import ScheduledTask, TaskExecution
 from .serializers import ScheduledTaskSerializer, TaskExecutionSerializer
 from .scheduler import register_periodic_task, unregister_periodic_task
+from .utils import format_log_for_display
 
 logger = logging.getLogger(__name__)
 
@@ -119,13 +120,10 @@ class TaskExecutionViewSet(viewsets.ReadOnlyModelViewSet):
     def get_log(self, request, **kwargs):
         """获取执行日志详情"""
         execution = self.get_object()
-        return Response({
-            'execution_id': execution.execution_id,
-            'log': execution.log,
-            'error_message': execution.error_message,
-            'status': execution.status,
-            'duration': execution.duration_display,
-        })
+        data = TaskExecutionSerializer(execution).data
+        data['log'] = format_log_for_display(execution.log)
+        data['error_message'] = format_log_for_display(execution.error_message)
+        return Response(data)
 
     @action(detail=True, methods=['delete'], url_path='remove')
     def remove(self, request, **kwargs):

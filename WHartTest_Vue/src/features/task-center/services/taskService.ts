@@ -35,6 +35,8 @@ export interface ScheduledTask {
   test_suite_name: string | null;
   ui_testcase_ids: number[];
   actuator_id: string;
+  task_timezone: string;
+  scheduler_timezone?: string;
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +58,7 @@ export interface TaskFormData {
   test_suite?: number | null;
   ui_testcase_ids?: number[];
   actuator_id?: string;
+  task_timezone?: string;
 }
 
 export interface TaskExecution {
@@ -64,6 +67,13 @@ export interface TaskExecution {
   task: number;
   trigger_type: TriggerType;
   status: ExecutionStatus;
+  display_status?: string;
+  display_status_text?: string;
+  actual_execution_id?: number | null;
+  actual_result_status?: string | null;
+  actual_result_text?: string | null;
+  actual_duration?: string | null;
+  actual_summary?: string | null;
   started_at: string;
   finished_at: string | null;
   duration: string;
@@ -196,7 +206,7 @@ export async function getTaskExecutions(
 export async function getExecutionLog(
   projectId: number,
   executionId: number
-): Promise<{ execution_id: string; log: string; error_message: string; status: string; duration: string }> {
+): Promise<TaskExecution> {
   const response = await axios.get(
     `${API_BASE_URL}/projects/${projectId}/task-executions/${executionId}/log/`,
     { headers: getHeaders() }

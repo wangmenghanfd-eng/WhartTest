@@ -14,6 +14,7 @@ import threading
 import json
 import mimetypes
 import re
+import uuid
 from typing import Optional
 
 from langchain_core.tools import tool as langchain_tool
@@ -26,6 +27,8 @@ logger = logging.getLogger("orchestrator_integration")
 
 _playwright_session_manager: Optional[PlaywrightSessionManager] = None
 _playwright_session_manager_lock = threading.Lock()
+_runtime_dir_locks: dict[str, threading.Lock] = {}
+_runtime_dir_locks_guard = threading.Lock()
 _ARTIFACT_EXTENSIONS = {
     ".drawio",
     ".png",
@@ -57,6 +60,24 @@ _QUOTED_ARTIFACT_TOKEN_RE = re.compile(
     r"[`'\"](?P<path>[^`'\"]+?\.(?:drawio|png|jpe?g|gif|svg|pdf|html?|txt|json|csv|xml|zip|docx?|xlsx?|pptx?))[`'\"]",
     re.IGNORECASE,
 )
+_PLAYWRIGHT_OPEN_URL_RE = re.compile(
+    r"^\s*(?:打开|访问)\s*(https?://[^\s\"']+)\s*$",
+    re.IGNORECASE,
+)
+_PLAYWRIGHT_JS_HINT_RE = re.compile(
+    r"\b(?:await|const|let|var|if|for|while|return|try|catch)\b|page\.|browser\.|context\.|helpers\.|console\.|=>|;",
+    re.IGNORECASE,
+)
+_CJK_RE = re.compile(r"[\u4e00-\u9fff]")
+
+
+def _get_runtime_dir_lock(target_dir: str) -> threading.Lock:
+    with _runtime_dir_locks_guard:
+        lock = _runtime_dir_locks.get(target_dir)
+        if lock is None:
+            lock = threading.Lock()
+            _runtime_dir_locks[target_dir] = lock
+        return lock
 
 
 def _sanitize_runtime_path_segment(value: Optional[str], default: str) -> str:
@@ -99,26 +120,30 @@ def _prepare_skill_screenshots_dir(
         os.makedirs(screenshots_dir, exist_ok=True)
         return screenshots_dir
 
-    session_marker = os.path.join(screenshots_dir, ".chat_session")
-    current_chat_id = chat_session_id or "default"
-    should_clear = False
+    with _get_runtime_dir_lock(screenshots_dir):
+        session_marker = os.path.join(screenshots_dir, ".chat_session")
+        current_chat_id = chat_session_id or "default"
+        should_clear = False
 
-    if os.path.exists(screenshots_dir):
-        if os.path.exists(session_marker):
-            with open(session_marker, "r", encoding="utf-8") as f:
-                stored_chat_id = f.read().strip()
-            if stored_chat_id != current_chat_id:
+        if os.path.exists(screenshots_dir):
+            if os.path.exists(session_marker):
+                try:
+                    with open(session_marker, "r", encoding="utf-8") as f:
+                        stored_chat_id = f.read().strip()
+                    if stored_chat_id != current_chat_id:
+                        should_clear = True
+                except OSError:
+                    should_clear = True
+            else:
                 should_clear = True
-        else:
-            should_clear = True
 
-    if should_clear:
-        shutil.rmtree(screenshots_dir, ignore_errors=True)
-        logger.info(f"[execute_skill_script] 清空旧截图目录: {screenshots_dir}")
+        if should_clear:
+            shutil.rmtree(screenshots_dir, ignore_errors=True)
+            logger.info(f"[execute_skill_script] 清空旧截图目录: {screenshots_dir}")
 
-    os.makedirs(screenshots_dir, exist_ok=True)
-    with open(session_marker, "w", encoding="utf-8") as f:
-        f.write(current_chat_id)
+        os.makedirs(screenshots_dir, exist_ok=True)
+        with open(session_marker, "w", encoding="utf-8") as f:
+            f.write(current_chat_id)
 
     return screenshots_dir
 
@@ -150,28 +175,61 @@ def _prepare_skill_artifacts_dir(
         os.makedirs(artifacts_dir, exist_ok=True)
         return artifacts_dir
 
-    session_marker = os.path.join(artifacts_dir, ".chat_session")
-    current_chat_id = chat_session_id or "default"
-    should_clear = False
+    with _get_runtime_dir_lock(artifacts_dir):
+        session_marker = os.path.join(artifacts_dir, ".chat_session")
+        current_chat_id = chat_session_id or "default"
+        should_clear = False
 
-    if os.path.exists(artifacts_dir):
-        if os.path.exists(session_marker):
-            with open(session_marker, "r", encoding="utf-8") as f:
-                stored_chat_id = f.read().strip()
-            if stored_chat_id != current_chat_id:
+        if os.path.exists(artifacts_dir):
+            if os.path.exists(session_marker):
+                try:
+                    with open(session_marker, "r", encoding="utf-8") as f:
+                        stored_chat_id = f.read().strip()
+                    if stored_chat_id != current_chat_id:
+                        should_clear = True
+                except OSError:
+                    should_clear = True
+            else:
                 should_clear = True
-        else:
-            should_clear = True
 
-    if should_clear:
-        shutil.rmtree(artifacts_dir, ignore_errors=True)
-        logger.info(f"[execute_skill_script] 清空旧产物目录: {artifacts_dir}")
+        if should_clear:
+            shutil.rmtree(artifacts_dir, ignore_errors=True)
+            logger.info(f"[execute_skill_script] 清空旧产物目录: {artifacts_dir}")
 
-    os.makedirs(artifacts_dir, exist_ok=True)
-    with open(session_marker, "w", encoding="utf-8") as f:
-        f.write(current_chat_id)
+        os.makedirs(artifacts_dir, exist_ok=True)
+        with open(session_marker, "w", encoding="utf-8") as f:
+            f.write(current_chat_id)
 
     return artifacts_dir
+
+
+def _rewrite_or_validate_playwright_code(raw_code: str) -> tuple[Optional[str], Optional[str]]:
+    code = (raw_code or "").strip()
+    if not code:
+        return None, "错误: playwright-skill 未收到任何可执行代码。"
+
+    if _PLAYWRIGHT_JS_HINT_RE.search(code):
+        return code, None
+
+    open_url_match = _PLAYWRIGHT_OPEN_URL_RE.match(code)
+    if open_url_match:
+        url = open_url_match.group(1).strip()
+        rewritten = (
+            f"await page.goto('{url}'); "
+            "const desc = await helpers.describePageForAI(page); "
+            "console.log(desc);"
+        )
+        return rewritten, (
+            f"[自动纠偏] 已将自然语言导航指令转换为可执行 JS：打开 {url}，并输出当前页面结构。"
+        )
+
+    if _CJK_RE.search(code):
+        return None, (
+            f"错误: playwright-skill 的 `node run.js` 需要可执行 JavaScript，而不是自然语言步骤：{code}\n"
+            "请改为类似 `await page.fill('#username', 'practice'); await page.click('button[type=submit]');` 的 JS 语句。"
+        )
+
+    return code, None
 
 
 def _is_allowed_artifact_file(file_path: str) -> bool:
@@ -202,6 +260,22 @@ def _snapshot_artifact_files(root_dir: str) -> dict[str, str]:
             rel_path = os.path.relpath(full_path, root_dir).replace(os.sep, "/")
             snapshot[rel_path] = full_path
     return snapshot
+
+
+def _find_new_runtime_files(
+    root_dir: Optional[str],
+    before_snapshot: Optional[dict[str, str]],
+) -> list[str]:
+    if not root_dir or not os.path.isdir(root_dir):
+        return []
+
+    before_snapshot = before_snapshot or {}
+    after_snapshot = _snapshot_artifact_files(root_dir)
+    new_files: list[str] = []
+    for rel_path, full_path in after_snapshot.items():
+        if rel_path not in before_snapshot:
+            new_files.append(full_path)
+    return new_files
 
 
 def _path_to_media_url(file_path: str) -> Optional[str]:
@@ -327,6 +401,8 @@ def _finalize_skill_result(
     skill_dir: str,
     artifacts_dir: str,
     artifacts_before: dict[str, str],
+    screenshots_dir: Optional[str] = None,
+    screenshots_before: Optional[dict[str, str]] = None,
 ) -> str:
     artifacts = _collect_skill_artifacts(
         result_output,
@@ -334,6 +410,22 @@ def _finalize_skill_result(
         artifacts_dir=artifacts_dir,
         artifacts_before=artifacts_before,
     )
+    screenshot_artifacts: list[dict[str, object]] = []
+    seen_urls = {
+        str(item.get("url") or "")
+        for item in artifacts
+        if isinstance(item, dict) and item.get("url")
+    }
+    for file_path in _find_new_runtime_files(screenshots_dir, screenshots_before):
+        payload = _build_artifact_payload(file_path)
+        if not payload:
+            continue
+        media_url = str(payload.get("url") or "")
+        if not media_url or media_url in seen_urls:
+            continue
+        seen_urls.add(media_url)
+        screenshot_artifacts.append(payload)
+    artifacts.extend(screenshot_artifacts)
     if not artifacts:
         return result_output
 
@@ -440,10 +532,16 @@ def get_skill_tools(
             logger.info(f"[execute_skill_script] 在目录 {skill_dir} 执行: {command}")
 
             env = os.environ.copy()
-            env["WHARTTEST_BACKEND_URL"] = getattr(
-                settings, "WHARTTEST_BACKEND_URL", "http://localhost:8000"
+            env["WHARTTEST_BACKEND_URL"] = (
+                getattr(settings, "WHARTTEST_BACKEND_URL", None)
+                or os.environ.get("WHARTTEST_BACKEND_URL")
+                or "http://localhost:8000"
             )
-            env["WHARTTEST_API_KEY"] = getattr(settings, "WHARTTEST_API_KEY", "")
+            env["WHARTTEST_API_KEY"] = (
+                getattr(settings, "WHARTTEST_API_KEY", None)
+                or os.environ.get("WHARTTEST_API_KEY")
+                or "wharttest-default-mcp-key-2025"
+            )
 
             case_dir_key = None
             if current_test_case_id:
@@ -465,6 +563,7 @@ def get_skill_tools(
             env["SKILL_OUTPUT_DIR"] = artifacts_dir
             env["ARTIFACT_DIR"] = artifacts_dir
             artifacts_before = _snapshot_artifact_files(artifacts_dir)
+            screenshots_before = _snapshot_artifact_files(screenshots_dir)
 
             # Windows 兼容：将单引号包裹的参数转换为双引号（用于 cmd.exe）
             # 同时处理多行字符串，将换行符转换为单行
@@ -504,6 +603,38 @@ def get_skill_tools(
             if session_id and skill_name == "playwright-skill":
                 run_js_args = extract_runjs_args(exec_command)
                 if run_js_args is not None:
+                    normalized_code, guidance = _rewrite_or_validate_playwright_code(
+                        run_js_args[0] if run_js_args else ""
+                    )
+                    if normalized_code is None:
+                        detail_text = ""
+                        chat_id_part = current_chat_session_id or "default"
+                        session_key = f"{current_user_id}_{current_project_id}_{chat_id_part}_{session_id}"
+                        try:
+                            manager = _get_playwright_session_manager()
+                            helper_output = manager.execute_run_js(
+                                session_key=session_key,
+                                skill_dir=skill_dir,
+                                run_js_args=[
+                                    "const desc = await helpers.describePageForAI(page); console.log(desc);"
+                                ],
+                                env=env,
+                                timeout_seconds=60,
+                            )
+                            helper_output = strip_terminal_control_sequences(helper_output).strip()
+                            if helper_output:
+                                detail_text = (
+                                    "\n\n当前页面结构如下，请基于真实 selector 重新生成 JS：\n"
+                                    f"{helper_output}"
+                                )
+                        except Exception:
+                            detail_text = ""
+                        return f"{guidance or '错误: 无法执行 Playwright 命令。'}{detail_text}"
+
+                    if guidance:
+                        logger.warning(f"[execute_skill_script] {guidance}")
+                    run_js_args = [normalized_code]
+
                     # 调试日志
                     logger.debug(f"[execute_skill_script] run_js_args: {run_js_args}")
                     # session_key 包含 chat_session_id 以隔离不同对话的浏览器会话
@@ -527,17 +658,59 @@ def get_skill_tools(
                             if cleaned_output.strip()
                             else "(无输出)"
                         )
+                        new_screenshot_files = _find_new_runtime_files(
+                            screenshots_dir, screenshots_before
+                        )
+                        if not new_screenshot_files:
+                            auto_screenshot_name = (
+                                f"auto-step-{uuid.uuid4().hex[:8]}.png"
+                            )
+                            try:
+                                manager.execute_run_js(
+                                    session_key=session_key,
+                                    skill_dir=skill_dir,
+                                    run_js_args=[
+                                        "await page.screenshot({ "
+                                        f"path: process.env.SCREENSHOT_DIR + '/{auto_screenshot_name}', "
+                                        "fullPage: true "
+                                        "}); "
+                                        f"console.log('已自动保存截图: {auto_screenshot_name}');"
+                                    ],
+                                    env=env,
+                                    timeout_seconds=60,
+                                )
+                            except Exception as screenshot_error:
+                                logger.warning(
+                                    "[execute_skill_script] 自动补截图失败: %s",
+                                    screenshot_error,
+                                )
+                            new_screenshot_files = _find_new_runtime_files(
+                                screenshots_dir, screenshots_before
+                            )
+
+                        if new_screenshot_files:
+                            screenshot_note = (
+                                f"本步新增 {len(new_screenshot_files)} 张截图，保存在 {screenshots_dir}"
+                            )
+                        else:
+                            screenshot_note = (
+                                f"当前会话截图目录: {screenshots_dir}（本步未生成新的截图文件）"
+                            )
                         result_output = (
                             f'[PERSISTENT_SESSION] session_id={session_id}\n'
                             f'[SCREENSHOT_DIR] {screenshots_dir}\n'
                             f'{result_output}\n'
-                            f'[提示] 后续步骤请继续使用 session_id="{session_id}"；截图已保存在 {screenshots_dir}'
+                            f'[提示] 后续步骤请继续使用 session_id="{session_id}"；{screenshot_note}'
                         )
+                        if guidance:
+                            result_output = f"{guidance}\n{result_output}"
                         return _finalize_skill_result(
                             result_output,
                             skill_dir=skill_dir,
                             artifacts_dir=artifacts_dir,
                             artifacts_before=artifacts_before,
+                            screenshots_dir=screenshots_dir,
+                            screenshots_before=screenshots_before,
                         )
                     except TimeoutError:
                         logger.error(
@@ -553,6 +726,19 @@ def get_skill_tools(
 
             # Windows 编码处理：cmd.exe 默认使用 GBK (cp936)，需要使用系统默认编码
             import locale
+
+            if skill_name == "playwright-skill" and "run.js" in command:
+                run_js_args = extract_runjs_args(exec_command)
+                if run_js_args is not None:
+                    normalized_code, guidance = _rewrite_or_validate_playwright_code(
+                        run_js_args[0] if run_js_args else ""
+                    )
+                    if normalized_code is None:
+                        return guidance or "错误: playwright-skill 需要可执行的 JavaScript。"
+                    if normalized_code != (run_js_args[0] if run_js_args else ""):
+                        escaped_code = normalized_code.replace("\\", "\\\\").replace('"', '\\"')
+                        exec_command = f'node run.js "{escaped_code}"'
+                        logger.warning(f"[execute_skill_script] {guidance}")
 
             if platform.system() == "Windows":
                 # Windows cmd 默认使用 GBK 编码，使用 None 让 subprocess 自动检测
@@ -624,6 +810,8 @@ def get_skill_tools(
                 skill_dir=skill_dir,
                 artifacts_dir=artifacts_dir,
                 artifacts_before=artifacts_before,
+                screenshots_dir=screenshots_dir,
+                screenshots_before=screenshots_before,
             )
 
         except subprocess.TimeoutExpired:
@@ -755,5 +943,9 @@ def get_skill_tools(
             return "错误: 单个执行模式需要提供 skill_name 和 command 参数"
 
         return _execute_single_skill_script(skill_name, command, session_id)
+
+    # 测试用例执行模式尽量收窄工具面，避免小模型先去读 Skill 文档再发散输出。
+    if current_test_case_id is not None:
+        return [execute_skill_script]
 
     return [read_skill_content, execute_skill_script]

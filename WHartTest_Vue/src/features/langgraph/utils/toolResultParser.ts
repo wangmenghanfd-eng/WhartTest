@@ -12,11 +12,39 @@ export interface ToolResultDisplayPayload {
   fileAttachments: ToolFileAttachment[];
 }
 
+const TOOL_OUTPUT_NOISE_PATTERNS = [
+  /^\[PERSISTENT_SESSION\].*$/i,
+  /^\[SCREENSHOT_DIR\].*$/i,
+  /^\[提示\]\s*后续步骤请继续使用 session_id=.*$/i,
+  /^\[注意\]\s*此次执行未使用 session_id.*$/i,
+];
+
+const collapseBlankLines = (value: string): string =>
+  value
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+const stripToolOutputNoise = (value: string): string => {
+  if (!value) return '';
+
+  const cleanedLines = value
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .filter((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return true;
+      return !TOOL_OUTPUT_NOISE_PATTERNS.some((pattern) => pattern.test(trimmed));
+    });
+
+  return collapseBlankLines(cleanedLines.join('\n'));
+};
+
 const safeStringify = (value: unknown): string => {
-  if (typeof value === 'string') return value;
+  if (typeof value === 'string') return stripToolOutputNoise(value);
   if (value === null || value === undefined) return '';
   try {
-    return JSON.stringify(value);
+    return stripToolOutputNoise(JSON.stringify(value));
   } catch {
     return '[无法序列化的数据]';
   }
@@ -125,7 +153,7 @@ export const parseToolResultDisplayPayload = (rawToolOutput: unknown): ToolResul
         }
 
         if (typeof obj.text === 'string' && obj.text.trim()) {
-          textParts.push(obj.text);
+          textParts.push(stripToolOutputNoise(obj.text));
           return;
         }
 
@@ -139,7 +167,7 @@ export const parseToolResultDisplayPayload = (rawToolOutput: unknown): ToolResul
       }
 
       if (typeof item === 'string') {
-        textParts.push(item);
+        textParts.push(stripToolOutputNoise(item));
       } else {
         const serialized = safeStringify(item);
         if (serialized) {
@@ -148,7 +176,7 @@ export const parseToolResultDisplayPayload = (rawToolOutput: unknown): ToolResul
       }
     });
 
-    const content = textParts.filter((part) => part && part.trim()).join('\n');
+    const content = collapseBlankLines(textParts.filter((part) => part && part.trim()).join('\n'));
     return {
       content:
         content ||
@@ -177,7 +205,7 @@ export const parseToolResultDisplayPayload = (rawToolOutput: unknown): ToolResul
 
     const text =
       typeof obj.text === 'string' && obj.text.trim()
-        ? obj.text
+        ? stripToolOutputNoise(obj.text)
         : '';
 
     return {
@@ -193,5 +221,5 @@ export const parseToolResultDisplayPayload = (rawToolOutput: unknown): ToolResul
     };
   }
 
-  return { content: safeStringify(normalized), fileAttachments: [] };
+  return { content: stripToolOutputNoise(safeStringify(normalized)), fileAttachments: [] };
 };

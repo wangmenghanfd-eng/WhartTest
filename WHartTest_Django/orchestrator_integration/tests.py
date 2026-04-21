@@ -1,4 +1,5 @@
 import os
+import json
 import tempfile
 from unittest.mock import patch
 
@@ -7,8 +8,15 @@ from django.test.utils import override_settings
 
 from . import agent_loop_view
 from .agent_loop_view import (
+    _build_sanitized_messages,
+    _compact_test_case_detail_output_for_model,
+    _compact_tool_output_for_test_case_execution,
     _extract_linked_image_urls,
+    _extract_test_case_execution_signals,
+    _infer_target_url_hint_from_test_case_detail,
+    _is_clear_final_test_case_summary,
     _is_linked_image_url_allowed,
+    _normalize_mcp_content_to_text,
     _normalize_uploaded_image_base64_list,
 )
 from .builtin_tools.skill_tools import (
@@ -16,11 +24,13 @@ from .builtin_tools.skill_tools import (
     _collect_skill_artifacts,
     _build_skill_screenshots_dir,
     _finalize_skill_result,
+    _find_new_runtime_files,
     _prepare_skill_screenshots_dir,
     _sanitize_runtime_path_segment,
 )
 from .builtin_tools.output_sanitizer import strip_terminal_control_sequences
 from .middleware_config import get_user_friendly_llm_error, _model_retry_should_retry
+from langchain_core.messages import AIMessage, ToolMessage
 
 
 class LLMFriendlyErrorTests(SimpleTestCase):
@@ -55,6 +65,26 @@ class LLMFriendlyErrorTests(SimpleTestCase):
     def test_model_cooldown_error_will_not_retry(self):
         exc = Exception(
             "Error code: 429 - {'error': {'code': 'model_cooldown', 'message': 'All credentials for model coder-model are cooling down', 'model': 'coder-model', 'reset_seconds': 27211, 'reset_time': '7h33m31s'}}"
+        )
+
+        self.assertFalse(_model_retry_should_retry(exc))
+
+    def test_organization_restricted_error_returns_friendly_payload(self):
+        exc = Exception(
+            "Error code: 400 - {'error': {'message': 'Organization has been restricted. Please reach out to support if you believe this was in error.', 'type': 'invalid_request_error', 'code': 'organization_restricted'}}"
+        )
+
+        result = get_user_friendly_llm_error(exc)
+
+        if result is None:
+            raise AssertionError("expected provider restriction payload")
+        self.assertEqual(result["status_code"], 400)
+        self.assertEqual(result["error_code"], "organization_restricted")
+        self.assertIn("账号或组织已被限制", result["message"])
+
+    def test_organization_restricted_error_will_not_retry(self):
+        exc = Exception(
+            "Error code: 400 - {'error': {'message': 'Organization has been restricted. Please reach out to support if you believe this was in error.', 'type': 'invalid_request_error', 'code': 'organization_restricted'}}"
         )
 
         self.assertFalse(_model_retry_should_retry(exc))
@@ -114,6 +144,143 @@ class LinkedImageUrlExtractionTests(SimpleTestCase):
                     "https://localhost:8080：准备注册信息：用户名testuser014"
                 )
             )
+
+
+class ToolMessageSanitizationTests(SimpleTestCase):
+    def test_normalize_mcp_text_block_list_to_plain_text(self):
+        content = [{"type": "text", "text": '{"id":5,"name":"demo"}'}]
+
+        self.assertEqual(
+            _normalize_mcp_content_to_text(content),
+            '{"id":5,"name":"demo"}',
+        )
+
+    def test_sanitize_messages_rewrites_mcp_toolmessage_blocks(self):
+        messages = [
+            AIMessage(
+                content="先读取测试用例详情",
+                tool_calls=[
+                    {
+                        "id": "tool-call-1",
+                        "name": "get_case_details",
+                        "args": {"project_id": 2, "case_id": 5},
+                    }
+                ],
+            ),
+            ToolMessage(
+                content=[{"type": "text", "text": '{"id":5,"name":"demo"}'}],
+                tool_call_id="tool-call-1",
+                name="get_case_details",
+            ),
+        ]
+
+        clean_messages, fix_count = _build_sanitized_messages(messages)
+
+        self.assertEqual(fix_count, 1)
+        self.assertEqual(len(clean_messages), 2)
+        self.assertIsInstance(clean_messages[1], ToolMessage)
+        self.assertEqual(clean_messages[1].content, '{"id":5,"name":"demo"}')
+
+
+class DedicatedTestCaseExecutionOutputTests(SimpleTestCase):
+    def test_compact_test_case_detail_output_keeps_key_fields(self):
+        raw_output = json.dumps(
+            {
+                "name": "用户登录-有效用户名和密码-正常流程",
+                "precondition": "系统URL: https://practice.expandtesting.com/",
+                "level": "P0",
+                "test_type": "functional",
+                "steps": [
+                    {
+                        "step_number": 1,
+                        "description": "访问登录页",
+                        "expected_result": "登录页显示正确",
+                    },
+                    {
+                        "step_number": 2,
+                        "description": "输入正确用户名和密码",
+                        "expected_result": "登录成功",
+                    },
+                ],
+            },
+            ensure_ascii=False,
+        )
+
+        compact = _compact_test_case_detail_output_for_model(raw_output)
+
+        self.assertIn("用例名称: 用户登录-有效用户名和密码-正常流程", compact)
+        self.assertIn("前置条件: 系统URL: https://practice.expandtesting.com/", compact)
+        self.assertIn("1. 访问登录页 => 登录页显示正确", compact)
+        self.assertIn("2. 输入正确用户名和密码 => 登录成功", compact)
+
+    def test_compact_tool_output_for_testcase_execution_summarizes_detail_json(self):
+        raw_output = json.dumps(
+            {
+                "name": "demo-case",
+                "precondition": "URL: https://practice.expandtesting.com/",
+                "steps": [{"step_number": 1, "description": "打开页面", "expected_result": "页面打开"}],
+            },
+            ensure_ascii=False,
+        )
+
+        compact = _compact_tool_output_for_test_case_execution(
+            "execute_skill_script",
+            {
+                "skill_name": "whart-test",
+                "command": "python whart_tools.py --action get_testcase_detail --project_id 2 --case_id 5",
+            },
+            raw_output,
+        )
+
+        self.assertIn("用例名称: demo-case", compact)
+        self.assertIn("1. 打开页面 => 页面打开", compact)
+
+    def test_infer_expandtesting_login_url_from_testcase_detail(self):
+        raw_output = json.dumps(
+            {
+                "name": "用户登录-有效用户名和密码-正常流程",
+                "module_detail": "用户登录模块",
+                "precondition": "系统URL: https://practice.expandtesting.com/, 使用练习账号",
+                "steps": [
+                    {"step_number": 1, "description": "访问登录页", "expected_result": "登录页显示正确"}
+                ],
+            },
+            ensure_ascii=False,
+        )
+
+        inferred = _infer_target_url_hint_from_test_case_detail(raw_output)
+
+        self.assertEqual(inferred, "https://practice.expandtesting.com/login")
+
+    def test_extract_execution_signals_detects_login_success_clues(self):
+        text = (
+            "You logged into a secure area!\n"
+            "Welcome to the Secure Area. When you are done click logout below.\n"
+            "Logout link found"
+        )
+
+        signals = _extract_test_case_execution_signals(text)
+
+        self.assertIn("secure_area_text", signals)
+        self.assertIn("welcome_secure_area", signals)
+        self.assertIn("logout_found", signals)
+
+    def test_clear_final_summary_rejects_future_tense_text(self):
+        text = "从页面文本可看到登录成功提示。接下来，我将验证这些提示信息是否存在。"
+
+        self.assertFalse(_is_clear_final_test_case_summary(text))
+
+    def test_extract_execution_signals_detects_secure_heading_and_logout_hint(self):
+        text = (
+            "Secure Area\n"
+            "Secure Area page for Automation Testing Practice\n"
+            "退出登录入口存在"
+        )
+
+        signals = _extract_test_case_execution_signals(text)
+
+        self.assertIn("secure_heading", signals)
+        self.assertIn("logout_found", signals)
 
 
 class UploadedImageNormalizationTests(SimpleTestCase):
@@ -216,6 +383,44 @@ class SkillScreenshotDirectoryTests(SimpleTestCase):
 
         self.assertIn('"type": "file"', wrapped)
         self.assertIn('/media/skills/1/11/demo.drawio', wrapped)
+
+    def test_find_new_runtime_files_ignores_chat_session_marker(self):
+        with tempfile.TemporaryDirectory() as temp_media_root:
+            with override_settings(MEDIA_ROOT=temp_media_root):
+                screenshots_dir = _prepare_skill_screenshots_dir(1, "89", "chat-a")
+                before = {}
+                screenshot_path = os.path.join(screenshots_dir, "step-1.png")
+                with open(screenshot_path, "wb") as f:
+                    f.write(b"png")
+
+                new_files = _find_new_runtime_files(screenshots_dir, before)
+
+        self.assertEqual(new_files, [screenshot_path])
+
+    def test_finalize_skill_result_includes_new_screenshot_payload(self):
+        with tempfile.TemporaryDirectory() as temp_media_root:
+            with override_settings(MEDIA_ROOT=temp_media_root, MEDIA_URL="/media/"):
+                skill_dir = os.path.join(temp_media_root, "skills", "1", "11")
+                os.makedirs(skill_dir, exist_ok=True)
+                screenshots_dir = os.path.join(
+                    temp_media_root, "skill_runtime", "screenshots", "1", "case-5"
+                )
+                os.makedirs(screenshots_dir, exist_ok=True)
+                screenshot_path = os.path.join(screenshots_dir, "auto-step.png")
+                with open(screenshot_path, "wb") as f:
+                    f.write(b"png")
+
+                wrapped = _finalize_skill_result(
+                    "已自动补截图",
+                    skill_dir=skill_dir,
+                    artifacts_dir=os.path.join(temp_media_root, "skill_runtime", "artifacts", "1", "s1"),
+                    artifacts_before={},
+                    screenshots_dir=screenshots_dir,
+                    screenshots_before={},
+                )
+
+        self.assertIn('"type": "file"', wrapped)
+        self.assertIn('/media/skill_runtime/screenshots/1/case-5/auto-step.png', wrapped)
 
 
 class TerminalOutputSanitizerTests(SimpleTestCase):

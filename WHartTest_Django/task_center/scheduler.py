@@ -66,7 +66,7 @@ def register_periodic_task(task: ScheduledTask):
         crontab_kwargs = _build_crontab_kwargs(task)
         if not crontab_kwargs:
             return
-        crontab_kwargs['timezone'] = timezone.get_current_timezone()
+        crontab_kwargs['timezone'] = task.task_timezone or timezone.get_current_timezone_name()
         crontab_schedule, _ = CrontabSchedule.objects.get_or_create(**crontab_kwargs)
         defaults.update(crontab=crontab_schedule, clocked=None, interval=None, one_off=False)
 

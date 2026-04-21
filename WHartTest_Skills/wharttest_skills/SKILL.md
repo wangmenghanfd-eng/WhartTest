@@ -24,6 +24,7 @@ python whart_tools.py --action <action_name> [--参数名 参数值]
 |--------|------|------|
 | `get_projects` | 获取所有项目列表 | 无 |
 | `get_modules` | 获取项目下的模块列表 | `--project_id` |
+| `get_module_id` | 根据模块名称获取模块ID | `--project_id`, `--module_name` |
 
 ### 用例管理
 
@@ -32,8 +33,16 @@ python whart_tools.py --action <action_name> [--参数名 参数值]
 | `get_levels` | 获取用例等级列表 | 无 |
 | `get_testcases` | 获取模块下的用例列表 | `--project_id`, `--module_id` |
 | `get_testcase_detail` | 获取用例详情 | `--project_id`, `--case_id` |
+| `get_test_result` | 获取该用例最近一次执行结果 | `--project_id`, `--case_id` |
 | `add_testcase` | 新增测试用例 | `--project_id`, `--module_id`, `--name`, `--level`, `--precondition`, `--steps`, `--notes`, `--review_status`, `--test_type` |
 | `edit_testcase` | 编辑测试用例 | `--project_id`, `--case_id`, `--name`, `--level`, `--module_id`, `--precondition`, `--steps`, `--notes`, `--review_status`, `--test_type`, `--is_optimization` |
+
+### 兼容动作（仅用于容错，不是主流程）
+
+| Action | 描述 | 说明 |
+|--------|------|------|
+| `get_case_details` | `get_testcase_detail` 的兼容别名 | 优先仍使用 `get_testcase_detail` |
+| `execute_test_case` | 返回正确执行链路指引 | 不会直接驱动浏览器执行 |
 
 ### 截图管理
 
@@ -46,6 +55,35 @@ python whart_tools.py --action <action_name> [--参数名 参数值]
 
 **单张上传**：`--file_path "case_11_step1.png"`
 **批量上传**：`--file_paths "step1.png,step2.png,step3.png"`（最多10张，逗号分隔）
+
+## 功能测试执行时的职责边界
+
+`whart-test` 只负责平台数据读写，不负责浏览器自动化执行。
+
+推荐顺序：
+1. 用 `get_testcase_detail` 读取用例步骤。
+2. 如需模块ID，用 `get_module_id` 或 `get_modules`。
+3. 浏览器操作必须切换到 `playwright-skill`，并使用 `node run.js "..."`。
+4. 截图必须先保存到 `SCREENSHOT_DIR`，再用 `upload_screenshot` 或 `upload_screenshots` 上传。
+5. 如需回看最近一次执行结果，再调用 `get_test_result`。
+
+## 避免混用其他工具层的名称
+
+下面这些名字容易和 MCP / 旧链路混淆，在 `whart-test` 里不要当成主流程动作使用：
+
+- `get_case_details`
+- `execute_test_case`
+- `browser_navigate`
+- `browser_snapshot`
+- `browser_take_screenshot`
+- `save_operation_screenshots_to_the_application_case`
+- `python playwright_script.py`
+
+正确做法是：
+
+- 平台数据：`python whart_tools.py --action get_testcase_detail ...`
+- 浏览器执行：`node run.js "..."`（在 `playwright-skill` 中）
+- 截图上传：`python whart_tools.py --action upload_screenshot --file_path "case_11_step1.png" ...`
 
 ### 审核状态
 
@@ -80,8 +118,17 @@ python whart_tools.py --action get_projects
 # 获取项目1的模块
 python whart_tools.py --action get_modules --project_id 1
 
+# 根据模块名称获取模块ID
+python whart_tools.py --action get_module_id --project_id 1 --module_name "用户登录模块"
+
 # 获取用例列表
 python whart_tools.py --action get_testcases --project_id 1 --module_id 5
+
+# 获取用例详情（主流程）
+python whart_tools.py --action get_testcase_detail --project_id 1 --case_id 10
+
+# 获取最近一次执行结果
+python whart_tools.py --action get_test_result --project_id 1 --case_id 10
 
 # 新增用例
 python whart_tools.py --action add_testcase \

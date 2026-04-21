@@ -36,6 +36,26 @@ _CONTENT_AUDIT_FRIENDLY_MSG = (
     "当前输入内容触发了模型服务商的内容安全审核，请尝试调整输入内容后重试。"
 )
 _MODEL_COOLDOWN_ERROR_CODES = {"model_cooldown"}
+_PROVIDER_ACCESS_RESTRICTED_ERROR_CODES = {
+    "organization_restricted",
+    "account_restricted",
+    "account_suspended",
+    "organization_suspended",
+    "organization_deactivated",
+}
+_PROVIDER_ACCESS_RESTRICTED_HINTS = (
+    "organization has been restricted",
+    "organization_restricted",
+    "account has been restricted",
+    "account_restricted",
+    "account suspended",
+    "organization suspended",
+    "organization deactivated",
+    "account deactivated",
+)
+_PROVIDER_ACCESS_RESTRICTED_FRIENDLY_MSG = (
+    "当前模型服务商账号或组织已被限制，无法继续调用模型。请更换可用的 API Key / 组织，或切换到其他可用模型配置后重试。"
+)
 _RATE_LIMIT_HINTS = (
     "rate limit",
     "too many requests",
@@ -258,6 +278,30 @@ def get_user_friendly_llm_error(
     if reset_seconds is None and not reset_time:
         reset_seconds, reset_time = _extract_retry_after_metadata(exc)
     error_text = str(exc).lower()
+    provider_type = str(provider_error.get("type") or "").strip().lower() or None
+
+    is_provider_access_restricted = (
+        error_code in _PROVIDER_ACCESS_RESTRICTED_ERROR_CODES
+        or any(hint in error_text for hint in _PROVIDER_ACCESS_RESTRICTED_HINTS)
+    )
+
+    if is_provider_access_restricted:
+        errors = {error_field: [_PROVIDER_ACCESS_RESTRICTED_FRIENDLY_MSG]}
+        if error_code:
+            errors["provider_code"] = [error_code]
+        if provider_type:
+            errors["provider_type"] = [provider_type]
+        if model:
+            errors["provider_model"] = [model]
+        return {
+            "status_code": status_code or 400,
+            "message": _PROVIDER_ACCESS_RESTRICTED_FRIENDLY_MSG,
+            "errors": errors,
+            "error_code": error_code or "provider_access_restricted",
+            "model": model,
+            "reset_seconds": None,
+            "reset_time": None,
+        }
 
     is_model_cooldown = (
         error_code in _MODEL_COOLDOWN_ERROR_CODES or "cooling down" in error_text
@@ -336,6 +380,16 @@ def _model_retry_should_retry(exc: Exception) -> bool:
     if friendly_error and friendly_error.get("error_code") == "model_cooldown":
         logger.warning(
             "ModelRetryMiddleware: 模型冷却中，不重试。error=%s",
+            _fix_mojibake(error_text),
+        )
+        return False
+
+    if friendly_error and friendly_error.get("error_code") in (
+        _PROVIDER_ACCESS_RESTRICTED_ERROR_CODES
+        | {"provider_access_restricted"}
+    ):
+        logger.warning(
+            "ModelRetryMiddleware: 供应商账号/组织受限，不重试。error=%s",
             _fix_mojibake(error_text),
         )
         return False

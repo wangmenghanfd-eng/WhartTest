@@ -236,7 +236,9 @@ class AgentBlackboard(models.Model):
             from langgraph_integration.models import LLMConfig
             from langgraph_integration.views import create_llm_instance
             
-            active_config = LLMConfig.objects.get(is_active=True)
+            active_config = LLMConfig.objects.filter(is_active=True).first()
+            if not active_config:
+                raise Exception("没有可用的 LLM 配置")
             llm = create_llm_instance(active_config)
             logger.info(f"[Compression] LLM实例创建成功,模型: {active_config.name}")
             

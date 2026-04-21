@@ -39,6 +39,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.tools import tool as langchain_tool
 from langchain.agents import create_agent
 from wharttest_django.checkpointer import get_async_checkpointer
 
@@ -47,7 +48,10 @@ from .middleware_config import (
     get_user_tool_approvals,
     get_user_friendly_llm_error,
 )
-from .playwright_instructions import PLAYWRIGHT_SCRIPT_INSTRUCTION
+from .playwright_instructions import (
+    PLAYWRIGHT_SCRIPT_INSTRUCTION,
+    TEST_CASE_EXECUTION_INSTRUCTION,
+)
 from .stop_signal import should_stop, clear_stop_signal
 from langgraph_integration.models import ChatSession, LLMConfig
 from langgraph_integration.views import (
@@ -207,6 +211,18 @@ _LINKED_IMAGE_FETCH_TIMEOUT = _get_env_float(
 )
 _MAX_SAFE_TOOL_MESSAGE_CHARS = _get_env_int(
     "AGENT_LOOP_MAX_SAFE_TOOL_MESSAGE_CHARS", 20000, min_value=1000
+)
+_MAX_TEST_CASE_TOOL_MESSAGE_CHARS = _get_env_int(
+    "AGENT_LOOP_TESTCASE_MAX_TOOL_MESSAGE_CHARS", 4000, min_value=500
+)
+_MAX_TEST_CASE_AGENT_STEPS = _get_env_int(
+    "AGENT_LOOP_TESTCASE_AGENT_STEPS", 12, min_value=2
+)
+_MAX_TEST_CASE_AI_SNIPPET_CHARS = _get_env_int(
+    "AGENT_LOOP_TESTCASE_AI_SNIPPET_CHARS", 500, min_value=100
+)
+_MAX_TEST_CASE_COMPLETION_TOKENS = _get_env_int(
+    "AGENT_LOOP_TESTCASE_MAX_COMPLETION_TOKENS", 384, min_value=64
 )
 
 
@@ -373,14 +389,8 @@ def process_mcp_tool_output(content: Any) -> tuple:
     Returns:
         tuple: (processed_content, summary)
     """
-    # 处理 MCP 工具返回的列表格式，提取 text 内容
-    if isinstance(content, list) and len(content) == 1:
-        first_item = content[0]
-        if isinstance(first_item, dict) and first_item.get("type") == "text":
-            text_content = first_item.get("text")
-            if text_content is not None:
-                content = text_content
-            # text 为 None 或空时保留原始列表格式
+    # 处理 MCP 工具返回的结构化 content block，尽量提取纯文本
+    content = _normalize_mcp_content_to_text(content)
 
     # 确保 content 可序列化
     if content is None:
@@ -398,6 +408,70 @@ def process_mcp_tool_output(content: Any) -> tuple:
             summary = str(content)[:200]
 
     return content, summary
+
+
+def _normalize_mcp_content_to_text(content: Any) -> Any:
+    """
+    将 MCP 常见的结构化 content block 压平成纯文本，避免后续 ToolMessage
+    以 list/dict 形式进入下一轮模型调用。
+
+    对图片/文件等非文本块，仅保留简短占位，避免把 base64/二进制元数据塞进上下文。
+    """
+    if content is None or isinstance(content, (str, int, float, bool)):
+        return content
+
+    if isinstance(content, dict):
+        if content.get("type") == "text" and content.get("text") is not None:
+            return str(content.get("text"))
+        try:
+            return json.dumps(content, ensure_ascii=False)
+        except (TypeError, ValueError):
+            return str(content)
+
+    if isinstance(content, list):
+        text_parts: List[str] = []
+        placeholders: List[str] = []
+
+        for item in content:
+            if isinstance(item, dict):
+                item_type = str(item.get("type", "")).lower()
+
+                if item_type == "text":
+                    text_value = item.get("text")
+                    if text_value is not None:
+                        text_parts.append(str(text_value))
+                    continue
+
+                if item_type == "image" or isinstance(item.get("base64"), str):
+                    placeholders.append("[工具返回了图片]")
+                    continue
+
+                if item_type == "file":
+                    file_name = item.get("name") or item.get("path") or "未命名文件"
+                    placeholders.append(f"[工具返回了文件: {file_name}]")
+                    continue
+
+                try:
+                    text_parts.append(json.dumps(item, ensure_ascii=False))
+                except (TypeError, ValueError):
+                    text_parts.append(str(item))
+                continue
+
+            if item is None:
+                continue
+            text_parts.append(str(item))
+
+        normalized_parts = [part for part in text_parts if isinstance(part, str) and part.strip()]
+        if normalized_parts:
+            return "\n".join(normalized_parts)
+        if placeholders:
+            return "\n".join(placeholders)
+        try:
+            return json.dumps(content, ensure_ascii=False)
+        except (TypeError, ValueError):
+            return str(content)
+
+    return str(content)
 
 
 def _build_sanitized_messages(messages: List[Any]) -> tuple[List[Any], int]:
@@ -429,15 +503,43 @@ def _build_sanitized_messages(messages: List[Any]) -> tuple[List[Any], int]:
         pending_call_ids.clear()
         pending_call_names.clear()
 
-    def _is_tool_content_problematic(msg: ToolMessage) -> bool:
+    def _sanitize_tool_message(msg: ToolMessage) -> tuple[ToolMessage, bool]:
         content = getattr(msg, "content", None)
-        if content is None or not isinstance(content, str):
-            return True
-        if len(content) > _MAX_SAFE_TOOL_MESSAGE_CHARS:
-            return True
-        if "data:image/" in content and "base64," in content:
-            return True
-        return False
+        normalized = _normalize_mcp_content_to_text(content)
+
+        if normalized is None:
+            normalized = ""
+        elif not isinstance(normalized, str):
+            normalized = str(normalized)
+
+        normalized = normalized.strip()
+
+        if (
+            not normalized
+            or len(normalized) > _MAX_SAFE_TOOL_MESSAGE_CHARS
+            or ("data:image/" in normalized and "base64," in normalized)
+        ):
+            return (
+                ToolMessage(
+                    content="[Tool output removed: content was invalid or too large]",
+                    tool_call_id=str(getattr(msg, "tool_call_id", "") or ""),
+                    name=getattr(msg, "name", None) or "unknown",
+                ),
+                True,
+            )
+
+        content_changed = normalized != content
+        if content_changed:
+            return (
+                ToolMessage(
+                    content=normalized,
+                    tool_call_id=str(getattr(msg, "tool_call_id", "") or ""),
+                    name=getattr(msg, "name", None) or "unknown",
+                ),
+                True,
+            )
+
+        return msg, False
 
     for msg in messages:
         # 带 tool_calls 的 AIMessage
@@ -465,13 +567,14 @@ def _build_sanitized_messages(messages: List[Any]) -> tuple[List[Any], int]:
             tc_id = str(getattr(msg, "tool_call_id", "") or "")
             if tc_id in pending_call_ids:
                 pending_call_ids.remove(tc_id)
-                if _is_tool_content_problematic(msg):
+                sanitized_msg, changed = _sanitize_tool_message(msg)
+                if changed:
+                    sanitized_name = getattr(sanitized_msg, "name", None) or pending_call_names.get(tc_id, "unknown")
                     result.append(
                         ToolMessage(
-                            content="[Tool output removed: content was invalid or too large]",
+                            content=sanitized_msg.content,
                             tool_call_id=tc_id,
-                            name=getattr(msg, "name", None)
-                            or pending_call_names.get(tc_id, "unknown"),
+                            name=sanitized_name,
                         )
                     )
                     fix_count += 1
@@ -559,6 +662,266 @@ async def _sanitize_history_before_model_call(
         return {"removed_count": 0, "sanitized": False}
 
     return {"removed_count": fix_count, "sanitized": True}
+
+
+def _tool_messages_need_sanitization(tool_messages: List[Any]) -> bool:
+    """
+    在工具节点完成后做一次轻量判断：
+    只要 ToolMessage 含有非字符串 content、超长文本或 base64，就立刻触发状态修复。
+    """
+    for tool_msg in tool_messages:
+        content = getattr(tool_msg, "content", None)
+        if not isinstance(content, str):
+            return True
+        if len(content) > _MAX_SAFE_TOOL_MESSAGE_CHARS:
+            return True
+        if "data:image/" in content and "base64," in content:
+            return True
+    return False
+
+
+def _extract_usage_metadata(message: Any) -> tuple[int, int, int]:
+    usage = getattr(message, "usage_metadata", None) or {}
+    if not isinstance(usage, dict):
+        return 0, 0, 0
+    input_tokens = int(usage.get("input_tokens", 0) or 0)
+    output_tokens = int(usage.get("output_tokens", 0) or 0)
+    total_tokens = int(usage.get("total_tokens", 0) or (input_tokens + output_tokens))
+    return input_tokens, output_tokens, total_tokens
+
+
+def _compact_test_case_detail_output_for_model(raw_output: Any) -> str:
+    """
+    将 get_testcase_detail 的 JSON 输出压成短文本，避免小模型复述整段 JSON。
+    """
+    normalized = _normalize_mcp_content_to_text(raw_output)
+    text = normalized if isinstance(normalized, str) else str(normalized)
+    text = text.strip()
+    if not text:
+        return "(无测试用例详情)"
+
+    try:
+        payload = json.loads(text)
+    except (TypeError, ValueError):
+        if len(text) <= _MAX_TEST_CASE_TOOL_MESSAGE_CHARS:
+            return text
+        return f"{text[:_MAX_TEST_CASE_TOOL_MESSAGE_CHARS]}\n...[测试用例详情已截断]"
+
+    if not isinstance(payload, dict):
+        serialized = json.dumps(payload, ensure_ascii=False)
+        if len(serialized) <= _MAX_TEST_CASE_TOOL_MESSAGE_CHARS:
+            return serialized
+        return f"{serialized[:_MAX_TEST_CASE_TOOL_MESSAGE_CHARS]}\n...[测试用例详情已截断]"
+
+    lines: List[str] = []
+    name = str(payload.get("name") or "").strip()
+    if name:
+        lines.append(f"用例名称: {name}")
+
+    precondition = str(payload.get("precondition") or "").strip()
+    if precondition:
+        lines.append(f"前置条件: {precondition}")
+
+    level = str(payload.get("level") or "").strip()
+    if level:
+        lines.append(f"优先级: {level}")
+
+    test_type = str(payload.get("test_type") or "").strip()
+    if test_type:
+        lines.append(f"测试类型: {test_type}")
+
+    steps = payload.get("steps") or []
+    if isinstance(steps, list) and steps:
+        lines.append("步骤:")
+        for raw_step in steps[:20]:
+            if not isinstance(raw_step, dict):
+                continue
+            step_number = raw_step.get("step_number") or len(lines)
+            description = str(raw_step.get("description") or "").strip()
+            expected = str(raw_step.get("expected_result") or "").strip()
+            if description or expected:
+                lines.append(f"{step_number}. {description} => {expected}".strip())
+
+    summary = "\n".join(line for line in lines if line).strip()
+    if not summary:
+        summary = text
+
+    if len(summary) > _MAX_TEST_CASE_TOOL_MESSAGE_CHARS:
+        summary = f"{summary[:_MAX_TEST_CASE_TOOL_MESSAGE_CHARS]}\n...[测试用例详情已截断]"
+    return summary
+
+
+def _compact_tool_output_for_test_case_execution(
+    tool_name: str,
+    tool_args: Optional[Dict[str, Any]],
+    raw_output: Any,
+) -> str:
+    """
+    给专用测试用例执行器压缩工具输出，减少模型在后续轮次中被长文本带偏。
+    """
+    normalized = _normalize_mcp_content_to_text(raw_output)
+    text = normalized if isinstance(normalized, str) else str(normalized)
+    text = text.strip() or "(无输出)"
+
+    tool_args = tool_args or {}
+    if tool_name == "execute_skill_script":
+        skill_name = str(tool_args.get("skill_name") or "").strip()
+        command = str(tool_args.get("command") or "").strip()
+        if skill_name == "whart-test" and "--action get_testcase_detail" in command:
+            return _compact_test_case_detail_output_for_model(text)
+
+    if len(text) > _MAX_TEST_CASE_TOOL_MESSAGE_CHARS:
+        return f"{text[:_MAX_TEST_CASE_TOOL_MESSAGE_CHARS]}\n...[工具输出已截断]"
+
+    return text
+
+
+def _infer_target_url_hint_from_test_case_detail(raw_output: Any) -> Optional[str]:
+    """
+    基于测试用例详情推断更精确的目标页面 URL。
+
+    目前先覆盖本轮联调用到的 Expand Testing 常见入口，避免模型总是从首页开始误操作。
+    """
+    normalized = _normalize_mcp_content_to_text(raw_output)
+    text = normalized if isinstance(normalized, str) else str(normalized)
+
+    try:
+        payload = json.loads(text)
+    except (TypeError, ValueError):
+        return None
+
+    if not isinstance(payload, dict):
+        return None
+
+    precondition = str(payload.get("precondition") or "")
+    base_url_match = re.search(r"https?://[^\s,，]+", precondition)
+    if not base_url_match:
+        return None
+
+    base_url = base_url_match.group(0).rstrip("/")
+    lowered_base = base_url.lower()
+    if "practice.expandtesting.com" not in lowered_base:
+        return None
+
+    parts: List[str] = []
+    for key in ("name", "module_detail", "notes"):
+        value = str(payload.get(key) or "").strip()
+        if value:
+            parts.append(value.lower())
+
+    steps = payload.get("steps") or []
+    if isinstance(steps, list):
+        for step in steps:
+            if not isinstance(step, dict):
+                continue
+            for key in ("description", "expected_result"):
+                value = str(step.get(key) or "").strip()
+                if value:
+                    parts.append(value.lower())
+
+    combined = "\n".join(parts)
+    route_map = [
+        (("/login",), ("登录", "login", "secure area")),
+        (("/register",), ("注册", "register")),
+        (("/forgot-password",), ("忘记密码", "forgot password", "retrieve password")),
+        (("/otp-login",), ("otp", "验证码", "one time password")),
+        (("/dynamic-loading", "/dynamic-loading/2"), ("动态加载", "dynamic loading")),
+    ]
+
+    for routes, keywords in route_map:
+        if any(keyword in combined for keyword in keywords):
+            return f"{base_url}{routes[0]}"
+
+    return None
+
+
+def _extract_test_case_execution_signals(text: Any) -> set[str]:
+    normalized = _normalize_mcp_content_to_text(text)
+    content = normalized if isinstance(normalized, str) else str(normalized)
+    lowered = content.lower()
+    signals: set[str] = set()
+
+    success_markers = {
+        "secure_area_text": "you logged into a secure area!" in lowered,
+        "welcome_secure_area": "welcome to the secure area" in lowered,
+        "logout_found": (
+            "logout link found" in lowered
+            or "退出登录入口存在" in content
+            or "href === '/logout'" in content
+        ),
+        "secure_path": "/secure" in lowered,
+        "flash_success": "logged into a secure area" in lowered,
+        "secure_heading": bool(
+            re.search(r"(^|\n)\s*secure area\s*($|\n)", lowered)
+        )
+        or "secure area page for automation testing practice" in lowered,
+    }
+    failure_markers = {
+        "invalid_username": "invalid username" in lowered,
+        "invalid_password": "invalid password" in lowered,
+        "selector_timeout": "waitforselector: timeout" in lowered,
+        "playwright_error": any(
+            marker in lowered
+            for marker in (
+                "error: playwright",
+                "referenceerror:",
+                "syntaxerror:",
+                "typeerror:",
+                "execution context was destroyed",
+                "target page, context or browser has been closed",
+                "timeout 60000ms exceeded",
+                "node.js v",
+            )
+        ),
+    }
+
+    for key, present in success_markers.items():
+        if present:
+            signals.add(key)
+    for key, present in failure_markers.items():
+        if present:
+            signals.add(key)
+    return signals
+
+
+def _is_clear_final_test_case_summary(text: str) -> bool:
+    content = (text or "").strip()
+    if not content:
+        return False
+
+    lowered = content.lower()
+    continuation_markers = (
+        "接下来",
+        "下一步",
+        "我将",
+        "继续验证",
+        "继续检查",
+        "然后我会",
+        "然后将",
+        "需要继续",
+        "还要验证",
+    )
+    if any(marker in content for marker in continuation_markers):
+        return False
+
+    final_markers = (
+        "测试通过",
+        "测试失败",
+        "验证通过",
+        "验证失败",
+        "执行完成",
+        "执行成功",
+        "执行失败",
+        "登录成功",
+        "登录失败",
+        "结论",
+        "passed",
+        "failed",
+        "success",
+    )
+    return any(marker in content for marker in final_markers) or any(
+        marker in lowered for marker in ("passed", "failed", "success")
+    )
 
 
 def calculate_context_tokens(
@@ -717,6 +1080,434 @@ class AgentLoopStreamAPIView(View):
         except Exception as e:
             raise AuthenticationFailed(f"Invalid token: {str(e)}")
 
+    async def _run_dedicated_test_case_execution(
+        self,
+        *,
+        llm: Any,
+        session_id: str,
+        project_id: str,
+        test_case_id: int,
+        user_message: str,
+        effective_prompt: Optional[str],
+        context_limit: int,
+        model_name: str,
+        builtin_tools: List[Any],
+        generate_playwright_script: bool,
+    ):
+        """
+        专用测试用例执行器。
+
+        避开通用 Agent Loop 的自由文本回复，强制执行固定流程：
+        1. 后端先确定性读取测试用例详情
+        2. 模型只能在 execute_skill_script / finish_test_case_execution 两个工具间选择
+        3. 如果模型没有给出 tool_call，则立刻失败，避免长时间卡在 100%
+        """
+        if not builtin_tools:
+            yield create_sse_data(
+                {"type": "error", "message": "未找到可用的内置执行工具"}
+            )
+            yield create_sse_data({"type": "complete", "status": "error", "steps": 0})
+            yield "data: [DONE]\n\n"
+            return
+
+        execute_skill_tool = builtin_tools[0]
+        usage_input_tokens = 0
+        usage_output_tokens = 0
+        step_count = 0
+        finished = False
+        final_summary = ""
+        final_success = True
+        observed_signals: set[str] = set()
+
+        @langchain_tool
+        def finish_test_case_execution(
+            success: bool,
+            summary: str,
+        ) -> str:
+            """
+            在已经完成测试执行且结论明确时调用。
+
+            Args:
+                success: 测试是否通过
+                summary: 基于实际执行结果的简短总结
+
+            Returns:
+                JSON 字符串，供后端收尾并展示给前端
+            """
+            return json.dumps(
+                {"success": bool(success), "summary": str(summary or "").strip()},
+                ensure_ascii=False,
+            )
+
+        # 第 1 步固定走后端读取测试用例详情，减少模型第一跳发散。
+        step_count += 1
+        yield create_sse_data(
+            {
+                "type": "step_start",
+                "step": step_count,
+                "max_steps": self.MAX_STEPS,
+                "tools": [execute_skill_tool.name],
+            }
+        )
+
+        initial_command = (
+            "python whart_tools.py --action get_testcase_detail "
+            f"--project_id {project_id} --case_id {test_case_id}"
+        )
+        detail_result = await sync_to_async(execute_skill_tool.invoke)(
+            {
+                "skill_name": "whart-test",
+                "command": initial_command,
+            }
+        )
+        detail_content, detail_summary = process_mcp_tool_output(detail_result)
+        yield create_sse_data(
+            {
+                "type": "tool_result",
+                "tool_name": execute_skill_tool.name,
+                "tool_output": detail_content,
+                "summary": detail_summary,
+                "step": step_count,
+            }
+        )
+        yield create_sse_data({"type": "step_complete", "step": step_count})
+
+        detail_text = detail_content if isinstance(detail_content, str) else str(detail_content)
+        if detail_text.startswith("错误:") or "命令执行失败" in detail_text:
+            yield create_sse_data(
+                {
+                    "type": "error",
+                    "message": "读取测试用例详情失败，已停止执行。请先检查该用例是否存在且当前 API 凭证可用。",
+                }
+            )
+            yield create_sse_data(
+                {"type": "complete", "status": "error", "steps": step_count}
+            )
+            yield "data: [DONE]\n\n"
+            return
+
+        compact_case_detail = _compact_test_case_detail_output_for_model(detail_content)
+        session_key = f"case_{test_case_id}"
+        target_url_hint = _infer_target_url_hint_from_test_case_detail(detail_content)
+
+        initial_page_snapshot = ""
+        if target_url_hint:
+            step_count += 1
+            yield create_sse_data(
+                {
+                    "type": "step_start",
+                    "step": step_count,
+                    "max_steps": self.MAX_STEPS,
+                    "tools": [execute_skill_tool.name],
+                }
+            )
+
+            goto_command = (
+                f"node run.js \"await page.goto({json.dumps(target_url_hint)}); "
+                "const desc = await helpers.describePageForAI(page); console.log(desc);\""
+            )
+            goto_result = await sync_to_async(execute_skill_tool.invoke)(
+                {
+                    "skill_name": "playwright-skill",
+                    "command": goto_command,
+                    "session_id": session_key,
+                }
+            )
+            goto_content, goto_summary = process_mcp_tool_output(goto_result)
+            observed_signals.update(_extract_test_case_execution_signals(goto_content))
+            yield create_sse_data(
+                {
+                    "type": "tool_result",
+                    "tool_name": execute_skill_tool.name,
+                    "tool_output": goto_content,
+                    "summary": goto_summary,
+                    "step": step_count,
+                }
+            )
+            yield create_sse_data({"type": "step_complete", "step": step_count})
+            initial_page_snapshot = _compact_tool_output_for_test_case_execution(
+                execute_skill_tool.name,
+                {"skill_name": "playwright-skill", "command": goto_command},
+                goto_content,
+            )
+
+        script_generation_note = (
+            "\n当前请求还打开了“生成 UI 自动化用例”选项，但此专用执行器当前优先保证功能测试执行链路稳定；"
+            "如果你已经完成测试，再调用 finish_test_case_execution 结束。"
+            if generate_playwright_script
+            else ""
+        )
+        dedicated_prompt = (
+            (effective_prompt or "").strip()
+            + "\n\n你正在执行 WHartTest 的功能测试用例，当前处于严格工具模式。\n"
+            "规则：\n"
+            "1. 优先调用工具，禁止输出解释性长文本；如果确实可以结束，只允许给出一句简短总结。\n"
+            "2. 只允许调用 execute_skill_script 或 finish_test_case_execution。\n"
+            f"3. 浏览器会话固定使用 session_id=\"{session_key}\"。\n"
+            "4. 第一次浏览器调用必须使用 playwright-skill 打开目标页面，并立刻执行 "
+            "`helpers.describePageForAI(page)` 获取真实 selector；如果后端已经预打开页面，就直接复用当前页面。\n"
+            "5. 之后基于真实 selector 继续执行，run.js 双引号内只能是可执行 JavaScript，禁止自然语言。\n"
+            "6. 如果某个 selector 不存在，不要连续重复同一条 fill/waitForSelector 命令，先重新查看当前页面结构或 URL。\n"
+            "7. 如果是登录场景，必须先确认当前页面就是登录页，再执行输入。\n"
+            "8. 不要复述测试用例 JSON，不要说“接下来我将”，直接调用工具。\n"
+            "9. 验证跳转/登录成功时优先用 `await page.waitForURL('**/secure');` 或 `console.log(page.url());`；"
+            "禁止用不加 /i 的正则选择器如 `text=/secure/`，大小写不匹配会导致 30s 超时。\n"
+            "10. 当结论明确后，调用 finish_test_case_execution，总结必须基于真实执行结果。"
+            + script_generation_note
+        ).strip()
+
+        human_text = (
+            f"请执行项目 {project_id} 的功能测试用例 {test_case_id}。\n"
+            f"用户原始请求：{user_message}\n\n"
+            "测试用例摘要如下：\n"
+            f"{compact_case_detail}\n\n"
+            + (
+                f"后端已预打开目标页面：{target_url_hint}\n"
+                f"当前页面结构摘要：\n{initial_page_snapshot}\n\n"
+                if target_url_hint and initial_page_snapshot
+                else ""
+            )
+            +
+            "现在继续调用工具执行浏览器步骤。"
+        )
+
+        messages: List[Any] = [
+            SystemMessage(content=dedicated_prompt),
+            HumanMessage(content=human_text),
+        ]
+
+        tool_runnable = llm.bind_tools(
+            [execute_skill_tool, finish_test_case_execution],
+            parallel_tool_calls=False,
+        ).bind(max_tokens=_MAX_TEST_CASE_COMPLETION_TOKENS)
+
+        for _ in range(_MAX_TEST_CASE_AGENT_STEPS):
+            if should_stop(session_id):
+                clear_stop_signal(session_id)
+                yield create_sse_data(
+                    {"type": "stopped", "message": "已停止生成", "step": step_count}
+                )
+                yield create_sse_data(
+                    {"type": "complete", "status": "stopped", "steps": step_count}
+                )
+                yield "data: [DONE]\n\n"
+                return
+
+            ai_msg = await tool_runnable.ainvoke(messages)
+            input_tokens, output_tokens, _ = _extract_usage_metadata(ai_msg)
+            usage_input_tokens += input_tokens
+            usage_output_tokens += output_tokens
+
+            tool_calls = getattr(ai_msg, "tool_calls", None) or []
+            if not tool_calls:
+                content = str(getattr(ai_msg, "content", "") or "").strip()
+                if len(content) > _MAX_TEST_CASE_AI_SNIPPET_CHARS:
+                    content = f"{content[:_MAX_TEST_CASE_AI_SNIPPET_CHARS]}..."
+                clear_success = len(
+                    observed_signals
+                    & {
+                        "secure_area_text",
+                        "welcome_secure_area",
+                        "logout_found",
+                        "secure_path",
+                        "flash_success",
+                        "secure_heading",
+                    }
+                ) >= 2 or (
+                    "secure_path" in observed_signals
+                    and "secure_area_text" in observed_signals
+                ) or (
+                    "secure_heading" in observed_signals
+                    and "logout_found" in observed_signals
+                )
+                clear_failure = bool(
+                    observed_signals
+                    & {
+                        "invalid_username",
+                        "invalid_password",
+                        "selector_timeout",
+                        "playwright_error",
+                    }
+                )
+                if step_count > 1 and (
+                    _is_clear_final_test_case_summary(content)
+                    or clear_success
+                    or clear_failure
+                ):
+                    if clear_success and not _is_clear_final_test_case_summary(content):
+                        final_summary = "测试通过：已进入安全区域页面，并观察到登录成功提示与 Logout 入口。"
+                    elif clear_failure and not _is_clear_final_test_case_summary(content):
+                        final_summary = "测试失败：执行过程中出现错误或未观察到预期页面信号。"
+                    else:
+                        final_summary = content
+                    finished = True
+                    final_success = clear_success or not any(
+                        marker in final_summary
+                        for marker in ("失败", "未通过", "错误", "异常")
+                    )
+                    logger.info(
+                        "AgentLoopStreamAPI: Dedicated testcase executor accepted short final text. "
+                        "session_id=%s, test_case_id=%s, content_snippet=%s, signals=%s",
+                        session_id,
+                        test_case_id,
+                        content,
+                        sorted(observed_signals),
+                    )
+                    break
+                logger.warning(
+                    "AgentLoopStreamAPI: Dedicated testcase executor got no tool call. "
+                    "session_id=%s, test_case_id=%s, content_snippet=%s, signals=%s",
+                    session_id,
+                    test_case_id,
+                    content,
+                    sorted(observed_signals),
+                )
+                yield create_sse_data(
+                    {
+                        "type": "error",
+                        "message": "测试执行代理没有产出工具调用，已中止本轮执行。请优先换用更强的支持工具调用模型，或稍后重试。",
+                    }
+                )
+                yield create_sse_data(
+                    {"type": "complete", "status": "error", "steps": step_count}
+                )
+                yield "data: [DONE]\n\n"
+                return
+
+            messages.append(ai_msg)
+
+            for tool_call in tool_calls:
+                tool_name = str(tool_call.get("name") or "").strip()
+                tool_args = tool_call.get("args") or {}
+                tool_call_id = str(tool_call.get("id") or "")
+
+                step_count += 1
+                yield create_sse_data(
+                    {
+                        "type": "step_start",
+                        "step": step_count,
+                        "max_steps": self.MAX_STEPS,
+                        "tools": [tool_name or "unknown"],
+                    }
+                )
+
+                try:
+                    if tool_name == finish_test_case_execution.name:
+                        tool_result = await sync_to_async(
+                            finish_test_case_execution.invoke
+                        )(tool_args)
+                    elif tool_name == execute_skill_tool.name:
+                        tool_result = await sync_to_async(execute_skill_tool.invoke)(
+                            tool_args
+                        )
+                    else:
+                        tool_result = f"错误: 不支持的工具 `{tool_name}`"
+                except Exception as e:
+                    logger.error(
+                        "AgentLoopStreamAPI: Dedicated testcase tool failed. "
+                        "session_id=%s, test_case_id=%s, tool=%s, error=%s",
+                        session_id,
+                        test_case_id,
+                        tool_name,
+                        e,
+                        exc_info=True,
+                    )
+                    tool_result = f"错误: {str(e)}"
+
+                tool_content, tool_summary = process_mcp_tool_output(tool_result)
+                observed_signals.update(
+                    _extract_test_case_execution_signals(tool_content)
+                )
+                yield create_sse_data(
+                    {
+                        "type": "tool_result",
+                        "tool_name": tool_name or "unknown",
+                        "tool_output": tool_content,
+                        "summary": tool_summary,
+                        "step": step_count,
+                    }
+                )
+                yield create_sse_data({"type": "step_complete", "step": step_count})
+
+                compact_tool_output = _compact_tool_output_for_test_case_execution(
+                    tool_name,
+                    tool_args,
+                    tool_content,
+                )
+                messages.append(
+                    ToolMessage(
+                        content=compact_tool_output,
+                        tool_call_id=tool_call_id,
+                        name=tool_name or "unknown",
+                    )
+                )
+
+                if tool_name == finish_test_case_execution.name:
+                    try:
+                        payload = json.loads(str(tool_result))
+                    except (TypeError, ValueError):
+                        payload = {}
+                    final_success = bool(payload.get("success", True))
+                    final_summary = str(
+                        payload.get("summary")
+                        or tool_args.get("summary")
+                        or "测试执行已结束"
+                    ).strip()
+                    if not final_summary:
+                        final_summary = "测试执行已结束"
+                    finished = True
+                    break
+
+            if finished:
+                break
+
+        if usage_input_tokens > 0 or usage_output_tokens > 0:
+            await sync_to_async(self._update_session_token_usage)(
+                session_id, usage_input_tokens, usage_output_tokens
+            )
+            logger.info(
+                "AgentLoopStreamAPI: Dedicated testcase executor token usage recorded - "
+                "input=%s, output=%s",
+                usage_input_tokens,
+                usage_output_tokens,
+            )
+
+        estimated_total = usage_input_tokens + usage_output_tokens
+        if estimated_total <= 0:
+            estimated_total = calculate_context_tokens(messages, model_name)[2]
+        yield create_sse_data(
+            {
+                "type": "context_update",
+                "context_token_count": estimated_total,
+                "context_limit": context_limit,
+            }
+        )
+
+        if not finished:
+            yield create_sse_data(
+                {
+                    "type": "error",
+                    "message": "测试执行代理在限定步数内未能正常结束，已强制停止。建议检查模型工具调用能力或更换模型。",
+                }
+            )
+            yield create_sse_data(
+                {"type": "complete", "status": "error", "steps": step_count}
+            )
+            yield "data: [DONE]\n\n"
+            return
+
+        if final_summary:
+            yield create_sse_data({"type": "stream", "data": final_summary})
+        yield create_sse_data(
+            {
+                "type": "complete",
+                "total_steps": step_count,
+                "status": "success" if final_success else "failed",
+            }
+        )
+        yield "data: [DONE]\n\n"
+        return
+
     async def _create_stream_generator(
         self,
         request,
@@ -741,16 +1532,17 @@ class AgentLoopStreamAPIView(View):
         thread_id = f"{request.user.id}_{project_id}_{session_id}"
 
         # 1. 获取 LLM 配置
-        try:
-            active_config = await sync_to_async(LLMConfig.objects.get)(is_active=True)
-            logger.info(f"AgentLoopStreamAPI: Using LLM config: {active_config.name}")
-            context_limit = active_config.context_limit or 128000
-            model_name = active_config.name or "gpt-4o"
-        except LLMConfig.DoesNotExist:
+        active_config = await sync_to_async(
+            LLMConfig.objects.filter(is_active=True).first
+        )()
+        if not active_config:
             yield create_sse_data(
                 {"type": "error", "message": "No active LLM configuration found"}
             )
             return
+        logger.info(f"AgentLoopStreamAPI: Using LLM config: {active_config.name}")
+        context_limit = active_config.context_limit or 128000
+        model_name = active_config.name or "gpt-4o"
 
         # 2. 验证多模态支持
         if uploaded_images_base64 and not active_config.supports_vision:
@@ -764,8 +1556,9 @@ class AgentLoopStreamAPIView(View):
 
         try:
             # 3. 初始化 LLM
+            llm_temperature = 0.0 if test_case_id else 0.7
             llm = await sync_to_async(create_llm_instance)(
-                active_config, temperature=0.7
+                active_config, temperature=llm_temperature
             )
             context_limit = resolve_runtime_context_limit(
                 active_config.context_limit, llm, model_name
@@ -773,47 +1566,60 @@ class AgentLoopStreamAPIView(View):
 
             # 4. 加载 MCP 工具
             tools: List[Any] = []
-            try:
-                active_mcp_configs = await sync_to_async(list)(
-                    RemoteMCPConfig.objects.filter(is_active=True)
-                )
-                if active_mcp_configs:
-                    client_config = {}
-                    for cfg in active_mcp_configs:
-                        key = cfg.name or f"remote_{cfg.id}"
-                        client_config[key] = {
-                            "url": cfg.url,
-                            "transport": (cfg.transport or "streamable_http").replace(
-                                "-", "_"
-                            ),
-                        }
-                        if cfg.headers:
-                            client_config[key]["headers"] = cfg.headers
-
-                    if client_config:
-                        mcp_tools = await mcp_session_manager.get_tools_for_config(
-                            client_config,
-                            user_id=str(request.user.id),
-                            project_id=str(project_id),
-                            session_id=session_id,
-                        )
-                        tools.extend(mcp_tools)
-                        logger.info(
-                            f"AgentLoopStreamAPI: Loaded {len(mcp_tools)} MCP tools"
-                        )
-                        yield create_sse_data(
-                            {
-                                "type": "info",
-                                "message": f"已加载 {len(mcp_tools)} 个工具",
-                            }
-                        )
-            except Exception as e:
-                logger.error(
-                    f"AgentLoopStreamAPI: MCP tools loading failed: {e}", exc_info=True
+            restrict_to_builtin_skills = bool(test_case_id)
+            if restrict_to_builtin_skills:
+                logger.info(
+                    "AgentLoopStreamAPI: test_case_id=%s detected, skip MCP tools and use builtin skills only",
+                    test_case_id,
                 )
                 yield create_sse_data(
-                    {"type": "warning", "message": f"MCP 工具加载失败: {str(e)}"}
+                    {
+                        "type": "info",
+                        "message": "测试用例执行模式：已跳过 MCP 工具，仅保留内置执行技能",
+                    }
                 )
+            else:
+                try:
+                    active_mcp_configs = await sync_to_async(list)(
+                        RemoteMCPConfig.objects.filter(is_active=True)
+                    )
+                    if active_mcp_configs:
+                        client_config = {}
+                        for cfg in active_mcp_configs:
+                            key = cfg.name or f"remote_{cfg.id}"
+                            client_config[key] = {
+                                "url": cfg.url,
+                                "transport": (cfg.transport or "streamable_http").replace(
+                                    "-", "_"
+                                ),
+                            }
+                            if cfg.headers:
+                                client_config[key]["headers"] = cfg.headers
+
+                        if client_config:
+                            mcp_tools = await mcp_session_manager.get_tools_for_config(
+                                client_config,
+                                user_id=str(request.user.id),
+                                project_id=str(project_id),
+                                session_id=session_id,
+                            )
+                            tools.extend(mcp_tools)
+                            logger.info(
+                                f"AgentLoopStreamAPI: Loaded {len(mcp_tools)} MCP tools"
+                            )
+                            yield create_sse_data(
+                                {
+                                    "type": "info",
+                                    "message": f"已加载 {len(mcp_tools)} 个工具",
+                                }
+                            )
+                except Exception as e:
+                    logger.error(
+                        f"AgentLoopStreamAPI: MCP tools loading failed: {e}", exc_info=True
+                    )
+                    yield create_sse_data(
+                        {"type": "warning", "message": f"MCP 工具加载失败: {str(e)}"}
+                    )
 
             # 5. 添加知识库工具
             logger.info(
@@ -884,7 +1690,14 @@ class AgentLoopStreamAPIView(View):
                 request.user, prompt_id, project
             )
 
-            # 8.1 如果需要生成脚本，追加脚本生成指令
+            # 8.1 执行功能测试用例时，追加专用执行指令
+            if test_case_id:
+                effective_prompt = (
+                    effective_prompt or ""
+                ) + TEST_CASE_EXECUTION_INSTRUCTION
+                logger.info(f"AgentLoopStreamAPI: 已追加测试用例执行指令")
+
+            # 8.2 如果需要生成脚本，追加脚本生成指令
             if generate_playwright_script:
                 effective_prompt = (
                     effective_prompt or ""
@@ -960,6 +1773,22 @@ class AgentLoopStreamAPIView(View):
                     else None,
                 }
             )
+
+            if test_case_id:
+                async for chunk in self._run_dedicated_test_case_execution(
+                    llm=llm,
+                    session_id=session_id,
+                    project_id=project_id,
+                    test_case_id=int(test_case_id),
+                    user_message=user_message,
+                    effective_prompt=effective_prompt,
+                    context_limit=context_limit,
+                    model_name=model_name,
+                    builtin_tools=builtin_tools,
+                    generate_playwright_script=generate_playwright_script,
+                ):
+                    yield chunk
+                return
 
             # 12. 创建 Agent（LangChain v1 统一路径）
             async with get_async_checkpointer() as checkpointer:
@@ -1224,6 +2053,14 @@ class AgentLoopStreamAPIView(View):
                                                         "step": step_count,
                                                     }
                                                 )
+                                        if _tool_messages_need_sanitization(
+                                            tool_messages
+                                        ):
+                                            await _sanitize_history_before_model_call(
+                                                agent,
+                                                invoke_config,
+                                                "AgentLoopStreamAPI[post-tools]",
+                                            )
                                         # 步骤完成
                                         if step_count > 0:
                                             yield create_sse_data(
@@ -2044,6 +2881,14 @@ class AgentLoopResumeAPIView(View):
                                                         "step": step_count,
                                                     }
                                                 )
+                                        if _tool_messages_need_sanitization(
+                                            tool_messages
+                                        ):
+                                            await _sanitize_history_before_model_call(
+                                                agent,
+                                                config,
+                                                "AgentLoopResumeAPI[post-tools]",
+                                            )
                                         if step_count > 0:
                                             yield create_sse_data(
                                                 {

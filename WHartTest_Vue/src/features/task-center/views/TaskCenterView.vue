@@ -18,7 +18,6 @@
       </div>
 
       <div class="content-container">
-        <!-- 筛选区域 -->
         <div class="filter-row">
           <a-input-search
             v-model="searchKeyword"
@@ -50,7 +49,6 @@
           </a-select>
         </div>
 
-        <!-- 任务列表 -->
         <a-table
           :columns="columns"
           :data="taskList"
@@ -88,25 +86,15 @@
 
           <template #actions="{ record }">
             <a-space :size="4">
-              <!-- 立即执行 -->
-              <a-button
-                type="text" size="small"
-                @click="handleRunNow(record)"
-              >
+              <a-button type="text" size="small" @click="handleRunNow(record)">
                 立即执行
               </a-button>
-              <!-- 执行记录 -->
               <a-button type="text" size="small" @click="handleViewExecutions(record)">
                 记录
               </a-button>
-              <!-- 编辑 -->
-              <a-button
-                type="text" size="small"
-                @click="handleEdit(record)"
-              >
+              <a-button type="text" size="small" @click="handleEdit(record)">
                 编辑
               </a-button>
-              <!-- 删除 -->
               <a-popconfirm content="确定要删除此任务吗？" @ok="handleDelete(record)">
                 <a-button type="text" size="small" status="danger">删除</a-button>
               </a-popconfirm>
@@ -115,11 +103,10 @@
         </a-table>
       </div>
 
-      <!-- 执行记录抽屉 -->
       <a-drawer
         v-model:visible="executionDrawerVisible"
         :title="`执行记录 - ${currentTask?.name || ''}`"
-        :width="900"
+        :width="980"
         :footer="false"
       >
         <a-table
@@ -131,17 +118,42 @@
           size="small"
           @page-change="onExecutionPageChange"
         >
-          <template #status="{ record }">
-            <a-tag :color="execStatusColorMap[record.status]">
-              {{ execStatusTextMap[record.status] }}
-            </a-tag>
-          </template>
           <template #trigger_type="{ record }">
             {{ triggerTextMap[record.trigger_type] }}
           </template>
+
+          <template #status="{ record }">
+            <a-tag :color="displayStatusColorMap[record.display_status || record.status]">
+              {{ record.display_status_text || execStatusTextMap[record.status] || record.status }}
+            </a-tag>
+          </template>
+
+          <template #actual_execution_id="{ record }">
+            {{ record.actual_execution_id || '—' }}
+          </template>
+
+          <template #actual_result="{ record }">
+            <a-tag
+              v-if="record.actual_result_text"
+              :color="actualResultColorMap[record.actual_result_status || 'completed']"
+            >
+              {{ record.actual_result_text }}
+            </a-tag>
+            <span v-else>—</span>
+          </template>
+
+          <template #actual_duration="{ record }">
+            {{ record.actual_duration || '—' }}
+          </template>
+
+          <template #actual_summary="{ record }">
+            <span class="summary-text">{{ record.actual_summary || '—' }}</span>
+          </template>
+
           <template #started_at="{ record }">
             {{ formatDate(record.started_at) }}
           </template>
+
           <template #actions="{ record }">
             <a-space :size="4">
               <a-button type="text" size="small" @click="handleViewLog(record)">日志</a-button>
@@ -154,10 +166,7 @@
       </a-drawer>
     </template>
 
-    <!-- 新建/编辑弹窗 -->
     <TaskFormModal ref="formModalRef" :project-id="currentProjectId!" @success="fetchTasks" />
-
-    <!-- 日志弹窗 -->
     <LogViewModal ref="logModalRef" :project-id="currentProjectId!" />
   </div>
 </template>
@@ -178,7 +187,6 @@ import LogViewModal from '../components/LogViewModal.vue';
 const projectStore = useProjectStore();
 const currentProjectId = computed(() => projectStore.currentProjectId);
 
-// 任务列表状态
 const taskList = ref<ScheduledTask[]>([]);
 const loading = ref(false);
 const searchKeyword = ref('');
@@ -188,7 +196,6 @@ const page = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 
-// 执行记录状态
 const executionDrawerVisible = ref(false);
 const currentTask = ref<ScheduledTask | null>(null);
 const executionList = ref<TaskExecution[]>([]);
@@ -196,22 +203,38 @@ const executionLoading = ref(false);
 const executionPage = ref(1);
 const executionTotal = ref(0);
 
-// 组件引用
 const formModalRef = ref<InstanceType<typeof TaskFormModal> | null>(null);
 const logModalRef = ref<InstanceType<typeof LogViewModal> | null>(null);
 
-// 映射
-const execStatusColorMap: Record<string, string> = {
-  running: 'blue', success: 'green', failed: 'red',
-};
 const execStatusTextMap: Record<string, string> = {
-  running: '执行中', success: '成功', failed: '失败',
-};
-const triggerTextMap: Record<string, string> = {
-  scheduled: '定时调度', manual: '手动执行', api: 'API 触发',
+  running: '执行中',
+  success: '成功',
+  failed: '失败',
 };
 
-// 分页配置
+const displayStatusColorMap: Record<string, string> = {
+  submitting: 'blue',
+  triggered: 'arcoblue',
+  failed: 'red',
+  running: 'blue',
+  success: 'green',
+};
+
+const actualResultColorMap: Record<string, string> = {
+  pending: 'gray',
+  running: 'blue',
+  passed: 'green',
+  completed: 'arcoblue',
+  failed: 'red',
+  cancelled: 'orange',
+};
+
+const triggerTextMap: Record<string, string> = {
+  scheduled: '定时调度',
+  manual: '手动执行',
+  api: 'API 触发',
+};
+
 const paginationConfig = computed(() => ({
   current: page.value,
   pageSize: pageSize.value,
@@ -227,7 +250,6 @@ const executionPagination = computed(() => ({
   showTotal: true,
 }));
 
-// 表格列
 const columns = [
   { title: '任务名称', slotName: 'name', width: 180, align: 'center' as const },
   { title: '模块', slotName: 'module', width: 110, align: 'center' as const },
@@ -241,20 +263,21 @@ const columns = [
 const executionColumns = [
   { title: '执行ID', dataIndex: 'execution_id', width: 180, ellipsis: true },
   { title: '触发方式', slotName: 'trigger_type', width: 90, align: 'center' as const },
-  { title: '状态', slotName: 'status', width: 80, align: 'center' as const },
+  { title: '触发状态', slotName: 'status', width: 90, align: 'center' as const },
+  { title: '套件执行ID', slotName: 'actual_execution_id', width: 110, align: 'center' as const },
+  { title: '实际结果', slotName: 'actual_result', width: 90, align: 'center' as const },
+  { title: '实际耗时', slotName: 'actual_duration', width: 90, align: 'center' as const },
+  { title: '结果概览', slotName: 'actual_summary', width: 220, ellipsis: true },
   { title: '开始时间', slotName: 'started_at', width: 150, align: 'center' as const },
-  { title: '耗时', dataIndex: 'duration', width: 80, align: 'center' as const },
   { title: '操作', slotName: 'actions', width: 120, align: 'center' as const },
 ];
 
-// 工具函数
 const formatDate = (dateStr: string) => {
   const d = new Date(dateStr);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-// 数据加载
 const fetchTasks = async () => {
   if (!currentProjectId.value) return;
   loading.value = true;
@@ -279,8 +302,9 @@ const fetchExecutions = async () => {
   executionLoading.value = true;
   try {
     const res = await getTaskExecutions(
-      currentProjectId.value, currentTask.value.id,
-      { page: executionPage.value }
+      currentProjectId.value,
+      currentTask.value.id,
+      { page: executionPage.value },
     );
     executionList.value = res.results;
     executionTotal.value = res.count;
@@ -291,13 +315,27 @@ const fetchExecutions = async () => {
   }
 };
 
-// 搜索和分页
-const handleSearch = () => { page.value = 1; fetchTasks(); };
-const onPageChange = (p: number) => { page.value = p; fetchTasks(); };
-const onPageSizeChange = (s: number) => { pageSize.value = s; page.value = 1; fetchTasks(); };
-const onExecutionPageChange = (p: number) => { executionPage.value = p; fetchExecutions(); };
+const handleSearch = () => {
+  page.value = 1;
+  fetchTasks();
+};
 
-// 操作
+const onPageChange = (p: number) => {
+  page.value = p;
+  fetchTasks();
+};
+
+const onPageSizeChange = (s: number) => {
+  pageSize.value = s;
+  page.value = 1;
+  fetchTasks();
+};
+
+const onExecutionPageChange = (p: number) => {
+  executionPage.value = p;
+  fetchExecutions();
+};
+
 const handleCreate = () => formModalRef.value?.open();
 const handleEdit = (task: ScheduledTask) => formModalRef.value?.open(task);
 
@@ -357,7 +395,6 @@ const handleDeleteExecution = async (execution: TaskExecution) => {
   }
 };
 
-// 监听项目切换
 watch(currentProjectId, (newId, oldId) => {
   if (newId !== oldId) {
     page.value = 1;
@@ -366,74 +403,60 @@ watch(currentProjectId, (newId, oldId) => {
     moduleFilter.value = undefined;
     fetchTasks();
   }
-}, { immediate: false });
+});
 
 onMounted(() => {
-  if (currentProjectId.value) fetchTasks();
+  fetchTasks();
 });
 </script>
 
 <style scoped>
 .task-center {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
   padding: 20px;
-  overflow: hidden;
-  box-sizing: border-box;
 }
 
 .no-project {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 48px 0;
 }
 
 .page-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 16px;
 }
 
 .page-title {
-  font-size: 24px;
-  font-weight: bold;
   margin: 0;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .content-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  background: var(--color-bg-2);
+  border-radius: 12px;
+  padding: 16px;
 }
 
 .filter-row {
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
-  flex-wrap: wrap;
 }
 
 .task-name-text {
-  font-weight: 500;
+  display: inline-block;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-@media (max-width: 768px) {
-  .task-center {
-    padding: 12px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .page-title {
-    font-size: 20px;
-  }
+.summary-text {
+  display: inline-block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

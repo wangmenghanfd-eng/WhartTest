@@ -50,6 +50,31 @@ node run.js "your playwright code here"
 
 **重要**：代码必须写在一行，语句用分号分隔。run.js 会自动包装 async IIFE 和 require 语句。**禁止添加 --session、--inline、--eval 等参数，run.js 不支持这些参数。**
 
+## WHartTest 功能测试执行链路
+
+当你是在执行 WHartTest 的“功能测试用例”时，职责分工必须固定：
+
+1. 先用 `whart-test` 读取测试用例详情，例如 `get_testcase_detail`。
+2. 再用 `playwright-skill` 执行浏览器动作，命令只能是 `node run.js "..."`。
+3. 对同一个用例，始终复用同一个 `session_id`，推荐格式：`case_{case_id}`。
+4. 截图保存到 `process.env.SCREENSHOT_DIR`。
+5. 最后回到 `whart-test` 调用 `upload_screenshot` 或 `upload_screenshots` 上传截图。
+
+不要把下面这些旧链路/其他工具层名字当成当前技能的可执行命令：
+
+- `python playwright_script.py --action execute_test_case`
+- `browser_navigate`
+- `browser_snapshot`
+- `browser_take_screenshot`
+- `save_operation_screenshots_to_the_application_case`
+- `/path/to/screenshot1.png`
+
+对当前技能来说，真正可执行的浏览器命令只有：
+
+```bash
+node run.js "your playwright code here"
+```
+
 ## 截图路径约定
 
 **必须使用环境变量 `process.env.SCREENSHOT_DIR`** 作为截图保存目录。系统会自动设置该变量指向 playwright-skill 目录下的 `media/screenshots/` 子目录。
@@ -147,6 +172,25 @@ await page.waitForURL('**/dashboard');
 | 类型 | `input[type="text"]`, `input[type="password"]` |
 | 占位符 | `input[placeholder*="账号"]`, `input[placeholder*="密码"]` |
 
+### ⚠️ 验证页面跳转/登录成功
+
+**优先用 URL 检查，而不是 `text=` 选择器**：
+
+```javascript
+// ✅ 推荐：等待 URL 变化（不依赖页面文字大小写）
+await page.waitForURL('**/secure');
+
+// ✅ 推荐：打印 URL 供 AI 判断
+console.log(page.url());
+
+// ❌ 禁止：text= 正则默认区分大小写
+// 页面显示 "Secure Area"（大写 S），但选择器写 /secure/（小写），永远超时
+await page.waitForSelector('text=/secure/');
+
+// ✅ 若必须用文本正则，加 /i 标志忽略大小写
+await page.waitForSelector('text=/secure area/i');
+```
+
 ### 截图（使用环境变量）
 
 ```javascript
@@ -217,6 +261,16 @@ execute_skill_script(
     skill_name="playwright-skill",
     command='node run.js "await page.click(\'button[type=submit]\'); await page.waitForTimeout(2000); console.log(\'登录后URL:\', page.url());"',
     session_id="test-case-001"
+)
+```
+
+### 适合 WHartTest 的执行片段
+
+```python
+execute_skill_script(
+    skill_name="playwright-skill",
+    command='node run.js "const dir = process.env.SCREENSHOT_DIR; await page.goto(\'https://practice.expandtesting.com/login\'); const desc = await helpers.describePageForAI(page); console.log(desc); await page.fill(\'#username\', \'practice\'); await page.fill(\'#password\', \'SuperSecretPassword!\'); await page.screenshot({ path: `${dir}/case_11_step1.png` }); await page.click(\'button[type=submit]\'); await page.waitForURL(\'**/secure\'); await page.screenshot({ path: `${dir}/case_11_step2.png` }); console.log(page.url());"',
+    session_id="case_11"
 )
 ```
 

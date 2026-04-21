@@ -64,7 +64,10 @@ export default defineConfig({
             ]},
             { text: '快速开始',
                 items:[
-                    {text: 'UI自动化', link: '/quick-start/uizdh'}]
+                    {text: 'UI自动化', link: '/quick-start/uizdh'},
+                    {text: '原始功能联调手册', link: '/quick-start/original-capability-runbook'},
+                    {text: '练习需求文档', link: '/quick-start/expand-testing-requirement'},
+                    {text: '上手记录模板', link: '/quick-start/adoption-gap-checklist'}]
                 },
             { text: '操作手册',
               items:[
