@@ -30,6 +30,7 @@
           <a-form-item label="所属模块" field="module" :rules="[{ required: true, message: '请选择' }]">
             <a-select v-model="form.module" placeholder="请选择模块" @change="onModuleChange">
               <a-option value="ui_automation">UI 自动化</a-option>
+              <a-option value="api_automation">接口自动化</a-option>
               <a-option value="test_suite">测试套件</a-option>
             </a-select>
           </a-form-item>
@@ -47,12 +48,31 @@
           </a-form-item>
 
           <a-form-item
+            v-if="form.module === 'api_automation'"
+            label="选择接口用例"
+            field="api_testcase_ids"
+            :rules="[{ required: true, message: '请选择至少一个接口用例' }]"
+          >
+            <a-button type="outline" size="small" @click="openApiCaseSelectModal">
+              <template #icon><icon-select-all /></template>
+              {{ form.api_testcase_ids.length ? `已选 ${form.api_testcase_ids.length} 个用例` : '选择接口用例' }}
+            </a-button>
+          </a-form-item>
+
+          <a-form-item
             v-if="form.module === 'test_suite'"
             label="选择测试套件"
             field="test_suite"
             :rules="[{ required: true, message: '请选择测试套件' }]"
           >
             <a-select v-model="form.test_suite" placeholder="请选择" :loading="loadingSuites" allow-search @popup-visible-change="(v: boolean) => v && loadTestSuites()">
+              <a-option
+                v-if="form.test_suite && missingSelectedSuiteLabel"
+                :key="form.test_suite"
+                :value="form.test_suite"
+              >
+                {{ missingSelectedSuiteLabel }}
+              </a-option>
               <a-option v-for="s in testSuites" :key="s.id" :value="s.id">{{ s.name }}</a-option>
             </a-select>
           </a-form-item>
@@ -94,6 +114,10 @@
 
         <div v-if="form.module === 'ui_automation'" class="form-tip">
           UI 自动化定时任务依赖所选执行器保持在线。若执行器页面断开，或连接没有落在当前处理调度的后端进程，任务可能提示“执行器不在线”。
+        </div>
+
+        <div v-if="form.module === 'api_automation'" class="form-tip">
+          接口自动化定时任务由后端 Celery/httpx 直接执行，不依赖浏览器执行器。建议优先为接口用例配置默认环境。
         </div>
 
         <!-- 非UI自动化模块：调度策略 + 执行时间 同行 -->
@@ -172,10 +196,11 @@
     </div>
   </a-modal>
   <UiTestCaseSelectModal ref="caseSelectModal" :project-id="projectId" @confirm="onCaseSelected" />
+  <ApiTestCaseSelectModal ref="apiCaseSelectModal" :project-id="projectId" @confirm="onApiCaseSelected" />
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { Message } from '@arco-design/web-vue';
 import axios from 'axios';
 import { API_BASE_URL } from '@/config/api';
@@ -183,6 +208,7 @@ import { useAuthStore } from '@/store/authStore';
 import { createTask, updateTask, type TaskFormData, type ScheduledTask } from '../services/taskService';
 import { actuatorApi, type ActuatorInfo } from '@/features/ui-automation/api';
 import UiTestCaseSelectModal from './UiTestCaseSelectModal.vue';
+import ApiTestCaseSelectModal from './ApiTestCaseSelectModal.vue';
 
 const props = defineProps<{
   projectId: number;
@@ -204,6 +230,8 @@ const loadingActuators = ref(false);
 const testSuites = ref<{ id: number; name: string }[]>([]);
 const actuators = ref<ActuatorInfo[]>([]);
 const caseSelectModal = ref<InstanceType<typeof UiTestCaseSelectModal>>();
+const apiCaseSelectModal = ref<InstanceType<typeof ApiTestCaseSelectModal>>();
+const editingTaskMeta = ref<ScheduledTask | null>(null);
 
 const weekDayOptions = [
   { value: 0, label: '周一' },
@@ -232,6 +260,7 @@ const defaultForm = (): TaskFormData => ({
   retry_interval: 2,
   test_suite: null,
   ui_testcase_ids: [],
+  api_testcase_ids: [],
   actuator_id: '',
 });
 
@@ -279,7 +308,19 @@ const loadActuators = async () => {
 const onModuleChange = () => {
   form.test_suite = null;
   form.ui_testcase_ids = [];
+  form.api_testcase_ids = [];
   form.actuator_id = '';
+  if (form.module === 'test_suite') {
+    form.execution_target = 'actuator';
+    void loadTestSuites();
+  }
+  if (form.module === 'ui_automation') {
+    form.execution_target = 'actuator';
+    void loadActuators();
+  }
+  if (form.module === 'api_automation') {
+    form.execution_target = 'backend';
+  }
 };
 
 const resetForm = () => {
@@ -354,12 +395,28 @@ const openCaseSelectModal = () => {
   caseSelectModal.value?.open(form.ui_testcase_ids);
 };
 
+const openApiCaseSelectModal = () => {
+  apiCaseSelectModal.value?.open(form.api_testcase_ids);
+};
+
 const onCaseSelected = (ids: number[]) => {
   form.ui_testcase_ids = ids;
 };
 
-const open = (task?: ScheduledTask) => {
+const onApiCaseSelected = (ids: number[]) => {
+  form.api_testcase_ids = ids;
+};
+
+const missingSelectedSuiteLabel = computed(() => {
+  if (!form.test_suite) return '';
+  const matched = testSuites.value.find((suite) => suite.id === form.test_suite);
+  if (matched) return '';
+  return editingTaskMeta.value?.test_suite_name || `测试套件 #${form.test_suite}`;
+});
+
+const open = async (task?: ScheduledTask) => {
   resetForm();
+  editingTaskMeta.value = task || null;
 
   if (task) {
     isEditing.value = true;
@@ -381,11 +438,32 @@ const open = (task?: ScheduledTask) => {
       retry_interval: task.retry_interval,
       test_suite: task.test_suite,
       ui_testcase_ids: task.ui_testcase_ids || [],
+      api_testcase_ids: task.api_testcase_ids || [],
       actuator_id: task.actuator_id || '',
     });
+
+    if (task.module === 'test_suite') {
+      await loadTestSuites();
+    }
+    if (task.module === 'ui_automation') {
+      await loadActuators();
+    }
+    if (task.module === 'api_automation') {
+      form.execution_target = 'backend';
+    }
   } else {
     isEditing.value = false;
     editingId.value = null;
+    editingTaskMeta.value = null;
+    if (form.module === 'test_suite') {
+      await loadTestSuites();
+    }
+    if (form.module === 'ui_automation') {
+      await loadActuators();
+    }
+    if (form.module === 'api_automation') {
+      form.execution_target = 'backend';
+    }
   }
   visible.value = true;
 };
@@ -416,6 +494,7 @@ const handleSubmit = async () => {
 
 const handleClose = () => {
   visible.value = false;
+  editingTaskMeta.value = null;
   resetForm();
 };
 

@@ -94,12 +94,6 @@ class Command(BaseCommand):
                 'url': 'http://mcp:8006/mcp',
                 'transport': 'streamable-http',
                 'description': '系统自动生成的WHartTest MCP工具配置，提供测试用例管理功能'
-            },
-            {
-                'name': 'Playwright-MCP',
-                'url': 'http://playwright-mcp:8931/mcp',
-                'transport': 'streamable-http',
-                'description': '系统自动生成的Playwright浏览器自动化MCP配置，提供网页操作、截图和自动化测试功能'
             }
         ]
         
@@ -119,11 +113,14 @@ class Command(BaseCommand):
                     name=config['name'],
                     url=config['url'],
                     transport=config['transport'],
-                    is_active=True
+                    is_active=config.get('is_active', True)
                 )
                 created_configs.append(config['name'])
                 self.stdout.write(
-                    self.style.SUCCESS(f'  ✅ 创建MCP配置: {config["name"]} ({config["url"]})')
+                    self.style.SUCCESS(
+                        f'  ✅ 创建MCP配置: {config["name"]} ({config["url"]})'
+                        f'{" [默认停用]" if not config.get("is_active", True) else ""}'
+                    )
                 )
         
         # 仅在本次确实创建了配置时输出汇总信息，避免日志噪声。
@@ -183,6 +180,9 @@ class Command(BaseCommand):
                     f'  ℹ️  登录后可在【项目管理】中查看'
                 )
             )
+
+        # 初始化标准用例导入导出模板（用于 Excel 导入/导出开箱即用）。
+        self._initialize_default_testcase_templates(admin_user)
         
         # 初始化知识库全局配置（仅在未被手工配置时注入默认值）。
         self._initialize_knowledge_global_config(admin_user)
@@ -235,6 +235,73 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.ERROR(f'❌ 初始化管理员提示词失败: {e}')
             )
+
+    def _initialize_default_testcase_templates(self, admin_user):
+        """初始化标准用例导入导出模板"""
+        try:
+            from testcase_templates.models import ImportExportTemplate
+
+            template_name = "标准测试用例导入导出模板"
+            default_headers = [
+                "用例名称",
+                "所属模块",
+                "前置条件",
+                "步骤描述",
+                "预期结果",
+                "用例等级",
+                "备注",
+            ]
+            defaults = {
+                "template_type": "both",
+                "description": (
+                    "平台标准测试用例 Excel 模板。"
+                    "适用于当前系统默认导出的测试用例文件，也可用于按相同列结构导入测试用例。"
+                ),
+                "sheet_name": "测试用例",
+                "template_headers": default_headers,
+                "header_row": 1,
+                "data_start_row": 2,
+                "field_mappings": {
+                    "name": "用例名称",
+                    "module": "所属模块",
+                    "precondition": "前置条件",
+                    "steps": "步骤描述",
+                    "expected_results": "预期结果",
+                    "level": "用例等级",
+                    "notes": "备注",
+                },
+                "value_transformations": {},
+                "step_parsing_mode": "single_cell",
+                "step_config": {
+                    "step_column": "步骤描述",
+                    "expected_column": "预期结果",
+                },
+                "module_path_delimiter": "/",
+                "is_active": True,
+                "creator": admin_user,
+            }
+
+            template, created = ImportExportTemplate.objects.get_or_create(
+                name=template_name,
+                defaults=defaults,
+            )
+
+            if created:
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'✅ 已创建标准用例导入导出模板: {template_name}'
+                    )
+                )
+            else:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f'标准用例导入导出模板 "{template_name}" 已存在，跳过创建'
+                    )
+                )
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'❌ 初始化标准用例导入导出模板失败: {e}')
+            )
     
     def _initialize_knowledge_global_config(self, admin_user):
         """初始化知识库全局配置（使用Xinference默认配置）"""
@@ -251,12 +318,12 @@ class Command(BaseCommand):
                 config.embedding_service = 'xinference'
                 config.api_base_url = xinference_url
                 config.api_key = ''
-                config.model_name = os.environ.get('XINFERENCE_EMBEDDING_MODEL', 'qwen3-vl-emb-2b')
+                config.model_name = os.environ.get('XINFERENCE_EMBEDDING_MODEL', 'BAAI/bge-m3')
                 # Reranker 配置（同一 Xinference 实例）
                 config.reranker_service = 'xinference'
                 config.reranker_api_url = xinference_url
                 config.reranker_api_key = ''
-                config.reranker_model_name = os.environ.get('XINFERENCE_RERANKER_MODEL', 'Qwen3-VL-Reranker-2B')
+                config.reranker_model_name = os.environ.get('XINFERENCE_RERANKER_MODEL', 'bge-reranker-v2-m3')
                 config.chunk_size = 1000
                 config.chunk_overlap = 200
                 config.updated_by = admin_user

@@ -72,6 +72,8 @@ $steps
    `python whart_tools.py --action upload_screenshot --project_id $project_id --case_id $testcase_id --file_path "case_$testcase_id_step1.png" --title "步骤1截图" --step_number 1`
 6. 如需查看最近一次历史结果，可调用：
    `python whart_tools.py --action get_test_result --project_id $project_id --case_id $testcase_id`
+7. 默认不要在 `page.goto()` 中使用 `waitUntil: 'networkidle'`；优先 `page.goto()` 后配合 `waitForSelector` / `waitForURL`。
+8. 负向场景先检查真实 `page.url()` 和页面文本，再写断言；不要先猜固定错误文案直接等待 30 秒。
 
 # 严禁使用
 - `browser_navigate`

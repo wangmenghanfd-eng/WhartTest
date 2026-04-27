@@ -24,7 +24,7 @@ async def test_actuator_directly():
     print("测试1: 检查执行器是否连接...")
     
     # 连接到前端WebSocket
-    web_ws_url = "ws://127.0.0.1:8000/ws/ui/web/"
+    web_ws_url = "ws://127.0.0.1:8912/ws/ui/web/"
     
     try:
         async with websockets.connect(web_ws_url) as ws:
@@ -75,7 +75,7 @@ async def test_actuator_directly():
 async def check_actuator_connection():
     """检查执行器是否已连接"""
     print("\n测试2: 直接连接执行器WebSocket...")
-    actuator_ws_url = "ws://127.0.0.1:8000/ws/ui/actuator/"
+    actuator_ws_url = "ws://127.0.0.1:8912/ws/ui/actuator/"
     
     try:
         async with websockets.connect(actuator_ws_url) as ws:

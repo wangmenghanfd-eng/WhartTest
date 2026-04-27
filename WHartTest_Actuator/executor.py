@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass, field
 from contextlib import asynccontextmanager
+from urllib.parse import urlparse
 
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page, Playwright, expect
 
@@ -26,9 +27,14 @@ class StepConfig:
     operation_type: str      # click, fill, goto, wait, assert等
     locator_type: str        # xpath, css, id等
     locator_value: str
+    locator_type_2: str = ''
+    locator_value_2: str = ''
+    locator_type_3: str = ''
+    locator_value_3: str = ''
     input_value: str = ''
     description: str = ''
     wait_time: float = 0
+    base_url: str = ''
     
     # 步骤详情(公共步骤)
     details: list['StepConfig'] = field(default_factory=list)
@@ -208,6 +214,7 @@ class PlaywrightExecutor:
             'placeholder': lambda: page.get_by_placeholder(locator_value),
             'label': lambda: page.get_by_label(locator_value),
             'testid': lambda: page.get_by_test_id(locator_value),
+            'test_id': lambda: page.get_by_test_id(locator_value),
         }
         return locator_map.get(locator_type, lambda: page.locator(locator_value))()
     
@@ -246,8 +253,20 @@ class PlaywrightExecutor:
             except ValueError:
                 return 1000
 
+        def _resolve_navigation_url(value: str) -> str:
+            """相对 URL 优先按环境 base_url 解析，其次才退回当前页面 origin。"""
+            value = (value or "").strip()
+            if value.startswith("/") and step.base_url:
+                return f"{step.base_url.rstrip('/')}{value}"
+            if value and not value.startswith(("http://", "https://", "/")) and step.base_url:
+                return f"{step.base_url.rstrip('/')}/{value.lstrip('/')}"
+            if value.startswith("/") and page.url.startswith(("http://", "https://")):
+                parsed = urlparse(page.url)
+                return f"{parsed.scheme}://{parsed.netloc}{value}"
+            return value
+
         page_operations = {
-            'goto': lambda: page.goto(step.input_value),
+            'goto': lambda: page.goto(_resolve_navigation_url(step.input_value)),
             'reload': lambda: page.reload(),
             'go_back': lambda: page.go_back(),
             'go_forward': lambda: page.go_forward(),
@@ -260,23 +279,51 @@ class PlaywrightExecutor:
             await page_operations[operation]()
             logger.debug(f"步骤 {step.step_id}: {operation} 耗时 {time.time() - op_start:.2f}s")
             return True, f"页面操作 {operation} 执行成功", None
+
+        if operation == 'assert_url':
+            await expect(page).to_have_url(_resolve_navigation_url(step.input_value))
+            logger.debug(f"步骤 {step.step_id}: assert_url 耗时 {time.time() - op_start:.2f}s")
+            return True, "断言 url 通过", None
+
+        if operation == 'assert_title':
+            await expect(page).to_have_title(step.input_value)
+            logger.debug(f"步骤 {step.step_id}: assert_title 耗时 {time.time() - op_start:.2f}s")
+            return True, "断言 title 通过", None
         
         # 元素操作（需要定位器）- 先验证定位器是否有效
         if not step.locator_value or not step.locator_value.strip():
             return False, f"元素定位器为空，请在元素管理中配置定位表达式（步骤: {step.description or step.step_id}）", None
         
         locator_start = time.time()
-        locator = self._get_locator(page, step.locator_type, step.locator_value)
+        locator_candidates = [
+            (step.locator_type, step.locator_value),
+            (step.locator_type_2, step.locator_value_2),
+            (step.locator_type_3, step.locator_value_3),
+        ]
+        locator = None
+        used_locator_type = step.locator_type
+        used_locator_value = step.locator_value
+        for loc_type, loc_value in locator_candidates:
+            if not loc_type or not loc_value:
+                continue
+            candidate = self._get_locator(page, loc_type, loc_value)
+            try:
+                await candidate.wait_for(state="visible", timeout=3000)
+                locator = candidate
+                used_locator_type = loc_type
+                used_locator_value = loc_value
+                break
+            except Exception:
+                if locator is None:
+                    locator = candidate
+                    used_locator_type = loc_type
+                    used_locator_value = loc_value
         
-        # 先等待元素可见（更短的超时时间加快检测）
-        try:
-            await locator.wait_for(state="visible", timeout=5000)
-        except Exception:
-            # 5秒内没有可见，继续尝试操作（可能是 hidden 元素）
-            pass
+        if locator is None:
+            return False, f"元素定位器为空，请在元素管理中配置定位表达式（步骤: {step.description or step.step_id}）", None
         
         locator_time = time.time() - locator_start
-        logger.debug(f"步骤 {step.step_id}: 定位元素 [{step.locator_type}={step.locator_value}] 耗时 {locator_time:.2f}s")
+        logger.debug(f"步骤 {step.step_id}: 定位元素 [{used_locator_type}={used_locator_value}] 耗时 {locator_time:.2f}s")
         
         element_operations = {
             'click': lambda: locator.click(),
@@ -312,8 +359,6 @@ class PlaywrightExecutor:
                 'text': lambda: expect(locator).to_have_text(step.input_value),
                 'value': lambda: expect(locator).to_have_value(step.input_value),
                 'contain_text': lambda: expect(locator).to_contain_text(step.input_value),
-                'url': lambda: expect(page).to_have_url(step.input_value),
-                'title': lambda: expect(page).to_have_title(step.input_value),
             }
             if assert_type in assert_operations:
                 await assert_operations[assert_type]()
@@ -377,7 +422,7 @@ class PlaywrightExecutor:
                     base_url = config.env_config.get('base_url', '') or ''
                 if base_url:
                     logger.info(f"导航到环境 base_url: {base_url}")
-                    await page.goto(base_url, wait_until="networkidle")
+                    await page.goto(base_url, wait_until="domcontentloaded")
 
                 for page_step in config.page_steps:
                     if self._stop_requested:
@@ -628,7 +673,7 @@ class PlaywrightExecutor:
                 base_url = config.env_config.get('base_url', '') or ''
             if base_url:
                 logger.info(f"[并发] 导航到环境 base_url: {base_url}")
-                await page.goto(base_url, wait_until="networkidle")
+                await page.goto(base_url, wait_until="domcontentloaded")
 
             for page_step in config.page_steps:
                 if self._stop_requested:

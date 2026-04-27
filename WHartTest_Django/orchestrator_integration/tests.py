@@ -282,6 +282,25 @@ class DedicatedTestCaseExecutionOutputTests(SimpleTestCase):
         self.assertIn("secure_heading", signals)
         self.assertIn("logout_found", signals)
 
+    def test_extract_execution_signals_ignores_example_case_titles(self):
+        text = (
+            "### Headings\n"
+            "- H3: Test Case 2: Invalid Username\n"
+            "- H3: Test Case 3: Invalid Password\n"
+        )
+
+        signals = _extract_test_case_execution_signals(text)
+
+        self.assertNotIn("invalid_username", signals)
+        self.assertNotIn("invalid_password", signals)
+
+    def test_extract_execution_signals_detects_real_invalid_login_flash_text(self):
+        text = "Your password is invalid!"
+
+        signals = _extract_test_case_execution_signals(text)
+
+        self.assertIn("invalid_password", signals)
+
 
 class UploadedImageNormalizationTests(SimpleTestCase):
     def test_normalize_uploaded_images_merges_legacy_and_array_fields(self):

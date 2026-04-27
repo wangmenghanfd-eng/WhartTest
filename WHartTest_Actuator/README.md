@@ -62,21 +62,25 @@ pip install -r requirements.txt
 python main.py
 ```
 
+本仓库本地 Docker 环境默认后端地址是 `http://127.0.0.1:8912`，对应 WebSocket 为
+`ws://127.0.0.1:8912/ws/ui/actuator/`。如果你不是用本仓库的 Docker 环境，而是直接
+`python manage.py runserver`，再按实际端口覆盖即可。
+
 ### 指定服务器地址
 ```bash
-python main.py --server ws://192.168.1.100:8000/ws/ui/actuator/
+python main.py --server ws://192.168.1.100:8912/ws/ui/actuator/
 ```
 
 ### 指定执行器ID
 ```bash
-python main.py --id actuator-01 --server ws://localhost:8000/ws/ui/actuator/
+python main.py --id actuator-01 --server ws://localhost:8912/ws/ui/actuator/
 ```
 
 ### 完整参数
 ```bash
 python main.py \
-    --server ws://localhost:8000/ws/ui/actuator/ \
-    --api http://localhost:8000 \
+    --server ws://localhost:8912/ws/ui/actuator/ \
+    --api http://localhost:8912 \
     --id my-actuator \
     --log-level DEBUG
 ```
@@ -85,10 +89,33 @@ python main.py \
 
 | 参数 | 短参数 | 默认值 | 说明 |
 |------|--------|--------|------|
-| --server | -s | ws://localhost:8000/ws/ui/actuator/ | WebSocket服务器地址 |
-| --api | -a | http://localhost:8000 | API服务器地址 |
+| --server | -s | ws://localhost:8912/ws/ui/actuator/ | WebSocket服务器地址 |
+| --api | -a | http://localhost:8912 | API服务器地址 |
 | --id | -i | actuator-{pid} | 执行器唯一标识 |
 | --log-level | -l | INFO | 日志级别 |
+
+## macOS 常驻启动
+
+如果你希望执行器在关闭终端后仍然常驻运行，可以使用本仓库自带的 `launchd` 安装脚本：
+
+```bash
+cd WHartTest_Actuator
+bash install_launch_agent.sh
+```
+
+安装完成后会创建用户级 `LaunchAgent`：
+- Label: `com.wharttest.actuator`
+- 配置文件: `~/Library/LaunchAgents/com.wharttest.actuator.plist`
+- 日志文件:
+  - `../data/logs/actuator-launchd.out.log`
+  - `../data/logs/actuator-launchd.err.log`
+
+卸载方式：
+
+```bash
+cd WHartTest_Actuator
+bash uninstall_launch_agent.sh
+```
 
 ## 工作流程
 
@@ -98,6 +125,18 @@ python main.py \
 4. **生成脚本**: 将步骤配置转换为Playwright代码
 5. **执行测试**: 调用Playwright执行浏览器自动化
 6. **返回结果**: 通过WebSocket将执行结果发送回服务器
+
+## OPEN 开关语义
+
+任务派发前，后端会优先选择 `is_open=true` 的执行器。
+
+- `OPEN = 开`：执行器在线且允许接收新任务
+- `OPEN = 关`：执行器仍保持在线，但后端不会再给它派发新任务
+
+这适合做临时摘机、维护、浏览器环境排查，不需要真的退出执行器进程。
+无论是“自动选择执行器”还是“明确指定某个执行器”，后端都会先检查 `is_open=true` 才允许派单。
+
+当前列表页中的 `DEBUG` 没有接入真实远程调试语义，默认不作为可操作开关使用。
 
 ## 打包成独立 EXE
 
@@ -152,13 +191,13 @@ dist/WHartTest_Actuator/
 
 ```bash
 # 机器A
-python main.py --id actuator-machine-a --server ws://server:8000/ws/ui/actuator/
+python main.py --id actuator-machine-a --server ws://server:8912/ws/ui/actuator/
 
 # 机器B  
-python main.py --id actuator-machine-b --server ws://server:8000/ws/ui/actuator/
+python main.py --id actuator-machine-b --server ws://server:8912/ws/ui/actuator/
 
 # 机器C
-python main.py --id actuator-machine-c --server ws://server:8000/ws/ui/actuator/
+python main.py --id actuator-machine-c --server ws://server:8912/ws/ui/actuator/
 ```
 
 服务器会自动将任务分发给可用的执行器。

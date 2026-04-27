@@ -112,6 +112,9 @@
           </a-form-item>
           <a-form-item field="ope_key" label="操作方法">
             <a-select v-model="formData.ope_key" allow-search @change="onOpeKeyChange">
+              <a-optgroup label="页面操作">
+                <a-option value="goto">打开页面 (goto)</a-option>
+              </a-optgroup>
               <a-optgroup label="鼠标操作">
                 <a-option value="click">点击 (click)</a-option>
                 <a-option value="dblclick">双击 (dblclick)</a-option>
@@ -120,11 +123,18 @@
               <a-optgroup label="输入操作">
                 <a-option value="fill">填充 (fill)</a-option>
                 <a-option value="type">输入 (type)</a-option>
+                <a-option value="press">按键 (press)</a-option>
                 <a-option value="clear">清空 (clear)</a-option>
+              </a-optgroup>
+              <a-optgroup label="状态操作">
+                <a-option value="check">勾选 (check)</a-option>
+                <a-option value="uncheck">取消勾选 (uncheck)</a-option>
+                <a-option value="focus">聚焦 (focus)</a-option>
               </a-optgroup>
               <a-optgroup label="其他">
                 <a-option value="wait">等待 (wait)</a-option>
                 <a-option value="screenshot">截图 (screenshot)</a-option>
+                <a-option value="select">选择下拉 (select)</a-option>
                 <a-option value="select_option">选择下拉 (select_option)</a-option>
               </a-optgroup>
             </a-select>
@@ -174,7 +184,10 @@
               <a-option value="assert_visible">元素可见</a-option>
               <a-option value="assert_hidden">元素隐藏</a-option>
               <a-option value="assert_text">文本断言</a-option>
+              <a-option value="assert_contain_text">包含文本断言</a-option>
               <a-option value="assert_value">值断言</a-option>
+              <a-option value="assert_url">地址断言</a-option>
+              <a-option value="assert_title">标题断言</a-option>
               <a-option value="assert_count">数量断言</a-option>
             </a-select>
           </a-form-item>
@@ -254,33 +267,48 @@ interface OpeParamDef {
 
 /** 操作方法与参数的映射 */
 const OPE_PARAMS_MAP: Record<string, OpeParamDef[]> = {
+  goto: [{ field: 'url', label: '目标地址', type: 'input', placeholder: '请输入页面 URL 或相对路径', required: true }],
   // 元素操作
   fill: [{ field: 'text', label: '输入内容', type: 'input', placeholder: '请输入要填充的文本', required: true }],
   type: [{ field: 'text', label: '输入内容', type: 'input', placeholder: '请输入要键入的文本', required: true }],
+  press: [{ field: 'key', label: '按键', type: 'input', placeholder: '请输入按键，如 Enter', required: true }],
   wait: [{ field: 'timeout', label: '等待时间(毫秒)', type: 'number', placeholder: '默认1000', min: 0, max: 60000 }],
   screenshot: [{ field: 'name', label: '截图文件名', type: 'input', placeholder: '可选，留空自动生成' }],
+  select: [{ field: 'value', label: '选项值', type: 'input', placeholder: '请输入要选择的选项值', required: true }],
   select_option: [{ field: 'value', label: '选项值', type: 'input', placeholder: '请输入要选择的选项值', required: true }],
   // 断言操作
   assert_text: [{ field: 'expected', label: '期望文本', type: 'input', placeholder: '请输入期望的文本内容', required: true }],
   assert_value: [{ field: 'expected', label: '期望值', type: 'input', placeholder: '请输入期望的值', required: true }],
+  assert_contain_text: [{ field: 'expected', label: '包含文本', type: 'input', placeholder: '请输入期望包含的文本', required: true }],
+  assert_url: [{ field: 'expected', label: '期望URL', type: 'input', placeholder: '请输入期望 URL 或路径', required: true }],
+  assert_title: [{ field: 'expected', label: '期望标题', type: 'input', placeholder: '请输入期望标题', required: true }],
   assert_count: [{ field: 'expected', label: '期望数量', type: 'number', placeholder: '请输入期望的元素数量', required: true, min: 0 }],
 }
 
 /** 操作方法标签映射 */
 const OPE_KEY_LABELS: Record<string, string> = {
+  goto: '打开页面',
   click: '点击',
   dblclick: '双击',
   hover: '悬停',
+  focus: '聚焦',
+  check: '勾选',
+  uncheck: '取消勾选',
   fill: '填充',
   type: '输入',
+  press: '按键',
   clear: '清空',
   wait: '等待',
   screenshot: '截图',
+  select: '选择下拉',
   select_option: '选择下拉',
   assert_visible: '元素可见',
   assert_hidden: '元素隐藏',
   assert_text: '文本断言',
   assert_value: '值断言',
+  assert_contain_text: '包含文本断言',
+  assert_url: '地址断言',
+  assert_title: '标题断言',
   assert_count: '数量断言',
 }
 
@@ -547,6 +575,10 @@ const buildOpeValue = () => {
   if (formData.ope_key === 'fill' && result.text !== undefined) {
     result.value = result.text
   }
+
+  if ((formData.ope_key === 'select' || formData.ope_key === 'select_option') && result.value !== undefined) {
+    result.text = result.value
+  }
   
   return Object.keys(result).length > 0 ? result : undefined
 }
@@ -560,11 +592,11 @@ const handleSubmit = async (done: (closed: boolean) => void) => {
     return
   }
   
-  // 额外的业务逻辑校验：对于 fill 操作，必须填写输入内容
-  if (formData.ope_key === 'fill') {
-    const textValue = opeParams.text
-    if (!textValue || textValue.trim() === '') {
-      Message.warning('请输入内容')
+  for (const param of currentOpeParams.value) {
+    if (!param.required) continue
+    const value = opeParams[param.field]
+    if (value === undefined || value === null || value === '') {
+      Message.warning(`请填写${param.label}`)
       done(false)
       return
     }

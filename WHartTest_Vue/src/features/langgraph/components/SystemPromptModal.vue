@@ -29,7 +29,7 @@
                   <template #icon>
                     <icon-settings />
                   </template>
-                  初始化提示词
+                  同步内置提示词
                 </a-button>
                 <a-button type="primary" size="small" @click="showCreatePromptForm">
                   <template #icon>
@@ -407,16 +407,20 @@ const handleInitializePrompts = async () => {
     
     let forceUpdate = false;
     
-    // 如果已有提示词，询问是否强制更新
+    // 如果已有提示词，询问是仅补齐还是覆盖系统内置版本
     if (existingCount > 0) {
       const result = await new Promise((resolve) => {
+        const hasMissingPrompts = missingCount > 0;
+        const content = hasMissingPrompts
+          ? `检测到已存在 ${existingCount} 个提示词，另有 ${missingCount} 个内置提示词尚未创建。\n\n默认建议只补齐缺失项，不覆盖你现有内容。\n只有在你希望用最新系统模板覆盖现有提示词时，才选择“覆盖全部”。`
+          : `检测到已存在 ${existingCount} 个提示词，当前内置提示词已齐全。\n\n通常不需要继续操作。\n只有在你希望用当前系统模板覆盖现有提示词内容时，才选择“覆盖全部”。`;
         Modal.confirm({
-          title: '提示词初始化确认',
-          content: `检测到已存在 ${existingCount} 个提示词。\n\n是否强制更新所有提示词到最新版本？\n（更新后将覆盖现有提示词内容）`,
-          okText: '强制更新',
-          cancelText: missingCount > 0 ? '仅创建缺失的' : '取消',
+          title: '同步内置提示词',
+          content,
+          okText: '覆盖全部',
+          cancelText: hasMissingPrompts ? '仅补齐缺失的' : '取消',
           onOk: () => resolve('force'),
-          onCancel: () => resolve(missingCount > 0 ? 'create' : 'cancel')
+          onCancel: () => resolve(hasMissingPrompts ? 'create' : 'cancel')
         });
       });
       
@@ -434,9 +438,9 @@ const handleInitializePrompts = async () => {
       const skippedCount = data.summary?.skipped_count || 0;
       
       if (forceUpdate) {
-        Message.success(`强制更新完成！更新了 ${createdCount} 个提示词`);
+        Message.success(`覆盖完成，已按系统模板更新 ${createdCount} 个提示词`);
       } else {
-        Message.success(`${response.message || '初始化完成！'}创建了 ${createdCount} 个提示词，跳过 ${skippedCount} 个`);
+        Message.success(`${response.message || '同步完成'}：补齐 ${createdCount} 个，跳过 ${skippedCount} 个`);
       }
       
       // 重新加载用户提示词列表

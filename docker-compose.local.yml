@@ -70,6 +70,7 @@ services:
       - ./data:/app/data
       - backend-static:/app/static
       - ./WHartTest_Skills:/app/bundled_skills:ro
+      - playwright-browsers:/root/.cache/ms-playwright
     environment:
       # 数据库配置
       # 默认使用 PostgreSQL（生产环境推荐）
@@ -182,50 +183,57 @@ services:
       start_period: 30s
 
   # Playwright MCP 服务（官方Docker镜像）
-  # playwright-mcp:
-  #   image: ${DOCKER_PLAYWRIGHT_MCP_IMAGE:-mcr.microsoft.com/playwright/mcp}
-  #   container_name: wharttest-playwright-mcp
-  #   user: root # 以 root 用户运行,确保有权限写入挂载目录
-  #   ports:
-  #     - "0.0.0.0:8916:8931"
-  #   volumes:
-  #     - ./data/playwright-screenshots:/tmp/playwright-output # 使用本地目录挂载
-  #     - ./WHartTest_MCP/playwright-mcp-config.json:/app/playwright-mcp-config.json:ro # 挂载配置文件
-  #   networks:
-  #     - wharttest-network
-  #   restart: unless-stopped
-  #   healthcheck:
-  #     test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8931/mcp" ]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 20s
+  # 说明：当前平台主链路优先使用内置 playwright-skill。
+  # 此服务保留给通用聊天 / 通用 Agent 场景做浏览器 MCP 能力扩展，
+  # 但平台默认 RemoteMCPConfig 会保持停用，避免与 playwright-skill 混淆。
+  playwright-mcp:
+    platform: linux/amd64
+    image: ${DOCKER_PLAYWRIGHT_MCP_IMAGE:-mcr.microsoft.com/playwright/mcp}
+    container_name: wharttest-playwright-mcp
+    user: root # 以 root 用户运行,确保有权限写入挂载目录
+    working_dir: /app
+    entrypoint: node
+    command: [ "cli.js", "--no-sandbox", "--host", "0.0.0.0", "--allowed-hosts", "*", "--config", "/app/playwright-mcp-config.json" ]
+    ports:
+      - "0.0.0.0:8916:8931"
+    volumes:
+      - ./data/playwright-screenshots:/tmp/playwright-output # 使用本地目录挂载
+      - ./WHartTest_MCP/playwright-mcp-config.json:/app/playwright-mcp-config.json:ro # 挂载配置文件
+    networks:
+      - wharttest-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "node", "-e", "fetch('http://localhost:8931/').then(()=>process.exit(0)).catch(()=>process.exit(1))" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   # Xinference 模型推理服务（Embedding + Reranker）
-  # xinference:
-  #   image: xprobe/xinference:latest-cpu
-  #   container_name: wharttest-xinference
-  #   ports:
-  #     - "0.0.0.0:8917:9997"
-  #   volumes:
-  #     - xinference-data:/root/.xinference
-  #     - xinference-cache:/root/.cache/huggingface
-  #   environment:
-  #     - HF_ENDPOINT=https://hf-mirror.com
-  #   networks:
-  #     - wharttest-network
-  #   restart: unless-stopped
-  #   command: xinference-local -H 0.0.0.0
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:9997/"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 60s
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 6G
+  xinference:
+    image: xprobe/xinference:latest-cpu
+    container_name: wharttest-xinference
+    ports:
+      - "0.0.0.0:8917:9997"
+    volumes:
+      - xinference-data:/root/.xinference
+      - xinference-cache:/root/.cache/huggingface
+    environment:
+      - HF_ENDPOINT=https://hf-mirror.com
+    networks:
+      - wharttest-network
+    restart: unless-stopped
+    command: xinference-local -H 0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9997/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 6G
     # 启动后需要部署模型:
     # Embedding: curl -X POST http://localhost:8917/v1/models -d '{"model_name": "bge-m3", "model_type": "embedding"}'
     # Reranker:  curl -X POST http://localhost:8917/v1/models -d '{"model_name": "bge-reranker-v2-m3", "model_type": "rerank"}'
@@ -254,6 +262,7 @@ volumes:
   xinference-data:
   xinference-cache:
   qdrant-data:
+  playwright-browsers:
     # db.sqlite3 和 media 改用本地目录挂载，不再需要 named volume
     # playwright-screenshots 改用本地目录挂载，不再需要 named volume
 

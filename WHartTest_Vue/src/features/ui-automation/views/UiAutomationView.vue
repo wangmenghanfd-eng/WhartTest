@@ -13,7 +13,7 @@
           <TestCaseList ref="testCaseListRef" :selected-module-id="selectedModuleId" />
         </a-tab-pane>
         <a-tab-pane key="execution-records" title="执行记录">
-          <ExecutionRecordList ref="executionRecordListRef" />
+          <ExecutionRecordList ref="executionRecordListRef" :selected-module-id="selectedModuleId" />
         </a-tab-pane>
         <a-tab-pane key="batch-records" title="批量执行">
           <BatchRecordList ref="batchRecordListRef" />
@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import ModulePanel from '../components/ModulePanel.vue'
 import PageList from './PageList.vue'
 import PageStepList from './PageStepList.vue'
@@ -98,6 +98,20 @@ const onModuleUpdated = () => {
   pageStepListRef.value?.refresh?.()
   testCaseListRef.value?.refresh?.()
 }
+
+const handleRecordingMaterialized = () => {
+  pageListRef.value?.refresh?.()
+  pageStepListRef.value?.refresh?.()
+  testCaseListRef.value?.refresh?.()
+}
+
+onMounted(() => {
+  window.addEventListener('ui-automation-recording-materialized', handleRecordingMaterialized as EventListener)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('ui-automation-recording-materialized', handleRecordingMaterialized as EventListener)
+})
 </script>
 
 <style scoped>

@@ -61,11 +61,17 @@
         </div>
       </div>
 
-      <TokenUsageIndicator
+      <div
         v-if="contextTokenCount > 0 || contextLimit > 0"
-        :current-tokens="contextTokenCount"
-        :max-tokens="contextLimit"
-      />
+        class="token-usage-wrapper"
+        title="当前上下文占用率（不是回答完成度）。它会随着知识库召回、系统注入和摘要压缩上下浮动；显示较高并不等于本轮会立即中断。"
+      >
+        <span class="token-usage-label">上下文</span>
+        <TokenUsageIndicator
+          :current-tokens="contextTokenCount"
+          :max-tokens="contextLimit"
+        />
+      </div>
 
       <div class="input-actions">
         <input
@@ -402,6 +408,19 @@ const handlePaste = (e: ClipboardEvent) => {
   padding: 16px 20px;
   background-color: white;
   border-top: 1px solid #e5e6eb;
+}
+
+.token-usage-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.token-usage-label {
+  font-size: 12px;
+  color: #4e5969;
+  white-space: nowrap;
 }
 
 .quote-preview-wrapper {

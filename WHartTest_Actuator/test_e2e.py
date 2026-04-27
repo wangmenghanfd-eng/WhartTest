@@ -26,13 +26,13 @@ except ImportError:
     sys.exit(1)
 
 
-API_BASE = "http://127.0.0.1:8000/api/ui-automation"
-AUTH_URL = "http://127.0.0.1:8000/api/token/"
-WS_URL = "ws://127.0.0.1:8000/ws/ui/web/"
+API_BASE = "http://127.0.0.1:8912/api/ui-automation"
+AUTH_URL = "http://127.0.0.1:8912/api/token/"
+WS_URL = "ws://127.0.0.1:8912/ws/ui/web/"
 
 # 测试用户凭据
 TEST_USERNAME = "admin"
-TEST_PASSWORD = "admin123"
+TEST_PASSWORD = "admin123456"
 TEST_PROJECT_ID = 4  # UI自动化测试项目
 
 

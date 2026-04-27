@@ -2,6 +2,9 @@
   <div class="execution-record-list">
     <div class="page-header">
       <div class="search-box">
+        <a-tag v-if="props.selectedModuleId" color="arcoblue" style="margin-right: 12px">
+          已按左侧模块筛选
+        </a-tag>
         <a-select
           v-model="filters.status"
           placeholder="执行状态"
@@ -9,7 +12,8 @@
           style="width: 120px; margin-right: 12px"
           @change="onSearch"
         >
-          <a-option v-for="(label, key) in STATUS_LABELS" :key="key" :value="Number(key)">{{ label }}</a-option>
+          <a-option :value="2">成功</a-option>
+          <a-option :value="3">失败</a-option>
         </a-select>
         <a-select
           v-model="filters.trigger_type"
@@ -20,7 +24,6 @@
         >
           <a-option value="manual">手动执行</a-option>
           <a-option value="scheduled">定时执行</a-option>
-          <a-option value="api">API 触发</a-option>
         </a-select>
         <a-button type="outline" @click="onSearch">
           <template #icon><icon-refresh /></template>
@@ -45,7 +48,7 @@
         </a-tag>
       </template>
       <template #trigger_type="{ record }">
-        <a-tag :color="triggerColors[record.trigger_type]">{{ triggerLabels[record.trigger_type] }}</a-tag>
+        <a-tag :color="triggerColors[record.trigger_type] || 'gray'">{{ triggerLabels[record.trigger_type] || record.trigger_type }}</a-tag>
       </template>
       <template #duration="{ record }">
         <span v-if="record.duration != null">{{ record.duration.toFixed(2) }}s</span>
@@ -88,7 +91,9 @@
             </a-tag>
           </a-descriptions-item>
           <a-descriptions-item label="触发类型">
-            <a-tag :color="triggerColors[currentRecord.trigger_type]">{{ triggerLabels[currentRecord.trigger_type] }}</a-tag>
+            <a-tag :color="triggerColors[currentRecord.trigger_type] || 'gray'">
+              {{ triggerLabels[currentRecord.trigger_type] || currentRecord.trigger_type }}
+            </a-tag>
           </a-descriptions-item>
           <a-descriptions-item label="开始时间">{{ currentRecord.start_time ? formatTime(currentRecord.start_time) : '-' }}</a-descriptions-item>
           <a-descriptions-item label="结束时间">{{ currentRecord.end_time ? formatTime(currentRecord.end_time) : '-' }}</a-descriptions-item>
@@ -105,7 +110,9 @@
         <!-- 错误信息 -->
         <template v-if="currentRecord.error_message">
           <a-divider>错误信息</a-divider>
-          <a-alert type="error" :title="currentRecord.error_message" />
+          <a-tooltip :content="currentRecord.error_message">
+            <a-alert type="error" :title="currentRecord.error_message" />
+          </a-tooltip>
         </template>
 
         <!-- 执行日志 -->
@@ -184,6 +191,10 @@ import type { UiExecutionRecord, ExecutionStatus } from '../types'
 import { STATUS_LABELS, extractPaginationData, extractResponseData } from '../types'
 import { useProjectStore } from '@/store/projectStore'
 
+const props = defineProps<{
+  selectedModuleId?: number
+}>()
+
 const router = useRouter()
 const projectStore = useProjectStore()
 const projectId = computed(() => projectStore.currentProject?.id)
@@ -210,13 +221,11 @@ const statusColors: Record<ExecutionStatus | 4, string> = {
 const triggerLabels: Record<string, string> = {
   manual: '手动执行',
   scheduled: '定时执行',
-  api: 'API 触发',
 }
 
 const triggerColors: Record<string, string> = {
   manual: 'arcoblue',
   scheduled: 'purple',
-  api: 'cyan',
 }
 
 const columns = [
@@ -276,6 +285,7 @@ const fetchRecords = async () => {
   try {
     const res = await executionRecordApi.list({
       project: projectId.value,
+      module: props.selectedModuleId,
       status: filters.status,
       trigger_type: filters.trigger_type,
     })
@@ -345,6 +355,11 @@ watch(projectId, () => {
     fetchRecords()
   }
 }, { immediate: true })
+
+watch(() => props.selectedModuleId, () => {
+  pagination.current = 1
+  fetchRecords()
+})
 </script>
 
 <style scoped>
@@ -364,6 +379,11 @@ watch(projectId, () => {
 .search-box {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.search-box > * {
+  margin-right: 0 !important;
 }
 
 .log-content {

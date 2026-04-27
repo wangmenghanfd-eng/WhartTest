@@ -1,11 +1,12 @@
 [server]
-ws_url = "ws://127.0.0.1:8000/ws/ui/actuator/"
-api_url = "http://127.0.0.1:8000"
-use_gui = true
+ws_url = "ws://127.0.0.1:8912/ws/ui/actuator/"
+api_url = "http://127.0.0.1:8912"
+use_gui = false
 api_username = "admin"
 api_password = "admin123456"
 
 [actuator]
+id = "WHartTest-001"
 name = "WHartTest-001"
 
 [browser]

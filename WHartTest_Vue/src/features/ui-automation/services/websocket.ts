@@ -13,6 +13,10 @@ export const UiSocketEnum = {
   TEST_CASE: 'u_test_case',               // 执行测试用例
   TEST_CASE_BATCH: 'u_test_case_batch',   // 批量执行用例
   STOP_EXECUTION: 'u_stop_execution',     // 停止执行
+  RECORD_START: 'u_record_start',         // 开始录制
+  RECORD_STOP: 'u_record_stop',           // 停止录制
+  RECORD_STATUS: 'u_record_status',       // 录制状态
+  RECORD_RESULT: 'u_record_result',       // 录制结果
   STEP_RESULT: 'u_step_result',           // 步骤执行结果
   CASE_RESULT: 'u_case_result',           // 用例执行结果
 } as const
@@ -51,6 +55,13 @@ export interface CaseResultModel {
   failed_steps: number
   duration: number
   steps: StepResultModel[]
+}
+
+/** 录制状态结果 */
+export interface RecordingStatusResult {
+  recording_id: number
+  status: string
+  recording?: Record<string, any>
 }
 
 type MessageHandler = (data: SocketDataModel) => void
@@ -245,6 +256,28 @@ class UiWebSocketService {
   stopExecution(taskId?: string): boolean {
     return this.send(UiSocketEnum.STOP_EXECUTION, {
       task_id: taskId,
+    })
+  }
+
+  /** 开始录制 */
+  startRecording(payload: {
+    project: number
+    module: number
+    page?: number
+    env_config_id?: number
+    actuator_id?: string
+    target_type: 'page_step' | 'test_case'
+    name: string
+  }): boolean {
+    return this.send(UiSocketEnum.RECORD_START, payload)
+  }
+
+  /** 停止录制 */
+  stopRecording(recordingId: number, actuatorId?: string, cancel = false): boolean {
+    return this.send(UiSocketEnum.RECORD_STOP, {
+      recording_id: recordingId,
+      actuator_id: actuatorId,
+      cancel,
     })
   }
 }

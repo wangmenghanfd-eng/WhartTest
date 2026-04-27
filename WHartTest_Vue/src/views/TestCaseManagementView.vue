@@ -591,7 +591,7 @@ const handleExecuteConfirm = (options: { generatePlaywrightScript: boolean }) =>
   };
 
   const notificationContent = options.generatePlaywrightScript
-    ? '测试用例执行任务已在后台开始处理，完成后将自动生成 UI 自动化用例。'
+    ? '测试用例执行任务已在后台开始处理，完成后将尝试生成并保存 UI 自动化用例到 UI 自动化模块。'
     : '测试用例执行任务已在后台开始处理。';
 
   startAutomationTask(

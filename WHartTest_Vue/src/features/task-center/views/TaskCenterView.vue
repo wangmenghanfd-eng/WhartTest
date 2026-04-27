@@ -45,6 +45,7 @@
             @change="handleSearch"
           >
             <a-option value="ui_automation">UI 自动化</a-option>
+            <a-option value="api_automation">接口自动化</a-option>
             <a-option value="test_suite">测试套件</a-option>
           </a-select>
         </div>
@@ -63,8 +64,8 @@
           </template>
 
           <template #module="{ record }">
-            <a-tag :color="record.module === 'ui_automation' ? 'arcoblue' : 'purple'">
-              {{ record.module === 'ui_automation' ? 'UI 自动化' : '测试套件' }}
+            <a-tag :color="record.module === 'ui_automation' ? 'arcoblue' : record.module === 'api_automation' ? 'green' : 'purple'">
+              {{ record.module === 'ui_automation' ? 'UI 自动化' : record.module === 'api_automation' ? '接口自动化' : '测试套件' }}
             </a-tag>
           </template>
 
@@ -264,7 +265,7 @@ const executionColumns = [
   { title: '执行ID', dataIndex: 'execution_id', width: 180, ellipsis: true },
   { title: '触发方式', slotName: 'trigger_type', width: 90, align: 'center' as const },
   { title: '触发状态', slotName: 'status', width: 90, align: 'center' as const },
-  { title: '套件执行ID', slotName: 'actual_execution_id', width: 110, align: 'center' as const },
+  { title: '实际执行ID', slotName: 'actual_execution_id', width: 110, align: 'center' as const },
   { title: '实际结果', slotName: 'actual_result', width: 90, align: 'center' as const },
   { title: '实际耗时', slotName: 'actual_duration', width: 90, align: 'center' as const },
   { title: '结果概览', slotName: 'actual_summary', width: 220, ellipsis: true },

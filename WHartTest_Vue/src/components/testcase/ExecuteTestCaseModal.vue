@@ -28,7 +28,7 @@
             <span class="checkbox-label">
               <span class="checkbox-text">
                 <span class="checkbox-title">生成 UI 自动化用例</span>
-                <span class="checkbox-desc">注意！！！断言失败或对话异常时，会生成失败。</span>
+                <span class="checkbox-desc">执行完成后会尝试把真实浏览器步骤保存到 UI 自动化模块；若步骤不足或执行异常，会明确提示失败原因。</span>
               </span>
             </span>
           </a-checkbox>

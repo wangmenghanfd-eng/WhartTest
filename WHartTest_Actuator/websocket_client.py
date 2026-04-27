@@ -63,7 +63,6 @@ class WebSocketClient:
             'name': getattr(self.config, 'actuator_name', None) or self.actuator_id,
             'type': 'web_ui',
             'is_open': True,
-            'debug': False,
             'version': self.VERSION,
         }
         

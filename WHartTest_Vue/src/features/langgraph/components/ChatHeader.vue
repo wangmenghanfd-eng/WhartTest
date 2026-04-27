@@ -15,6 +15,7 @@
         <div class="prompt-selector">
           <span class="prompt-label">提示词：</span>
           <a-select
+            v-if="showPromptSelect"
             v-model="selectedPromptId"
             :placeholder="defaultPrompt ? defaultPrompt.name : '选择提示词'"
             style="width: 160px"
@@ -33,6 +34,16 @@
               <a-tag v-if="prompt.is_default" color="blue" size="small" style="margin-left: 8px;">默认</a-tag>
             </a-option>
           </a-select>
+          <div v-else class="single-prompt-display">
+            <span class="single-prompt-name">{{ activePromptName }}</span>
+            <a-tag
+              v-if="singleAvailablePrompt?.is_default"
+              color="blue"
+              size="small"
+            >
+              默认
+            </a-tag>
+          </div>
         </div>
 
         <a-button type="text" @click="$emit('show-system-prompt')">
@@ -84,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { Button as AButton, Tag as ATag, Switch as ASwitch, Select as ASelect, Option as AOption } from '@arco-design/web-vue';
 import { IconDelete, IconSettings, IconThunderbolt, IconFile } from '@arco-design/web-vue/es/icon';
@@ -128,6 +139,26 @@ const selectedPromptId = ref<number | null>(props.selectedPromptId);
 const userPrompts = ref<UserPrompt[]>([]);
 const defaultPrompt = ref<UserPrompt | null>(null);
 const promptsLoading = ref(false);
+
+const singleAvailablePrompt = computed<UserPrompt | null>(() => {
+  if (userPrompts.value.length === 1) {
+    return userPrompts.value[0];
+  }
+  if (userPrompts.value.length === 0 && defaultPrompt.value) {
+    return defaultPrompt.value;
+  }
+  return null;
+});
+
+const showPromptSelect = computed(() => userPrompts.value.length > 1);
+
+const activePromptName = computed(() => {
+  return (
+    singleAvailablePrompt.value?.name ||
+    defaultPrompt.value?.name ||
+    '默认通用提示词'
+  );
+});
 
 // 加载用户提示词
 const loadUserPrompts = async () => {
@@ -343,6 +374,26 @@ defineExpose({
   font-size: 13px;
   color: #4e5969;
   white-space: nowrap;
+}
+
+.single-prompt-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 10px;
+  background: #f7f8fa;
+  border: 1px solid #e5e6eb;
+  border-radius: 6px;
+}
+
+.single-prompt-name {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #1d2129;
 }
 
 

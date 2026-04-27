@@ -104,9 +104,23 @@ function cleanupOldTempFiles() {
 }
 
 /**
+ * 修正 AI 常见代码错误：
+ * 1. `await page.url();` → `console.log("CURRENT_URL:", page.url());`
+ * 2. `await helpers.describePageForAI(page);` → `console.log(await helpers.describePageForAI(page));`
+ */
+function sanitizeCode(code) {
+  // page.url() 是同步方法，AI 常写成 `await page.url();`，导致返回值丢失
+  code = code.replace(/\bawait\s+page\.url\(\)\s*;/g, 'console.log("CURRENT_URL:", page.url());');
+  // describePageForAI 返回字符串，AI 常忘记 console.log 包裹
+  code = code.replace(/\bawait\s+helpers\.describePageForAI\(page\)\s*;/g, 'console.log(await helpers.describePageForAI(page));');
+  return code;
+}
+
+/**
  * 若代码尚未包裹为 async IIFE，则自动包裹
  */
 function wrapCodeIfNeeded(code) {
+  code = sanitizeCode(code);
   // 检查代码是否已包含 require() 与 async 结构
   const hasRequire = code.includes('require(');
   const hasAsyncIIFE = code.includes('(async () => {') || code.includes('(async()=>{');

@@ -28,6 +28,10 @@ class UiSocketEnum:
     TEST_CASE = 'u_test_case'
     TEST_CASE_BATCH = 'u_test_case_batch'
     STOP_EXECUTION = 'u_stop_execution'
+    RECORD_START = 'u_record_start'
+    RECORD_STOP = 'u_record_stop'
+    RECORD_STATUS = 'u_record_status'
+    RECORD_RESULT = 'u_record_result'
     STEP_RESULT = 'u_step_result'
     CASE_RESULT = 'u_case_result'
     SET_ACTUATOR_INFO = 't_set_actuator_info'  # 设置执行器信息

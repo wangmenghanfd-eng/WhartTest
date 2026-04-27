@@ -326,10 +326,15 @@ class TestCaseViewSet(viewsets.ModelViewSet):
 
         # 获取模版
         try:
-            template = ImportExportTemplate.objects.get(id=template_id, is_active=True)
+            template = ImportExportTemplate.objects.get(
+                id=template_id,
+                is_active=True,
+                template_type__in=["import", "both"],
+            )
         except ImportExportTemplate.DoesNotExist:
             return Response(
-                {"error": "模版不存在或已禁用"}, status=status.HTTP_404_NOT_FOUND
+                {"error": "模版不存在、已禁用，或不是可用于导入的模版"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # 获取项目

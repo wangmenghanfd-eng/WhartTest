@@ -17,7 +17,7 @@
               </a-tag>
             </a-descriptions-item>
             <a-descriptions-item label="调度耗时">{{ logData.duration }}</a-descriptions-item>
-            <a-descriptions-item label="套件执行ID">{{ logData.actual_execution_id || '—' }}</a-descriptions-item>
+            <a-descriptions-item label="实际执行ID">{{ logData.actual_execution_id || '—' }}</a-descriptions-item>
             <a-descriptions-item label="实际结果">
               <a-tag v-if="logData.actual_result_text" :color="actualResultColorMap[logData.actual_result_status || 'completed']">
                 {{ logData.actual_result_text }}

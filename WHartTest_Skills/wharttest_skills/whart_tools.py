@@ -274,6 +274,7 @@ def edit_testcase(project_id: int, case_id: int, name: str = None, level: str = 
 def upload_screenshot(project_id: int, case_id: int, file_path: str, title: str,
                       description: str = "", step_number: int = None, page_url: str = ""):
     """上传单张截图"""
+    title = title or os.path.basename(file_path or "") or "自动上传截图"
     # 如果是文件名（无目录分隔符），自动从 SCREENSHOT_DIR 查找
     if os.sep not in file_path and '/' not in file_path:
         screenshot_dir = os.environ.get('SCREENSHOT_DIR', '')
@@ -365,7 +366,7 @@ def upload_screenshots(project_id: int, case_id: int, file_paths: str, title: st
             file_handles.append(f)
             files.append(('screenshots', (os.path.basename(fp), f, content_type)))
 
-        data = {'title': title}
+        data = {'title': title or '批量上传截图'}
         if description: data['description'] = description
         if step_number is not None: data['step_number'] = str(step_number)
         if page_url: data['page_url'] = page_url
@@ -460,7 +461,7 @@ ACTIONS = {
 
 
 def main():
-    parser = argparse.ArgumentParser(description="WHartTest 测试管理平台工具")
+    parser = argparse.ArgumentParser(description="WHartTest 测试管理平台工具", allow_abbrev=False)
     parser.add_argument("--action", required=True, choices=ACTIONS.keys(), help="要执行的操作")
     parser.add_argument("--project_id", type=int, help="项目ID")
     parser.add_argument("--module_id", type=int, help="模块ID")
@@ -477,6 +478,7 @@ def main():
     parser.add_argument("--screenshot_paths", help="兼容旧参数名，等价于 --file_paths")
     parser.add_argument("--title", help="标题")
     parser.add_argument("--description", help="描述")
+    parser.add_argument("--step", type=int, help="兼容旧参数名，等价于 --step_number")
     parser.add_argument("--step_number", type=int, help="步骤编号")
     parser.add_argument("--page_url", help="页面URL")
     parser.add_argument("--review_status", help="审核状态 (pending_review/approved/needs_optimization/optimization_pending_review/unavailable)")
@@ -484,6 +486,9 @@ def main():
     parser.add_argument("--is_optimization", action="store_true", help="是否为优化操作（自动设置状态为optimization_pending_review）")
 
     args = parser.parse_args()
+    if args.step_number is None and args.step is not None:
+        args.step_number = args.step
+
     result = ACTIONS[args.action](args)
     print(json.dumps(result, indent=2, ensure_ascii=False))
 

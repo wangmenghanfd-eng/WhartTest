@@ -6,6 +6,8 @@ from django.utils import timezone
 
 LOG_LINE_PATTERN = re.compile(r"^\[(?P<timestamp>[^\]]+)\]\s*(?P<message>.*)$")
 SUITE_EXECUTION_ID_PATTERN = re.compile(r"套件执行已(?:提交|触发): execution_id=(?P<execution_id>\d+)")
+UI_BATCH_ID_PATTERN = re.compile(r"批量执行已触发: batch_id=(?P<batch_id>\d+)")
+API_BATCH_ID_PATTERN = re.compile(r"接口批量执行已触发: batch_id=(?P<batch_id>\d+)")
 
 
 def format_local_timestamp(dt=None) -> str:
@@ -67,6 +69,34 @@ def extract_suite_execution_id(log_text: str):
 
     try:
         return int(match.group("execution_id"))
+    except (TypeError, ValueError):
+        return None
+
+
+def extract_ui_batch_id(log_text: str):
+    if not log_text:
+        return None
+
+    match = UI_BATCH_ID_PATTERN.search(log_text)
+    if not match:
+        return None
+
+    try:
+        return int(match.group("batch_id"))
+    except (TypeError, ValueError):
+        return None
+
+
+def extract_api_batch_id(log_text: str):
+    if not log_text:
+        return None
+
+    match = API_BATCH_ID_PATTERN.search(log_text)
+    if not match:
+        return None
+
+    try:
+        return int(match.group("batch_id"))
     except (TypeError, ValueError):
         return None
 

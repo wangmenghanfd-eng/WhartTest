@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
 """UI 自动化视图"""
 
-from rest_framework import viewsets, status
+import logging
+
+from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models.deletion import ProtectedError
 from django.db import transaction
+from django.db.models import Q
 
 from .models import (
     UiModule, UiPage, UiElement, UiPageSteps, UiPageStepsDetailed,
     UiTestCase, UiCaseStepsDetailed, UiExecutionRecord, UiPublicData, UiEnvironmentConfig,
-    UiBatchExecutionRecord
+    UiBatchExecutionRecord, UiRecordingSession
 )
 from .serializers import (
     UiModuleSerializer, UiPageSerializer, UiPageDetailSerializer,
@@ -20,8 +23,12 @@ from .serializers import (
     UiPageStepsDetailedSerializer, UiTestCaseSerializer, UiTestCaseListSerializer, UiTestCaseDetailSerializer,
     UiCaseStepsDetailedSerializer, UiExecutionRecordSerializer, UiExecutionRecordListSerializer,
     UiPublicDataSerializer, UiEnvironmentConfigSerializer, UiTestCaseExecuteSerializer,
-    UiPageStepsExecuteSerializer, UiBatchExecutionRecordSerializer, UiBatchExecutionRecordDetailSerializer
+    UiPageStepsExecuteSerializer, UiBatchExecutionRecordSerializer, UiBatchExecutionRecordDetailSerializer,
+    UiRecordingSessionSerializer, UiRecordingSessionDetailSerializer
 )
+from .recording_service import materialize_recording_session
+
+logger = logging.getLogger('ui_automation')
 
 
 class UiModuleViewSet(viewsets.ModelViewSet):
@@ -74,6 +81,13 @@ class UiPageViewSet(viewsets.ModelViewSet):
             return UiPageDetailSerializer
         return UiPageSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        keyword = (self.request.query_params.get('search') or '').strip()
+        if keyword:
+            queryset = queryset.filter(Q(name__icontains=keyword) | Q(url__icontains=keyword))
+        return queryset
+
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
 
@@ -116,6 +130,9 @@ class UiPageStepsViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """列表查询时排除大字段"""
         queryset = super().get_queryset()
+        keyword = (self.request.query_params.get('search') or '').strip()
+        if keyword:
+            queryset = queryset.filter(name__icontains=keyword)
         if self.action == 'list':
             return queryset.defer('result_data', 'flow_data', 'run_flow', 'description')
         return queryset
@@ -194,6 +211,9 @@ class UiTestCaseViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """列表查询时排除大字段"""
         queryset = super().get_queryset()
+        keyword = (self.request.query_params.get('search') or '').strip()
+        if keyword:
+            queryset = queryset.filter(name__icontains=keyword)
         if self.action == 'list':
             return queryset.defer(
                 'result_data', 'front_custom', 'front_sql', 'posterior_sql',
@@ -327,10 +347,16 @@ class UiCaseStepsDetailedViewSet(viewsets.ModelViewSet):
 
 class UiExecutionRecordViewSet(viewsets.ModelViewSet):
     """执行记录管理视图"""
-    queryset = UiExecutionRecord.objects.select_related('test_case', 'executor')
+    queryset = UiExecutionRecord.objects.select_related('test_case', 'test_case__module', 'executor')
     serializer_class = UiExecutionRecordSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = {'test_case': ['exact'], 'status': ['exact'], 'trigger_type': ['exact'], 'test_case__project': ['exact']}
+    filterset_fields = {
+        'test_case': ['exact'],
+        'status': ['exact'],
+        'trigger_type': ['exact'],
+        'test_case__project': ['exact'],
+        'test_case__module': ['exact'],
+    }
     ordering_fields = ['created_at', 'duration']
     ordering = ['-created_at']
 
@@ -338,8 +364,11 @@ class UiExecutionRecordViewSet(viewsets.ModelViewSet):
         """列表查询时排除大字段，支持 project 参数过滤"""
         queryset = super().get_queryset()
         project_id = self.request.query_params.get('project')
+        module_id = self.request.query_params.get('module')
         if project_id:
             queryset = queryset.filter(test_case__project_id=project_id)
+        if module_id:
+            queryset = queryset.filter(test_case__module_id=module_id)
         if self.action == 'list':
             return queryset.defer(
                 'step_results', 'screenshots', 'trace_data', 'log',
@@ -490,9 +519,7 @@ class ActuatorViewSet(viewsets.ViewSet):
                 'ip': actuator_info.get('ip', 'unknown'),
                 'type': actuator_info.get('type', 'web_ui'),
                 'is_open': actuator_info.get('is_open', True),
-                'debug': actuator_info.get('debug', False),
                 'browser_type': actuator_info.get('browser_type', 'chromium'),
-                'headless': actuator_info.get('headless', False),
                 'connected_at': actuator_info.get('connected_at'),
             })
 
@@ -502,6 +529,30 @@ class ActuatorViewSet(viewsets.ViewSet):
                 'count': len(actuators),
                 'items': actuators
             }
+        })
+
+    @action(detail=False, methods=['post'])
+    def toggle_open(self, request):
+        """切换执行器的 is_open 状态（控制是否接受新任务）"""
+        from .consumers import SocketUserManager
+
+        actuator_id = request.data.get('actuator_id')
+        is_open = request.data.get('is_open')
+
+        if not actuator_id:
+            return Response({'status': 'error', 'message': '缺少 actuator_id'}, status=400)
+        if is_open is None:
+            return Response({'status': 'error', 'message': '缺少 is_open'}, status=400)
+
+        consumer = SocketUserManager.get_actuator_by_id(actuator_id)
+        if not consumer:
+            return Response({'status': 'error', 'message': f'执行器 {actuator_id} 不在线'}, status=404)
+
+        consumer.actuator_info['is_open'] = bool(is_open)
+        logger.info(f"执行器 {actuator_id} is_open 已设置为 {bool(is_open)}")
+        return Response({
+            'status': 'success',
+            'data': {'actuator_id': actuator_id, 'is_open': bool(is_open)}
         })
 
     @action(detail=False, methods=['get'])
@@ -548,6 +599,63 @@ class UiBatchExecutionRecordViewSet(viewsets.ModelViewSet):
         """删除批量执行记录及其关联的执行记录"""
         instance.execution_records.all().delete()
         instance.delete()
+
+
+class UiRecordingSessionViewSet(mixins.ListModelMixin,
+                                mixins.RetrieveModelMixin,
+                                viewsets.GenericViewSet):
+    """录制草稿管理视图"""
+
+    queryset = UiRecordingSession.objects.select_related('project', 'module', 'page', 'executor')
+    serializer_class = UiRecordingSessionSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['project', 'module', 'target_type', 'status', 'actuator_id']
+    search_fields = ['name']
+    ordering_fields = ['started_at', 'ended_at', 'duration']
+    ordering = ['-started_at']
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return UiRecordingSessionDetailSerializer
+        return UiRecordingSessionSerializer
+
+    @action(detail=True, methods=['post'])
+    def materialize(self, request, pk=None):
+        """将录制草稿落为正式页面步骤或测试用例"""
+        session = self.get_object()
+        try:
+            request_payload = request.data if isinstance(request.data, dict) else {}
+            result = materialize_recording_session(
+                session.id,
+                normalized_actions=request_payload.get('normalized_actions')
+                if 'normalized_actions' in request_payload
+                else None,
+                name=request_payload.get('name'),
+            )
+            session.refresh_from_db()
+            return Response({
+                'message': '录制草稿已成功保存',
+                'recording': UiRecordingSessionDetailSerializer(session).data,
+                **result,
+            })
+        except ValueError as exc:
+            return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            logger.error("录制草稿落库失败: %s", exc, exc_info=True)
+            return Response({'error': f'录制草稿落库失败: {exc}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def discard(self, request, pk=None):
+        """丢弃录制草稿"""
+        session = self.get_object()
+        if session.status == 'materialized':
+            return Response({'error': '已落库的录制会话不能丢弃'}, status=status.HTTP_400_BAD_REQUEST)
+        session.status = 'cancelled'
+        session.save(update_fields=['status'])
+        return Response({
+            'message': '录制草稿已丢弃',
+            'recording': UiRecordingSessionDetailSerializer(session).data,
+        })
 
 
 # ---------- 截图上传 ----------
@@ -658,14 +766,24 @@ def trigger_batch_execution(request):
         return Response({'error': '未提供用例 ID'}, status=status.HTTP_400_BAD_REQUEST)
 
     # 查找执行器
-    if actuator_id:
-        actuator = SocketUserManager.get_actuator_by_id(actuator_id)
-    else:
-        actuator = SocketUserManager.get_actuator()
+    actuator = SocketUserManager.get_actuator(actuator_id or None)
+    selected_actuator_exists = bool(
+        actuator_id and SocketUserManager.get_actuator_by_id(actuator_id)
+    )
 
     if not actuator:
         return Response(
-            {'error': f'执行器 {actuator_id} 不在线' if actuator_id else '没有可用的执行器'},
+            {
+                'error': (
+                    '没有可用的执行器'
+                    if not actuator_id
+                    else (
+                        f'执行器 {actuator_id} 已暂停接单'
+                        if selected_actuator_exists
+                        else f'执行器 {actuator_id} 不在线'
+                    )
+                )
+            },
             status=status.HTTP_503_SERVICE_UNAVAILABLE
         )
 
@@ -685,11 +803,21 @@ def trigger_batch_execution(request):
         executor=request.user,
         start_time=tz.now(),
     )
+    logger.info(
+        "UI 自动化批量执行已创建: batch_id=%s, trigger_type=%s, executor=%s, cases=%s",
+        batch.id,
+        trigger_type,
+        request.user.username,
+        case_ids,
+    )
 
     args = {
         'case_ids': case_ids,
         'actuator_id': actuator_id,
         'batch_id': batch.id,
+        'executor_id': request.user.id,
+        'executor_name': request.user.username,
+        'trigger_type': trigger_type,
     }
 
     # 通过 WebSocket 发送给执行器

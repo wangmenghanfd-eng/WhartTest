@@ -146,6 +146,25 @@ await page.goto('http://example.com');
 await page.goto('http://example.com', { waitUntil: 'networkidle' });
 ```
 
+### ⚠️ 导航等待策略
+
+默认不要把 `waitUntil: 'networkidle'` 当成通用等待策略。很多真实站点会持续发请求，容易导致：
+- `Page.goto: Timeout ... waiting until "networkidle"`
+
+优先策略：
+
+```javascript
+// 推荐：先正常打开
+await page.goto('https://example.com/login');
+
+// 再按目标显式等待
+await page.waitForSelector('#username');
+// 或
+await page.waitForURL('**/secure');
+```
+
+只有在你确认页面确实需要等待网络完全安静时，才使用 `networkidle`。
+
 ### 元素定位与操作
 
 ```javascript
@@ -190,6 +209,29 @@ await page.waitForSelector('text=/secure/');
 // ✅ 若必须用文本正则，加 /i 标志忽略大小写
 await page.waitForSelector('text=/secure area/i');
 ```
+
+### ⚠️ 负向场景断言
+
+对于“密码错误 / 用户名错误 / 权限不足”这类负向场景，不要先猜固定报错文案再死等 30 秒。
+
+推荐顺序：
+
+```javascript
+// 先看 URL 是否仍停留在登录页
+console.log(page.url());
+
+// 再看页面实际文本
+const text = await helpers.getPageText(page);
+console.log(text);
+```
+
+然后再根据真实文本使用大小写不敏感匹配：
+
+```javascript
+await page.waitForSelector('text=/password is invalid/i');
+```
+
+如果第一次文本断言超时，优先重新读取页面文本或结构，而不是立刻刷新页面。
 
 ### 截图（使用环境变量）
 

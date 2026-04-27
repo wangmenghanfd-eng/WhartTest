@@ -5,7 +5,7 @@ from rest_framework import serializers
 from .models import (
     UiModule, UiPage, UiElement, UiPageSteps, UiPageStepsDetailed,
     UiTestCase, UiCaseStepsDetailed, UiExecutionRecord, UiPublicData, UiEnvironmentConfig,
-    UiBatchExecutionRecord
+    UiBatchExecutionRecord, UiRecordingSession
 )
 
 
@@ -72,6 +72,10 @@ class UiPageStepsDetailedExecuteSerializer(serializers.ModelSerializer):
     element_name = serializers.CharField(source='element.name', read_only=True)
     locator_type = serializers.CharField(source='element.locator_type', read_only=True)
     locator_value = serializers.CharField(source='element.locator_value', read_only=True)
+    locator_type_2 = serializers.CharField(source='element.locator_type_2', read_only=True)
+    locator_value_2 = serializers.CharField(source='element.locator_value_2', read_only=True)
+    locator_type_3 = serializers.CharField(source='element.locator_type_3', read_only=True)
+    locator_value_3 = serializers.CharField(source='element.locator_value_3', read_only=True)
     wait_time = serializers.IntegerField(source='element.wait_time', read_only=True)
 
     class Meta:
@@ -205,12 +209,14 @@ class UiTestCaseExecuteSerializer(UiTestCaseSerializer):
 class UiExecutionRecordListSerializer(serializers.ModelSerializer):
     """执行记录列表序列化器（精简字段，提升性能）"""
     test_case_name = serializers.CharField(source='test_case.name', read_only=True)
+    test_case_module = serializers.IntegerField(source='test_case.module_id', read_only=True)
+    test_case_module_name = serializers.CharField(source='test_case.module.name', read_only=True)
     executor_name = serializers.CharField(source='executor.username', read_only=True)
 
     class Meta:
         model = UiExecutionRecord
         fields = [
-            'id', 'batch', 'test_case', 'test_case_name', 'executor', 'executor_name',
+            'id', 'batch', 'test_case', 'test_case_name', 'test_case_module', 'test_case_module_name', 'executor', 'executor_name',
             'status', 'trigger_type', 'start_time', 'end_time', 'duration', 'created_at'
         ]
         read_only_fields = ['created_at']
@@ -219,12 +225,14 @@ class UiExecutionRecordListSerializer(serializers.ModelSerializer):
 class UiExecutionRecordBatchDetailSerializer(serializers.ModelSerializer):
     """批量执行详情中的执行记录序列化器（包含步骤结果和错误信息，不含过大字段）"""
     test_case_name = serializers.CharField(source='test_case.name', read_only=True)
+    test_case_module = serializers.IntegerField(source='test_case.module_id', read_only=True)
+    test_case_module_name = serializers.CharField(source='test_case.module.name', read_only=True)
     executor_name = serializers.CharField(source='executor.username', read_only=True)
 
     class Meta:
         model = UiExecutionRecord
         fields = [
-            'id', 'batch', 'test_case', 'test_case_name', 'executor', 'executor_name',
+            'id', 'batch', 'test_case', 'test_case_name', 'test_case_module', 'test_case_module_name', 'executor', 'executor_name',
             'status', 'trigger_type', 'start_time', 'end_time', 'duration',
             'step_results', 'screenshots', 'error_message', 'trace_path', 'created_at'
         ]
@@ -234,6 +242,8 @@ class UiExecutionRecordBatchDetailSerializer(serializers.ModelSerializer):
 class UiExecutionRecordSerializer(serializers.ModelSerializer):
     """执行记录序列化器"""
     test_case_name = serializers.CharField(source='test_case.name', read_only=True)
+    test_case_module = serializers.IntegerField(source='test_case.module_id', read_only=True)
+    test_case_module_name = serializers.CharField(source='test_case.module.name', read_only=True)
     executor_name = serializers.CharField(source='executor.username', read_only=True)
 
     class Meta:
@@ -266,6 +276,8 @@ class UiBatchExecutionRecordSerializer(serializers.ModelSerializer):
     """批量执行记录序列化器"""
     executor_name = serializers.CharField(source='executor.username', read_only=True)
     success_rate = serializers.SerializerMethodField()
+    completed_cases = serializers.SerializerMethodField()
+    pending_cases = serializers.SerializerMethodField()
 
     class Meta:
         model = UiBatchExecutionRecord
@@ -277,10 +289,40 @@ class UiBatchExecutionRecordSerializer(serializers.ModelSerializer):
             return 0
         return round(obj.passed_cases / obj.total_cases * 100, 1)
 
+    def get_completed_cases(self, obj):
+        return obj.passed_cases + obj.failed_cases
+
+    def get_pending_cases(self, obj):
+        return max(obj.total_cases - self.get_completed_cases(obj), 0)
+
 
 class UiBatchExecutionRecordDetailSerializer(UiBatchExecutionRecordSerializer):
     """批量执行记录详情序列化器（含关联执行记录详情：包含步骤结果和错误信息）"""
     execution_records = UiExecutionRecordBatchDetailSerializer(many=True, read_only=True)
 
     class Meta(UiBatchExecutionRecordSerializer.Meta):
+        fields = '__all__'
+
+
+class UiRecordingSessionSerializer(serializers.ModelSerializer):
+    """录制会话序列化器"""
+
+    module_name = serializers.CharField(source='module.name', read_only=True)
+    page_name = serializers.CharField(source='page.name', read_only=True)
+    executor_name = serializers.CharField(source='executor.username', read_only=True)
+
+    class Meta:
+        model = UiRecordingSession
+        fields = '__all__'
+        read_only_fields = [
+            'raw_script', 'raw_actions', 'normalized_actions', 'preview_payload',
+            'artifacts', 'generated_page_step_ids', 'generated_test_case_id',
+            'error_message', 'started_at', 'ended_at', 'duration',
+        ]
+
+
+class UiRecordingSessionDetailSerializer(UiRecordingSessionSerializer):
+    """录制会话详情序列化器"""
+
+    class Meta(UiRecordingSessionSerializer.Meta):
         fields = '__all__'

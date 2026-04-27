@@ -402,6 +402,15 @@ const refresh = () => fetchData()
 
 defineExpose({ refresh })
 
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+
+watch(() => filters.search, () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    onSearch()
+  }, 300)
+})
+
 // 监听项目变化，重新加载数据
 watch(projectId, () => {
   if (projectId.value) {

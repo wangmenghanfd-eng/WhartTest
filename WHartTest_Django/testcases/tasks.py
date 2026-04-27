@@ -435,7 +435,17 @@ async def _execute_testcase_via_chat_api(result: TestCaseResult):
     
     execution_log = []
     screenshots = []
-    
+
+    # 每次执行前清空旧截图，避免历次执行结果累积
+    try:
+        deleted_count, _ = await sync_to_async(
+            lambda: testcase.screenshots.all().delete()
+        )()
+        if deleted_count:
+            logger.info(f"已清空测试用例 {testcase.id} 的 {deleted_count} 张旧截图")
+    except Exception as e:
+        logger.warning(f"清空旧截图失败（继续执行）: {e}")
+
     try:
         # 1. 获取测试用例执行提示词
         prompt = await _get_test_execution_prompt(executor)

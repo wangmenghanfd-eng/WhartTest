@@ -3145,11 +3145,11 @@ class UserToolApprovalViewSet(viewsets.ModelViewSet):
         skill_builtin_tools = [
             {
                 "tool_name": "read_skill_content",
-                "description": "读取 Skill 的 SKILL.md 内容",
+                "description": "只读工具：读取某个 Skill 的 SKILL.md 操作手册，用于让模型先看平台内置技能的使用说明。",
             },
             {
                 "tool_name": "execute_skill_script",
-                "description": "执行 Skill 脚本命令，支持单个或批量并发执行（需审批）",
+                "description": "高权限工具：执行平台 Skill 命令，可读取/写回平台数据、调用浏览器自动化、上传截图，并支持批量并发执行。",
             },
         ]
 

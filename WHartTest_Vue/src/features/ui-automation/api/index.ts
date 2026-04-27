@@ -18,6 +18,7 @@ import type {
   UiBatchExecutionRecord,
   UiPublicData,
   UiEnvironmentConfig,
+  UiRecordingSession,
   UiModuleForm,
   UiPageForm,
   UiElementForm,
@@ -151,7 +152,7 @@ export const caseStepsApi = {
 
 // ==================== 执行记录管理 ====================
 export const executionRecordApi = {
-  list: (params?: { project?: number; test_case?: number; status?: number; trigger_type?: string }) =>
+  list: (params?: { project?: number; module?: number; test_case?: number; status?: number; trigger_type?: string }) =>
     request.get<PaginatedResponse<UiExecutionRecord>>(`${BASE_URL}/execution-records/`, { params }),
 
   get: (id: number) => request.get<UiExecutionRecord>(`${BASE_URL}/execution-records/${id}/`),
@@ -214,9 +215,7 @@ export interface ActuatorInfo {
   ip: string
   type: string
   is_open: boolean
-  debug: boolean
   browser_type: string
-  headless: boolean
   connected_at: string
 }
 
@@ -231,4 +230,24 @@ export const actuatorApi = {
     request.get<{ count: number; items: ActuatorInfo[] }>(`${BASE_URL}/actuators/list_actuators/`),
 
   status: () => request.get<ActuatorStatus>(`${BASE_URL}/actuators/status/`),
+
+  toggleOpen: (actuatorId: string, isOpen: boolean) =>
+    request.post(`${BASE_URL}/actuators/toggle_open/`, { actuator_id: actuatorId, is_open: isOpen }),
+}
+
+// ==================== 录制草稿管理 ====================
+export const recordingApi = {
+  get: (id: number) => request.get<UiRecordingSession>(`${BASE_URL}/recordings/${id}/`),
+
+  materialize: (id: number, data?: { name?: string; normalized_actions?: unknown[] }) =>
+    request.post<{
+      recording: UiRecordingSession
+      generated_page_step_ids: number[]
+      generated_test_case_id?: number | null
+      created_pages: Array<{ id: number; name: string }>
+      warnings: string[]
+    }>(`${BASE_URL}/recordings/${id}/materialize/`, data || {}),
+
+  discard: (id: number) =>
+    request.post<{ recording: UiRecordingSession }>(`${BASE_URL}/recordings/${id}/discard/`),
 }

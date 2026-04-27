@@ -43,6 +43,9 @@ const percentage = computed(() => {
 
 const displayPercentage = computed(() => {
   const pct = percentage.value;
+  if (pct >= 99 && pct < 100) {
+    return `${pct.toFixed(1)}%`;
+  }
   // 小于1%时显示一位小数，否则显示整数
   if (pct < 1 && pct > 0) {
     return `${pct.toFixed(1)}%`;

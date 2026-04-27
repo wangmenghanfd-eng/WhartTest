@@ -981,7 +981,7 @@ class LoginWindow(QDialog):
     def _load_saved_credentials(self):
         """加载保存的凭证和设置"""
         server = self._config.get('server', {})
-        self.api_url_input.setText(server.get('api_url', 'http://localhost:8000'))
+        self.api_url_input.setText(server.get('api_url', 'http://localhost:8912'))
         self.username_input.setText(server.get('api_username', ''))
         self.password_input.setText(server.get('api_password', ''))
         

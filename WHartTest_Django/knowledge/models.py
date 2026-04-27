@@ -50,7 +50,7 @@ class KnowledgeGlobalConfig(models.Model):
     model_name = models.CharField(
         _('模型名称'),
         max_length=100,
-        default='qwen3-vl-emb-2b',
+        default='BAAI/bge-m3',
         help_text=_('具体的嵌入模型名称')
     )
 
@@ -79,7 +79,7 @@ class KnowledgeGlobalConfig(models.Model):
     reranker_model_name = models.CharField(
         _('Reranker模型名称'),
         max_length=100,
-        default='Qwen3-VL-Reranker-2B',
+        default='bge-reranker-v2-m3',
         blank=True,
         help_text=_('Reranker模型名称')
     )

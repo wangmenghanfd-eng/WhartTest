@@ -8,8 +8,8 @@ UI自动化执行器 - 主入口
     python main.py --config config.toml
     
     # 使用命令行参数（覆盖配置文件）
-    python main.py --server ws://localhost:8000/ws/ui/actuator/
-    python main.py --server ws://localhost:8000/ws/ui/actuator/ --id my-actuator
+    python main.py --server ws://localhost:8912/ws/ui/actuator/
+    python main.py --server ws://localhost:8912/ws/ui/actuator/ --id my-actuator
     
     # 打包成 exe 后运行
     WHartTest_Actuator.exe --gui
@@ -52,12 +52,12 @@ class Config:
     
     def __init__(self):
         # 默认配置
-        self.ws_url = "ws://127.0.0.1:8000/ws/ui/actuator/"
-        self.api_url = "http://127.0.0.1:8000"
+        self.ws_url = "ws://127.0.0.1:8912/ws/ui/actuator/"
+        self.api_url = "http://127.0.0.1:8912"
         # 打包成 exe 时默认启用 GUI 登录，开发模式默认关闭
         self.use_gui = getattr(sys, 'frozen', False)
         self.api_username = "admin"
-        self.api_password = "admin123"
+        self.api_password = "admin123456"
         self.actuator_id: str | None = None
         self.actuator_name: str | None = None
         self.actuator_description: str | None = None
@@ -111,6 +111,7 @@ class Config:
         
         # 执行器配置
         if 'actuator' in data:
+            self.actuator_id = data['actuator'].get('id', self.actuator_id)
             self.actuator_name = data['actuator'].get('name')
             self.actuator_description = data['actuator'].get('description')
         

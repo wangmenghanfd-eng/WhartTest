@@ -138,6 +138,7 @@ const loading = ref(false)
 const submitting = ref(false)
 const pageData = ref<UiPage[]>([])
 const moduleOptions = ref<UiModule[]>([])
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 const modalVisible = ref(false)
 const elementDrawerVisible = ref(false)
 const isEdit = ref(false)
@@ -340,6 +341,11 @@ watch(projectId, () => {
     fetchPages()
   }
 }, { immediate: true })
+
+watch(() => filters.search, () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(onSearch, 300)
+})
 
 const refresh = () => {
   fetchModules()

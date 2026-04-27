@@ -30,7 +30,7 @@ class KnowledgeGlobalConfigSecretHandlingTests(TestCase):
         self.config.reranker_service = "custom"
         self.config.reranker_api_url = "https://reranker.example.com/v1/rerank"
         self.config.reranker_api_key = "reranker-real-secret"
-        self.config.reranker_model_name = "Qwen3-VL-Reranker-2B"
+        self.config.reranker_model_name = "bge-reranker-v2-m3"
         self.config.save()
 
     def test_put_global_config_keeps_real_secret_when_api_key_is_omitted(self):
@@ -40,7 +40,7 @@ class KnowledgeGlobalConfigSecretHandlingTests(TestCase):
             "model_name": "baai/bge-m3",
             "reranker_service": "custom",
             "reranker_api_url": "https://reranker.example.com/v1/rerank",
-            "reranker_model_name": "Qwen3-VL-Reranker-2B",
+            "reranker_model_name": "bge-reranker-v2-m3",
             "chunk_size": 1200,
             "chunk_overlap": 150,
         }

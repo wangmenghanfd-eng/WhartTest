@@ -19,6 +19,8 @@ TEST_CASE_EXECUTION_INSTRUCTION = """
 7. 验证页面跳转/登录成功时，优先用 URL 检查，禁止用 `text=` 正则匹配跳转目标：
    - 推荐：`await page.waitForURL('**/secure');` 或 `console.log(page.url());`
    - 必须用文本匹配时，正则须加 `/i` 标志忽略大小写，例如 `text=/secure area/i`，禁止写 `text=/secure/`。
+8. 默认不要在 `page.goto()` 中使用 `waitUntil: 'networkidle'`。很多站点会持续发请求，容易造成无意义的导航超时。优先 `page.goto()` 后配合 `waitForSelector` / `waitForURL`。
+9. 负向场景（如用户名错误、密码错误）先检查 `page.url()` 和页面实际文本，再写断言；禁止先凭空猜测完整报错文案后直接 `waitForSelector('text=...')` 30 秒。
 
 推荐动作：
 - `python whart_tools.py --action get_testcase_detail --project_id <项目ID> --case_id <用例ID>`

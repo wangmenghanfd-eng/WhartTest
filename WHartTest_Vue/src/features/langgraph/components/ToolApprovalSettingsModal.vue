@@ -11,14 +11,14 @@
     <div class="approval-settings">
       <a-alert type="info" class="info-alert">
         <template #icon><icon-info-circle /></template>
-        设置后，系统将自动应用您的审批选择，无需每次手动确认。
+        设置后，系统会自动应用您的审批选择。`read_skill_content` 属于只读说明查看，`execute_skill_script` 属于高权限执行工具，可读取平台数据、执行浏览器动作、上传截图。
       </a-alert>
 
       <a-spin :loading="loading" tip="加载中...">
         <div v-if="toolGroups.length === 0 && !loading" class="empty-state">
           <icon-empty />
           <p>暂无需要审批的工具</p>
-          <p class="empty-hint">请先添加 MCP 配置并同步工具</p>
+          <p class="empty-hint">当前没有可配置的内置技能或 MCP 工具</p>
         </div>
 
         <div v-else class="tool-groups">

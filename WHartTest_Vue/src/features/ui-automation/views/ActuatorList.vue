@@ -33,8 +33,8 @@
     >
       <template #columns>
         <a-table-column title="状态" :width="70" align="center">
-          <template #cell>
-            <div class="online-dot"></div>
+          <template #cell="{ record }">
+            <div :class="['status-dot', record.is_open ? 'status-dot-online' : 'status-dot-paused']"></div>
           </template>
         </a-table-column>
         <a-table-column title="名称" data-index="name" :width="160" />
@@ -47,24 +47,17 @@
           </template>
         </a-table-column>
         <a-table-column title="浏览器" data-index="browser_type" :width="100" />
-        <a-table-column title="无头模式" :width="90" align="center">
-          <template #cell="{ record }">
-            <a-tag :color="record.headless ? 'orangered' : 'green'" size="small">
-              {{ record.headless ? '是' : '否' }}
-            </a-tag>
-          </template>
-        </a-table-column>
         <a-table-column title="OPEN" :width="80" align="center">
           <template #cell="{ record }">
-            <a-switch v-model="record.is_open" size="small" disabled />
+            <a-switch
+              v-model="record.is_open"
+              size="small"
+              :loading="togglingId === record.id"
+              @change="(val) => handleToggleOpen(record, val)"
+            />
           </template>
         </a-table-column>
-        <a-table-column title="DEBUG" :width="80" align="center">
-          <template #cell="{ record }">
-            <a-switch v-model="record.debug" size="small" disabled />
-          </template>
-        </a-table-column>
-        <a-table-column title="连接时间" :width="170">
+        <a-table-column title="上线时间" :width="170">
           <template #cell="{ record }">
             <span class="time-text">{{ formatTime(record.connected_at) }}</span>
           </template>
@@ -76,6 +69,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { Message } from '@arco-design/web-vue'
 import { IconRefresh } from '@arco-design/web-vue/es/icon'
 import { actuatorApi, type ActuatorInfo } from '../api'
 
@@ -83,7 +77,9 @@ void IconRefresh
 
 const actuators = ref<ActuatorInfo[]>([])
 const loading = ref(false)
+const togglingId = ref<string | null>(null)
 let refreshTimer: ReturnType<typeof setInterval> | null = null
+const REFRESH_INTERVAL_MS = 30000
 
 const loadActuators = async () => {
   loading.value = true
@@ -98,6 +94,43 @@ const loadActuators = async () => {
     actuators.value = []
   } finally {
     loading.value = false
+  }
+}
+
+const stopRefreshTimer = () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+
+const startRefreshTimer = () => {
+  stopRefreshTimer()
+  if (!document.hidden) {
+    refreshTimer = setInterval(loadActuators, REFRESH_INTERVAL_MS)
+  }
+}
+
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    stopRefreshTimer()
+    return
+  }
+  void loadActuators()
+  startRefreshTimer()
+}
+
+const handleToggleOpen = async (record: ActuatorInfo, val: boolean) => {
+  togglingId.value = record.id
+  try {
+    await actuatorApi.toggleOpen(record.id, val)
+    record.is_open = val
+    Message.success(val ? `执行器 ${record.name} 已开启接单` : `执行器 ${record.name} 已暂停接单`)
+  } catch {
+    record.is_open = !val
+    Message.error('操作失败，请重试')
+  } finally {
+    togglingId.value = null
   }
 }
 
@@ -137,15 +170,14 @@ const refresh = () => loadActuators()
 defineExpose({ refresh })
 
 onMounted(() => {
-  loadActuators()
-  // 每30秒刷新一次
-  refreshTimer = setInterval(loadActuators, 30000)
+  void loadActuators()
+  startRefreshTimer()
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onUnmounted(() => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer)
-  }
+  stopRefreshTimer()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 
@@ -182,13 +214,21 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
-.online-dot {
+.status-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot-online {
   background: #00b42a;
   box-shadow: 0 0 8px rgba(0, 180, 42, 0.5);
-  display: inline-block;
+}
+
+.status-dot-paused {
+  background: #ffb400;
+  box-shadow: 0 0 8px rgba(255, 180, 0, 0.5);
 }
 
 .time-text {

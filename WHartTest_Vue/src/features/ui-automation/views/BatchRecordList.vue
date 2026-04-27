@@ -9,7 +9,19 @@
           style="width: 120px; margin-right: 12px"
           @change="onSearch"
         >
-          <a-option v-for="(label, key) in BATCH_STATUS_LABELS" :key="key" :value="Number(key)">{{ label }}</a-option>
+          <a-option v-for="item in batchStatusFilterOptions" :key="item.value" :value="item.value">
+            {{ item.label }}
+          </a-option>
+        </a-select>
+        <a-select
+          v-model="filters.trigger_type"
+          placeholder="触发类型"
+          allow-clear
+          style="width: 120px; margin-right: 12px"
+          @change="onSearch"
+        >
+          <a-option value="manual">手动执行</a-option>
+          <a-option value="scheduled">定时执行</a-option>
         </a-select>
         <a-button type="outline" @click="onSearch">
           <template #icon><icon-refresh /></template>
@@ -30,7 +42,7 @@
     >
       <template #status="{ record }">
         <a-tag :color="statusColors[record.status as BatchExecutionStatus]">
-          {{ BATCH_STATUS_LABELS[record.status as BatchExecutionStatus] ?? '未知' }}
+          {{ getBatchStatusText(record) }}
         </a-tag>
       </template>
       <template #progress="{ record }">
@@ -40,7 +52,10 @@
           :show-text="false"
           size="small"
         />
-        <span class="progress-text">{{ record.passed_cases + record.failed_cases }}/{{ record.total_cases }}</span>
+        <span class="progress-text">
+          已完成 {{ record.passed_cases + record.failed_cases }}/{{ record.total_cases }}
+          · 成功 {{ record.passed_cases }} / 失败 {{ record.failed_cases }}
+        </span>
       </template>
       <template #success_rate="{ record }">
         <span :style="{ color: record.success_rate >= 80 ? 'green' : record.success_rate >= 50 ? 'orange' : 'red' }">
@@ -84,7 +99,7 @@
           <a-descriptions-item label="执行人">{{ currentRecord.executor_name ?? '-' }}</a-descriptions-item>
           <a-descriptions-item label="执行状态">
             <a-tag :color="statusColors[currentRecord.status as BatchExecutionStatus]">
-              {{ BATCH_STATUS_LABELS[currentRecord.status as BatchExecutionStatus] ?? '未知' }}
+              {{ getBatchStatusText(currentRecord) }}
             </a-tag>
           </a-descriptions-item>
           <a-descriptions-item label="成功率">
@@ -117,7 +132,9 @@
             {{ r.duration?.toFixed(2) ?? '-' }}s
           </template>
           <template #error_message="{ record: r }">
-            <span v-if="r.error_message" class="error-text">{{ r.error_message }}</span>
+            <a-tooltip v-if="r.error_message" :content="r.error_message">
+              <span class="error-text ellipsis-inline">{{ r.error_message }}</span>
+            </a-tooltip>
             <span v-else>-</span>
           </template>
           <template #expand-row="{ record: r }">
@@ -149,6 +166,12 @@
                       fit="cover"
                       :preview="true"
                     />
+                    <span v-else>-</span>
+                  </template>
+                  <template #step_message="{ record: step }">
+                    <a-tooltip v-if="step.message" :content="step.message" position="top">
+                      <span class="step-message-text">{{ step.message }}</span>
+                    </a-tooltip>
                     <span v-else>-</span>
                   </template>
                 </a-table>
@@ -187,6 +210,7 @@ const currentRecord = ref<UiBatchExecutionRecord | null>(null)
 
 const filters = reactive({
   status: undefined as number | undefined,
+  trigger_type: undefined as string | undefined,
 })
 const pagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true, showPageSize: true })
 
@@ -197,6 +221,12 @@ const statusColors: Record<BatchExecutionStatus, string> = {
   3: 'orange',
   4: 'red',
 }
+
+const batchStatusFilterOptions = [
+  { value: 2, label: BATCH_STATUS_LABELS[2] },
+  { value: 3, label: BATCH_STATUS_LABELS[3] },
+  { value: 4, label: BATCH_STATUS_LABELS[4] },
+]
 
 const execStatusColors: Record<ExecutionStatus | 4, string> = {
   0: 'gray',
@@ -209,8 +239,8 @@ const execStatusColors: Record<ExecutionStatus | 4, string> = {
 const columns = [
   { title: 'ID', dataIndex: 'id', width: 70, align: 'center' as const },
   { title: '批次名称', dataIndex: 'name', ellipsis: true, tooltip: true, width: 200 },
-  { title: '状态', slotName: 'status', width: 100, align: 'center' as const },
-  { title: '执行进度', slotName: 'progress', width: 150, align: 'center' as const },
+  { title: '状态', slotName: 'status', width: 150, align: 'center' as const },
+  { title: '执行进度', slotName: 'progress', width: 260, align: 'center' as const },
   { title: '成功率', slotName: 'success_rate', width: 80, align: 'center' as const },
   { title: '时长', slotName: 'duration', width: 90, align: 'center' as const },
   { title: '创建时间', slotName: 'created_at', width: 170, align: 'center' as const },
@@ -222,7 +252,7 @@ const detailColumns = [
   { title: '用例名称', dataIndex: 'test_case_name', ellipsis: true },
   { title: '状态', slotName: 'status', width: 80 },
   { title: '时长', slotName: 'duration', width: 80 },
-  { title: '错误信息', slotName: 'error_message', ellipsis: true, width: 200 },
+  { title: '错误信息', slotName: 'error_message', ellipsis: true, tooltip: true, width: 240 },
 ]
 
 const stepColumns = [
@@ -231,7 +261,7 @@ const stepColumns = [
   { title: '状态', slotName: 'step_status', width: 70 },
   { title: '时长', slotName: 'step_duration', width: 70 },
   { title: '截图', slotName: 'step_screenshot', width: 80 },
-  { title: '消息', dataIndex: 'message', ellipsis: true },
+  { title: '消息', slotName: 'step_message', ellipsis: true },
 ]
 
 const formatTime = (time: string) => {
@@ -247,11 +277,23 @@ const getProgressStatus = (record: UiBatchExecutionRecord) => {
   return 'warning'
 }
 
+const getBatchStatusText = (record: UiBatchExecutionRecord) => {
+  if (record.status === 0) return '待执行'
+  if (record.status === 1) {
+    return `执行中 ${record.passed_cases + record.failed_cases}/${record.total_cases}`
+  }
+  return `成功 ${record.passed_cases} / 失败 ${record.failed_cases}`
+}
+
 const fetchRecords = async () => {
   if (!projectId.value) return
   loading.value = true
   try {
-    const res = await batchRecordApi.list({ project: projectId.value, status: filters.status })
+    const res = await batchRecordApi.list({
+      project: projectId.value,
+      status: filters.status,
+      trigger_type: filters.trigger_type,
+    })
     const { items, count } = extractPaginationData(res)
     recordData.value = items
     pagination.total = count
@@ -333,7 +375,8 @@ watch(projectId, () => {
 }
 
 .progress-text {
-  margin-left: 8px;
+  display: block;
+  margin-top: 4px;
   font-size: 12px;
   color: var(--color-text-3);
 }
@@ -341,6 +384,24 @@ watch(projectId, () => {
 .error-text {
   color: rgb(var(--red-6));
   font-size: 12px;
+}
+
+.ellipsis-inline {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.step-message-text {
+  display: inline-block;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 
 .expand-content {

@@ -515,6 +515,27 @@ def get_skill_tools(
             f"[execute_skill_script] skill_name={skill_name}, command={command}"
         )
 
+        # 在测试用例执行模式下，禁止运行安装/环境配置命令
+        _FORBIDDEN_CMD_PREFIXES = (
+            "npx playwright install",
+            "npm install",
+            "pip install",
+            "apt-get install",
+            "apt install",
+        )
+        if current_test_case_id:
+            normalized_cmd = command.strip().lower()
+            for forbidden in _FORBIDDEN_CMD_PREFIXES:
+                if normalized_cmd.startswith(forbidden):
+                    logger.warning(
+                        f"[execute_skill_script] 拦截危险命令: {command!r}"
+                    )
+                    return (
+                        f"错误: 在测试用例执行模式下禁止运行安装命令 '{forbidden}'。"
+                        f"若 Playwright 浏览器缺失，请联系管理员重建容器。"
+                        f"请继续执行测试步骤，不要尝试安装环境。"
+                    )
+
         try:
             skill = Skill.objects.filter(name=skill_name, is_active=True).first()
 
@@ -545,7 +566,12 @@ def get_skill_tools(
 
             case_dir_key = None
             if current_test_case_id:
-                case_dir_key = str(current_test_case_id)
+                if current_chat_session_id:
+                    # 加入 session 后缀，防止同一 case 并发执行时互相清空截图目录
+                    safe_suffix = current_chat_session_id[-8:]
+                    case_dir_key = f"{current_test_case_id}_{safe_suffix}"
+                else:
+                    case_dir_key = str(current_test_case_id)
             elif session_id:
                 case_dir_key = session_id
 

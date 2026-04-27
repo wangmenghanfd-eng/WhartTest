@@ -49,6 +49,13 @@ def execute_scheduled_task(self, task_id: int, trigger_type: str = 'scheduled'):
             if not ui_case_ids:
                 raise ValueError("未关联任何 UI 自动化用例")
             append_log(log_lines, f"关联用例数: {len(ui_case_ids)}")
+            logger.info(
+                "定时任务触发 UI 自动化批量执行: task_id=%s, name=%s, cases=%s, actuator_id=%s",
+                task.id,
+                task.name,
+                ui_case_ids,
+                task.actuator_id,
+            )
 
             # 通过内部 API 触发批量执行（API 会创建记录并通过 WebSocket 通知执行器）
             import requests
@@ -75,6 +82,51 @@ def execute_scheduled_task(self, task_id: int, trigger_type: str = 'scheduled'):
             batch_data = resp.json().get('data', {})
             append_log(log_lines, f"批量执行已触发: batch_id={batch_data.get('batch_id')}")
             append_log(log_lines, "任务已触发完成，等待 UI 自动化批量执行结束")
+            logger.info(
+                "UI 自动化批量执行已触发: task_id=%s, task_execution=%s, batch_id=%s",
+                task.id,
+                execution.execution_id,
+                batch_data.get('batch_id'),
+            )
+
+        elif task.module == ScheduledTask.TaskModule.API_AUTOMATION:
+            append_log(log_lines, "触发接口自动化执行...")
+            api_case_ids = list(task.api_testcases.values_list('id', flat=True))
+            if not api_case_ids:
+                raise ValueError("未关联任何接口自动化用例")
+            append_log(log_lines, f"关联接口用例数: {len(api_case_ids)}")
+
+            from api_automation.models import ApiBatchExecutionRecord, ApiExecutionRecord
+            from api_automation.tasks import execute_api_batch_task
+
+            batch = ApiBatchExecutionRecord.objects.create(
+                project=task.project,
+                name=f"定时任务-{task.name}",
+                status=0,
+                trigger_type='scheduled',
+                total_cases=len(api_case_ids),
+                executor=task.creator,
+                start_time=timezone.now(),
+            )
+            for case in task.api_testcases.all():
+                ApiExecutionRecord.objects.create(
+                    project=task.project,
+                    test_case=case,
+                    batch=batch,
+                    environment=case.environment,
+                    status=0,
+                    trigger_type='scheduled',
+                    executor=task.creator,
+                )
+            execute_api_batch_task.delay(batch.id)
+            append_log(log_lines, f"接口批量执行已触发: batch_id={batch.id}")
+            append_log(log_lines, "任务已触发完成，等待接口自动化批量执行结束")
+            logger.info(
+                "接口自动化批量执行已触发: task_id=%s, task_execution=%s, batch_id=%s",
+                task.id,
+                execution.execution_id,
+                batch.id,
+            )
 
         elif task.module == ScheduledTask.TaskModule.TEST_SUITE:
             append_log(log_lines, "触发测试套件执行...")

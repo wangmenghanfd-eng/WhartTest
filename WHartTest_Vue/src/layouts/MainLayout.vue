@@ -129,6 +129,11 @@
             <a href="#" @click="checkProjectAndNavigate($event, '/ui-automation')">UI自动化</a>
           </a-menu-item>
 
+          <a-menu-item key="api-automation" v-if="hasApiAutomationPermission">
+            <template #icon><icon-code-block /></template>
+            <a href="#" @click="checkProjectAndNavigate($event, '/api-automation')">接口自动化</a>
+          </a-menu-item>
+
           <a-menu-item key="task-center" v-if="hasTaskCenterPermission">
             <template #icon><icon-schedule /></template>
             <a href="#" @click="checkProjectAndNavigate($event, '/task-center')">任务中心</a>
@@ -343,6 +348,7 @@ const activeMenu = computed(() => {
   if (path.startsWith('/permissions')) return 'permissions';
   if (path.startsWith('/llm-configs')) return 'llm-configs';
   if (path.startsWith('/langgraph-chat')) return 'langgraph-chat';
+  if (path.startsWith('/api-automation')) return 'api-automation';
   if (path.startsWith('/task-center')) return 'task-center';
   if (path.startsWith('/knowledge-management')) return 'knowledge-management';
   if (path.startsWith('/api-keys')) return 'api-keys';
@@ -388,6 +394,13 @@ const hasUiAutomationPermission = computed(() => {
   return authStore.hasPermission('ui_automation.view_uimodule') ||
          authStore.hasPermission('ui_automation.view_uipage') ||
          authStore.hasPermission('ui_automation.view_uitestcase');
+});
+
+const hasApiAutomationPermission = computed(() => {
+  return user.value?.is_staff ||
+         authStore.hasPermission('api_automation.view_apimodule') ||
+         authStore.hasPermission('api_automation.view_apidefinition') ||
+         authStore.hasPermission('api_automation.view_apitestcase');
 });
 
 const hasKnowledgePermission = computed(() => {
@@ -829,7 +842,11 @@ onMounted(async () => {
   margin: 5px 5px 10px 10px;
   border-radius: 8px;
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.25), 0 0 4px rgba(0, 0, 0, 0.15);
-  height: auto; /* 让 flex 自动撑开 */
+  height: calc(100vh - 86px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .menu {
@@ -837,10 +854,12 @@ onMounted(async () => {
   color: #333333;
   border-right: none;
   border-radius: 8px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   text-align: left;
-  max-height: calc(100% - 50px);
+  max-height: none;
 }
 
 :deep(.arco-menu-light) {
@@ -995,9 +1014,8 @@ onMounted(async () => {
 }
 
 .sider-footer {
-  position: absolute;
-  bottom: 0;
   width: 100%;
+  flex-shrink: 0;
   padding: 10px 0;
   display: flex;
   justify-content: center;

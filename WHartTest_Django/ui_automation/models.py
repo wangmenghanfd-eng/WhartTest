@@ -15,6 +15,7 @@ UI 自动化数据模型
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 from projects.models import Project
 
@@ -298,6 +299,66 @@ class UiCaseStepsDetailed(models.Model):
         return f"{self.test_case.name} - {self.page_step.name}"
 
 
+class UiRecordingSession(models.Model):
+    """UI 自动化录制会话（草稿态）"""
+
+    TARGET_TYPE_CHOICES = [
+        ('page_step', _('页面步骤')),
+        ('test_case', _('测试用例')),
+    ]
+    STATUS_CHOICES = [
+        ('recording', _('录制中')),
+        ('processing', _('处理中')),
+        ('draft', _('草稿')),
+        ('materialized', _('已落库')),
+        ('failed', _('失败')),
+        ('cancelled', _('已取消')),
+    ]
+
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE,
+        related_name='ui_recording_sessions', verbose_name=_('所属项目')
+    )
+    module = models.ForeignKey(
+        UiModule, on_delete=models.PROTECT,
+        related_name='recording_sessions', verbose_name=_('所属模块')
+    )
+    page = models.ForeignKey(
+        UiPage, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='recording_sessions', verbose_name=_('所属页面')
+    )
+    target_type = models.CharField(_('目标类型'), max_length=20, choices=TARGET_TYPE_CHOICES)
+    name = models.CharField(_('录制名称'), max_length=255)
+    status = models.CharField(_('状态'), max_length=20, choices=STATUS_CHOICES, default='recording')
+    env_config = models.JSONField(_('环境配置快照'), default=dict, blank=True)
+    actuator_id = models.CharField(_('执行器ID'), max_length=128, blank=True, null=True)
+    executor = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='ui_recording_sessions', verbose_name=_('发起人')
+    )
+    base_url = models.TextField(_('基础URL'), blank=True, null=True)
+    raw_script = models.TextField(_('原始录制脚本'), blank=True, null=True)
+    raw_actions = models.JSONField(_('原始动作'), default=list, blank=True)
+    normalized_actions = models.JSONField(_('归一化动作'), default=list, blank=True)
+    preview_payload = models.JSONField(_('草稿预览'), default=dict, blank=True)
+    artifacts = models.JSONField(_('录制产物'), default=dict, blank=True)
+    generated_page_step_ids = models.JSONField(_('生成的页面步骤ID'), default=list, blank=True)
+    generated_test_case_id = models.IntegerField(_('生成的测试用例ID'), null=True, blank=True)
+    error_message = models.TextField(_('错误信息'), blank=True, null=True)
+    started_at = models.DateTimeField(_('开始时间'), default=timezone.now)
+    ended_at = models.DateTimeField(_('结束时间'), null=True, blank=True)
+    duration = models.FloatField(_('时长（秒）'), null=True, blank=True)
+
+    class Meta:
+        verbose_name = _('录制会话')
+        verbose_name_plural = _('录制会话')
+        ordering = ['-started_at']
+        db_table = 'ui_recording_session'
+
+    def __str__(self):
+        return f"{self.name} ({self.get_status_display()})"
+
+
 class UiBatchExecutionRecord(models.Model):
     """批量执行记录"""
     STATUS_CHOICES = [
@@ -307,7 +368,7 @@ class UiBatchExecutionRecord(models.Model):
         (3, _('部分失败')),
         (4, _('全部失败')),
     ]
-    TRIGGER_TYPE_CHOICES = [('manual', _('手动执行')), ('scheduled', _('定时执行')), ('api', _('API 触发'))]
+    TRIGGER_TYPE_CHOICES = [('manual', _('手动执行')), ('scheduled', _('定时执行'))]
 
     name = models.CharField(_('批次名称'), max_length=255)
     total_cases = models.IntegerField(_('用例总数'), default=0)
@@ -356,7 +417,7 @@ class UiBatchExecutionRecord(models.Model):
 class UiExecutionRecord(models.Model):
     """UI 测试执行记录"""
     STATUS_CHOICES = [(0, _('未执行')), (1, _('执行中')), (2, _('成功')), (3, _('失败')), (4, _('取消'))]
-    TRIGGER_TYPE_CHOICES = [('manual', _('手动执行')), ('scheduled', _('定时执行')), ('api', _('API 触发'))]
+    TRIGGER_TYPE_CHOICES = [('manual', _('手动执行')), ('scheduled', _('定时执行'))]
 
     batch = models.ForeignKey(
         UiBatchExecutionRecord, on_delete=models.CASCADE,

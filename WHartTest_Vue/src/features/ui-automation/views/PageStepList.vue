@@ -24,6 +24,10 @@
         />
       </div>
       <div class="action-buttons">
+        <a-button type="outline" style="margin-right: 12px" @click="showRecordingModal">
+          <template #icon><icon-settings /></template>
+          录制生成步骤
+        </a-button>
         <a-button type="primary" @click="showAddModal">
           <template #icon><icon-plus /></template>
           新增步骤
@@ -41,7 +45,11 @@
       @page-size-change="onPageSizeChange"
     >
       <template #page_name="{ record }">
-        <a-tag color="arcoblue">{{ record.page_name }}</a-tag>
+        <a-tooltip :content="record.page_name || '-'">
+          <span class="page-name-chip">
+            {{ record.page_name || '-' }}
+          </span>
+        </a-tooltip>
       </template>
       <template #status="{ record }">
         <a-tag :color="statusColors[record.status as ExecutionStatus]">
@@ -121,6 +129,13 @@
     >
       <StepDetailList v-if="currentPageStep" :page-step="currentPageStep" />
     </a-drawer>
+
+    <RecordingSessionModal
+      v-model:visible="recordingModalVisible"
+      :project-id="projectId"
+      :default-module-id="filters.module || props.selectedModuleId"
+      default-target-type="page_step"
+    />
   </div>
 </template>
 
@@ -133,6 +148,7 @@ import { pageStepsApi, pageApi, moduleApi } from '../api'
 import type { UiPageSteps, UiPageStepsForm, UiPage, UiModule, ExecutionStatus } from '../types'
 import { STATUS_LABELS, extractListData, extractPaginationData, extractResponseData } from '../types'
 import StepDetailList from './StepDetailList.vue'
+import RecordingSessionModal from '../components/RecordingSessionModal.vue'
 
 const props = defineProps<{
   selectedModuleId?: number
@@ -146,8 +162,10 @@ const submitting = ref(false)
 const pageStepData = ref<UiPageSteps[]>([])
 const pageOptions = ref<UiPage[]>([])
 const moduleOptions = ref<UiModule[]>([])
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 const modalVisible = ref(false)
 const detailDrawerVisible = ref(false)
+const recordingModalVisible = ref(false)
 const isEdit = ref(false)
 const currentPageStep = ref<UiPageSteps | null>(null)
 const formRef = ref()
@@ -181,7 +199,7 @@ const statusColors: Record<ExecutionStatus, string> = { 0: 'gray', 1: 'blue', 2:
 
 const columns = [
   { title: 'ID', dataIndex: 'id', width: 70, align: 'center' as const },
-  { title: '页面', slotName: 'page_name', width: 120, align: 'center' as const },
+  { title: '页面', slotName: 'page_name', width: 180, align: 'center' as const },
   { title: '步骤名称', dataIndex: 'name', ellipsis: true, tooltip: true, width: 150, align: 'center' as const },
   { title: '状态', slotName: 'status', width: 90, align: 'center' as const },
   { title: '操作数', slotName: 'step_count', width: 80, align: 'center' as const },
@@ -374,6 +392,20 @@ const viewStepDetails = (record: UiPageSteps) => {
   detailDrawerVisible.value = true
 }
 
+const showRecordingModal = async () => {
+  if (!projectId.value) {
+    Message.warning('请先选择项目')
+    return
+  }
+  if (!moduleOptions.value.length) {
+    await fetchModules()
+  }
+  if (!pageOptions.value.length) {
+    await fetchPages()
+  }
+  recordingModalVisible.value = true
+}
+
 watch(() => props.selectedModuleId, (newVal) => {
   filters.module = newVal
   pagination.current = 1
@@ -389,6 +421,11 @@ watch(projectId, () => {
     fetchPageSteps()
   }
 }, { immediate: true })
+
+watch(() => filters.search, () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(onSearch, 300)
+})
 
 const refresh = () => {
   fetchPages()
@@ -412,5 +449,20 @@ defineExpose({ refresh })
 .search-box {
   display: flex;
   align-items: center;
+}
+
+.page-name-chip {
+  display: inline-block;
+  max-width: 150px;
+  padding: 4px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 4px;
+  background: rgb(var(--arcoblue-1));
+  color: rgb(var(--arcoblue-6));
+  font-size: 12px;
+  line-height: 1.4;
+  vertical-align: middle;
 }
 </style>

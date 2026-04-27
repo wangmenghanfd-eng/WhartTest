@@ -1,6 +1,6 @@
 # WHartTest 项目上下文交接文档
 
-> 给新会话 Cascade 使用——读完此文即可接手，无需再重新扫描整个工程。最后更新：2026-04-20。
+> 给新会话 Cascade 使用——读完此文即可接手，无需再重新扫描整个工程。最后更新：2026-04-27。
 
 ---
 
@@ -92,16 +92,17 @@ WHartTest/
 
 ---
 
-## 4. 当前验证状态（2026-04-20 已验证通过）
+## 4. 当前验证状态（2026-04-27 已验证通过）
 
 | 模块 | 状态 | 备注 |
 |------|------|------|
 | LLM 对话 | ✅ | 使用 SiliconFlow Qwen2.5-7B（免费） |
 | 知识库 | ✅ | 创建/上传/Embedding/RAG 查询全链路通 |
 | 需求管理 | ✅ | 已有 "Expand Testing" 样例文档 |
-| UI 自动化 | ✅ | 8条执行记录（6成2败） |
+| UI 自动化（AI 模式） | ✅ | AI 驱动 Playwright 测试通过（the-internet.herokuapp.com 登录用例） |
+| UI 自动化（执行器模式） | ✅ | Actuator 本地启动 + WebSocket 派单 + OPEN 任务调度控制 |
 | 测试管理 | ✅ | 6条测试用例 |
-| 任务中心 | ⚠️ | 页面正常，**定时任务不自动触发（时区/时间窗问题，待修，见 §6.5）** |
+| 任务中心 | ✅ | 时区修复 + 立即执行 + 触发失败逻辑均正常 |
 | Playwright-MCP | ✅ | 容器可运行，已修复 MODULE_NOT_FOUND |
 
 ---
@@ -137,6 +138,55 @@ test: [ "CMD", "python", "-c", "import socket; s=socket.create_connection(('loca
 ```
 下次 `docker-compose up -d` 重启生效。
 
+### 5.6 AI 驱动 Playwright 测试稳定性修复（2026-04-21） ✅
+
+**踩过的坑及修复**：
+
+1. **AI 反复执行 `npx playwright install`** — 在 `orchestrator_integration/builtin_tools/skill_tools.py` 加 `_FORBIDDEN_CMD_PREFIXES` 拦截安装类命令
+2. **并发用例互相清空截图目录** — 同 skill_tools.py，`case_dir_key` 加 chat_session_id 后缀隔离
+3. **Playwright 浏览器容器重建后丢失** — `docker-compose.local.yml` 加 named volume `playwright-browsers:/root/.cache/ms-playwright`
+4. **截图历次累积** — `testcases/tasks.py` 每次执行前清空旧截图
+5. **AI 输出不调用 `finish_test_case_execution`** — `agent_loop_view.py` 提示词 Rule 9 强化 `waitForURL` 后必须立刻 finish
+6. **`waitForURL` 成功但被判失败** — `agent_loop_view.py` 信号提取改为：`secure_path` 单信号即可判 success；`clear_success` 优先于 `clear_failure`；只从 playwright-skill 工具结果提取信号（避免 whart-test 元数据假阳性）
+7. **`whart_tools.py` 参数歧义错误** — `argparse.ArgumentParser(allow_abbrev=False)` 关闭缩写匹配
+
+### 5.7 Actuator 桌面执行器修复（2026-04-21） ✅
+
+**症状**：`python main.py` 启动即挂。
+
+**根因 + 修复**：
+
+| 问题 | 修复 |
+|------|------|
+| `use_gui = true` 但 PySide6 未装 → ImportError | `WHartTest_Actuator/config.toml` 改 `use_gui = false` |
+| API/WS 端口写的 `8000`（容器内端口）但执行器跑在主机 | 改为 `ws://127.0.0.1:8912/ws/ui/actuator/` 和 `http://127.0.0.1:8912` |
+| 默认 `python3` 是 3.9，代码用了 `str \| None`（3.10+ 语法） | **必须用 `python3.11 main.py` 启动** |
+
+**正确启动命令**：
+```bash
+cd /Users/wangmenghan/WHartTest/WHartTest_Actuator
+python3.11 main.py
+```
+
+### 5.8 执行器任务调度控制（2026-04-21） ✅
+
+**目标**：让前端 OPEN 开关真实生效，关闭后执行器不再收新任务。
+
+**改动**：
+
+| 文件 | 改动 |
+|------|------|
+| `ui_automation/consumers.py` | `SocketUserManager.get_actuator()` 过滤 `is_open=True` 的执行器才返回 |
+| `ui_automation/views.py` | 新增 `POST /api/ui-automation/actuators/toggle_open/`，body `{actuator_id, is_open}` |
+| `WHartTest_Vue/src/features/ui-automation/api/index.ts` | 新增 `actuatorApi.toggleOpen()` |
+| `WHartTest_Vue/src/features/ui-automation/views/ActuatorList.vue` | OPEN switch 移除 `disabled`，可点击切换；DEBUG 仍 disabled（执行器侧未实现） |
+
+**生效路径覆盖**：
+- UI 自动化手动执行（WebSocket）：`handle_execute_*` → `get_actuator()` → 拒绝
+- 定时任务立即执行（HTTP）：`trigger_batch_execution` → `get_actuator()` → 返回 503 "执行器 xxx 已暂停接单" → Celery `TaskExecution` 标记 FAILED → 前端记录显示"触发失败"
+
+**注意**：状态保存在 backend 内存（`consumer.actuator_info['is_open']`），执行器重连后会被执行器上报值覆盖（默认 True）。
+
 ---
 
 ## 6. 已知问题 / 待办
@@ -156,9 +206,8 @@ test: [ "CMD", "python", "-c", "import socket; s=socket.create_connection(('loca
 ### 6.4 未验证但存在的模块
 - 批量执行（UI 自动化）
 - 公共数据、环境配置（UI 自动化）
-- 执行器（Actuator）桌面端
 - Prompts 管理
-- 远程 MCP Ping/同步（具体 UI 路径未走）
+- 远程 MCP Ping/同步（具体 UI 路径未走)
 
 ### 6.5 ✅ **定时任务时区错位 — 已修复（2026-04-21，方案 B）**
 
@@ -185,6 +234,11 @@ c = pt.crontab
 print('crontab:', c.hour, c.minute, c.timezone)
 "
 ```
+
+### 6.6 执行器相关待办（可选）
+- 前端 `TestCaseList.vue` 关闭执行器时的提示语可优化（当前是 "没有可用的执行器"，可改为 "执行器已暂停接单，请先开启"）
+- DEBUG 字段目前纯展示，执行器/后端均无逻辑使用——可考虑移除，或实现 debug 模式
+- 执行器重连时 `is_open` 会被执行器自身上报值（默认 True）覆盖前端的设置——若要保留服务端状态需扩展 SET_ACTUATOR_INFO 协议
 
 ---
 
@@ -247,7 +301,9 @@ print(c.embedding_service, c.api_base_url, c.model_name)
 - **风格**：简洁、直接，给结论不啰嗦
 - **验证方式**：优先用 Playwright MCP（`mcp0_browser_*` 工具）进到前端点一遍，而不是只看代码
 - **修改原则**：除非明确要改，否则不动与任务无关的文件；bug 就修根因，不要加补丁
-- **当前待办优先级**：§6.5 的定时任务时区问题是用户最关心的
+- **代码注释**：除非明确要求，不要主动加注释
+- **Git 工作流**：用户在 `dev` 分支开发测试，验证通过后自己手动合 master
+- **远程仓库**：https://github.com/wangmenghanfd-eng/WhartTest.git
 
 ---
 
@@ -256,4 +312,6 @@ print(c.embedding_service, c.api_base_url, c.model_name)
 1. 读这份文档
 2. 执行 `docker ps` 确认服务都健康
 3. 针对用户请求定位到 §7 的对应文件，不用重新扫描整个仓库
-4. 如果用户新开会话后第一句是"继续定时任务问题"——直接进入 §6.5 的修复方案 B 或 C
+4. 若是 Actuator 启动问题 → §5.7（重点：python3.11、端口 8912、use_gui=false）
+5. 若是 UI 自动化执行器调度 → §5.8
+6. 若是 AI 驱动 Playwright 测试问题 → §5.6

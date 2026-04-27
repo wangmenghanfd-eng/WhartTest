@@ -17,6 +17,7 @@ from executor import (
     PlaywrightExecutor, StepConfig, PageStepConfig, TestCaseConfig
 )
 from data_processor import reset_data_processor, DataProcessor
+from recorder import CodegenRecordingManager
 
 logger = logging.getLogger('actuator')
 
@@ -26,7 +27,7 @@ class TaskConsumer:
     
     def __init__(self, ws_client: WebSocketClient, api_base_url: str, 
                  config: Any = None,
-                 api_username: str = 'admin', api_password: str = 'admin123'):
+                 api_username: str = 'admin', api_password: str = 'admin123456'):
         self.ws_client = ws_client
         self.api_base_url = api_base_url.rstrip('/')
         self.api_username = api_username
@@ -56,6 +57,7 @@ class TaskConsumer:
                 'trace_sources': getattr(config, 'trace_sources', False),
             }
         self.executor = PlaywrightExecutor(**executor_config)
+        self.recorder = CodegenRecordingManager(config)
         self.task_queue: asyncio.Queue[QueueModel] = asyncio.Queue()
         self._stop_event = asyncio.Event()
         self._current_user: Optional[str] = None
@@ -66,6 +68,23 @@ class TaskConsumer:
             getattr(config, 'trace_dir', './data/traces') if config else './data/traces',
             max_age_days=7
         )
+
+    async def _apply_env_execution_options(self, env_config: Optional[dict]) -> None:
+        """让环境配置成为执行时浏览器选项的唯一业务口径。"""
+        if not env_config or 'headless' not in env_config:
+            return
+        desired_headless = bool(env_config.get('headless'))
+        if self.executor.headless == desired_headless:
+            return
+
+        logger.info(
+            "按环境配置切换无头模式: %s -> %s",
+            self.executor.headless,
+            desired_headless,
+        )
+        # 持久化浏览器如果已经启动，需要重启后新 headless 才能生效。
+        await self.executor.close()
+        self.executor.headless = desired_headless
 
     def _cleanup_expired_files(self, screenshot_dir: str, trace_dir: str, max_age_days: int = 7):
         """清理超过指定天数的本地临时文件"""
@@ -286,6 +305,8 @@ class TaskConsumer:
             UiSocketEnum.PAGE_STEPS: self.execute_page_steps,
             UiSocketEnum.TEST_CASE: self.execute_test_case,
             UiSocketEnum.TEST_CASE_BATCH: self.execute_batch,
+            UiSocketEnum.RECORD_START: self.start_recording,
+            UiSocketEnum.RECORD_STOP: self.stop_recording,
             UiSocketEnum.STOP_EXECUTION: self.stop_execution,
         }
         
@@ -326,6 +347,7 @@ class TaskConsumer:
         if env_config:
             base_url = env_config.get('base_url', '') or ''
             logger.info(f"使用环境配置: {env_config.get('name')}, base_url: {base_url}")
+        await self._apply_env_execution_options(env_config)
         
         # 构建配置，传入 base_url 和数据处理器
         config = self._build_page_step_config(page_step_data, base_url, data_processor)
@@ -416,6 +438,7 @@ class TaskConsumer:
             logger.info(f"环境配置已获取: name={env_config.get('name')}, base_url={env_config.get('base_url')}")
         else:
             logger.warning(f"未获取到环境配置 (env_config_id={env_config_id}, project_id={project_id})")
+        await self._apply_env_execution_options(env_config)
 
         # 初始化数据处理器，加载项目公共变量
         data_processor = await self._init_data_processor(project_id)
@@ -442,6 +465,7 @@ class TaskConsumer:
         result_data = result.model_dump()
         if batch_id:
             result_data['batch_id'] = batch_id
+        result_data['trigger_type'] = args.get('trigger_type', 'manual')
         # 添加执行人信息
         if executor_id:
             result_data['executor_id'] = executor_id
@@ -474,6 +498,7 @@ class TaskConsumer:
         # 预先获取所有用例数据并构建配置
         configs = []
         config_batch_map = {}  # case_id -> batch_id 映射
+        batch_env_config = None
 
         for case_id in case_ids:
             if self._stop_event.is_set():
@@ -492,6 +517,8 @@ class TaskConsumer:
                 env_config = await self._fetch_env_config(env_config_id)
             elif project_id:
                 env_config = await self._fetch_default_env_config(project_id)
+            if batch_env_config is None and env_config:
+                batch_env_config = env_config
 
             # 初始化数据处理器
             data_processor = await self._init_data_processor(project_id)
@@ -504,6 +531,7 @@ class TaskConsumer:
         if not configs:
             logger.warning("没有可执行的用例")
             return
+        await self._apply_env_execution_options(batch_env_config)
 
         # 定义结果回调 - 每个用例完成后立即发送结果
         async def on_result(result):
@@ -519,6 +547,7 @@ class TaskConsumer:
             result_data = result.model_dump()
             if batch_id:
                 result_data['batch_id'] = batch_id
+            result_data['trigger_type'] = args.get('trigger_type', 'manual')
             # 添加执行人信息
             if executor_id:
                 result_data['executor_id'] = executor_id
@@ -539,6 +568,67 @@ class TaskConsumer:
         )
 
         logger.info("批量执行完成")
+
+    async def start_recording(self, args: dict):
+        """开始浏览器录制"""
+        recording_id = args.get('recording_id')
+        if not recording_id:
+            logger.error("缺少 recording_id 参数")
+            return
+        try:
+            result = await self.recorder.start(
+                recording_id=recording_id,
+                start_url=args.get('base_url') or '',
+                name=args.get('name') or '',
+            )
+            await self.ws_client.send_result(
+                UiSocketEnum.RECORD_STATUS,
+                result,
+                self._current_user
+            )
+            logger.info("录制已启动: #%s", recording_id)
+        except Exception as exc:
+            logger.error("启动录制失败: %s", exc, exc_info=True)
+            await self.ws_client.send_result(
+                UiSocketEnum.RECORD_RESULT,
+                {
+                    'recording_id': recording_id,
+                    'status': 'failed',
+                    'raw_script': '',
+                    'artifacts': {},
+                    'final_url': args.get('base_url') or '',
+                    'error_message': str(exc),
+                    'cancelled': False,
+                },
+                self._current_user
+            )
+
+    async def stop_recording(self, args: dict):
+        """停止浏览器录制并回传草稿"""
+        recording_id = args.get('recording_id')
+        if not recording_id:
+            logger.error("缺少 recording_id 参数")
+            return
+        cancelled = bool(args.get('cancel'))
+        try:
+            result = await self.recorder.stop(recording_id=recording_id, cancelled=cancelled)
+        except Exception as exc:
+            logger.error("停止录制失败: %s", exc, exc_info=True)
+            result = {
+                'recording_id': recording_id,
+                'status': 'failed',
+                'raw_script': '',
+                'artifacts': {},
+                'final_url': '',
+                'error_message': str(exc),
+                'cancelled': cancelled,
+            }
+        await self.ws_client.send_result(
+            UiSocketEnum.RECORD_RESULT,
+            result,
+            self._current_user
+        )
+        logger.info("录制已结束: #%s", recording_id)
     
     async def stop_execution(self, args: dict):
         """停止执行"""
@@ -637,6 +727,7 @@ class TaskConsumer:
                 input_value = (
                     ope_value.get('text') or
                     ope_value.get('value') or
+                    ope_value.get('expected') or
                     ope_value.get('timeout') or  # wait 操作使用 timeout
                     ope_value.get('url') or      # goto 操作可能使用 url
                     ope_value.get('key') or      # press 操作可能使用 key
@@ -678,9 +769,14 @@ class TaskConsumer:
                 operation_type=detail.get('ope_key', ''),  # 操作类型如 click, type
                 locator_type=detail.get('locator_type', 'xpath'),  # 定位方式
                 locator_value=locator_value,  # 定位表达式
+                locator_type_2=detail.get('locator_type_2') or '',
+                locator_value_2=data_processor.replace(detail.get('locator_value_2') or '') if data_processor and detail.get('locator_value_2') else (detail.get('locator_value_2') or ''),
+                locator_type_3=detail.get('locator_type_3') or '',
+                locator_value_3=data_processor.replace(detail.get('locator_value_3') or '') if data_processor and detail.get('locator_value_3') else (detail.get('locator_value_3') or ''),
                 input_value=input_value,  # 输入值
                 description=detail.get('element_name', ''),  # 元素名称作为描述
                 wait_time=detail.get('wait_time', 0),
+                base_url=base_url,
             ))
         
         # 页面URL处理：支持相对路径与 base_url 拼接

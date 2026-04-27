@@ -116,6 +116,14 @@
         </div>
 
         <a-form :model="form" layout="vertical">
+          <a-alert
+            v-if="!loadingTemplates && templates.length === 0"
+            type="warning"
+            class="no-template-alert"
+          >
+            当前没有可用的导入模板，请先前往“模板管理”创建至少一个 `导入` 或 `导入/导出` 模板。
+          </a-alert>
+
           <!-- 选择模版 -->
           <a-form-item required>
             <template #label>
@@ -267,13 +275,16 @@ const canImport = computed(() => {
 const loadTemplates = async () => {
   loadingTemplates.value = true;
   try {
+    templates.value = [];
+
     const result = await getTemplateList({ template_type: 'import', is_active: true });
     if (result.success && result.data) {
       templates.value = result.data;
-      const bothResult = await getTemplateList({ template_type: 'both', is_active: true });
-      if (bothResult.success && bothResult.data) {
-        templates.value = [...templates.value, ...bothResult.data];
-      }
+    }
+
+    const bothResult = await getTemplateList({ template_type: 'both', is_active: true });
+    if (bothResult.success && bothResult.data) {
+      templates.value = [...templates.value, ...bothResult.data];
     }
   } finally {
     loadingTemplates.value = false;
@@ -364,6 +375,10 @@ defineExpose({ open });
 .import-form {
   width: 100%;
   box-sizing: border-box;
+}
+
+.no-template-alert {
+  margin-bottom: 16px;
 }
 
 /* 隐藏上传列表中的开始按钮 */

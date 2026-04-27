@@ -6,6 +6,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from projects.models import Project
 from testcases.models import TestSuite
 from ui_automation.models import UiTestCase
+from api_automation.models import ApiTestCase
 from .utils import format_duration_value
 
 
@@ -24,10 +25,12 @@ class ScheduledTask(models.Model):
 
     class TaskModule(models.TextChoices):
         UI_AUTOMATION = 'ui_automation', _('UI 自动化')
+        API_AUTOMATION = 'api_automation', _('接口自动化')
         TEST_SUITE = 'test_suite', _('测试套件')
 
     class ExecutionTarget(models.TextChoices):
         ACTUATOR = 'actuator', _('执行器')
+        BACKEND = 'backend', _('后端执行')
 
     # 基本信息
     name = models.CharField(_('任务名称'), max_length=50)
@@ -59,6 +62,11 @@ class ScheduledTask(models.Model):
         UiTestCase, blank=True, related_name='scheduled_tasks',
         verbose_name=_('关联UI用例'),
         help_text=_('模块为"UI自动化"时选择要执行的用例')
+    )
+    api_testcases = models.ManyToManyField(
+        ApiTestCase, blank=True, related_name='scheduled_tasks',
+        verbose_name=_('关联接口用例'),
+        help_text=_('模块为"接口自动化"时选择要执行的用例')
     )
 
     # 调度配置

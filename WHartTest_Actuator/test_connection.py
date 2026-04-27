@@ -21,7 +21,7 @@ except ImportError:
 
 async def test_connection():
     """测试WebSocket连接"""
-    server_url = "ws://localhost:8000/ws/ui/actuator/"
+    server_url = "ws://localhost:8912/ws/ui/actuator/"
     
     print(f"正在连接: {server_url}")
     
@@ -75,7 +75,7 @@ async def test_executor_flow():
     print("\n测试执行器工作流程...")
     
     ws_client = WebSocketClient(
-        "ws://localhost:8000/ws/ui/actuator/",
+        "ws://localhost:8912/ws/ui/actuator/",
         "test-actuator"
     )
     

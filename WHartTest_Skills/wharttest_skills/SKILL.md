@@ -53,8 +53,20 @@ python whart_tools.py --action <action_name> [--参数名 参数值]
 
 **截图路径约定**：playwright-skill 保存的截图位于 `SCREENSHOT_DIR` 环境变量指定的目录。上传时只需传入文件名（无需路径），系统会自动从 `SCREENSHOT_DIR` 查找。
 
+**兼容参数说明**：
+- `--screenshot_path` 等价于 `--file_path`
+- `--screenshot_paths` 等价于 `--file_paths`
+- `--step` 等价于 `--step_number`
+
+推荐优先使用新参数名；如果模型误用了旧参数名，当前平台也会兼容处理。
+
 **单张上传**：`--file_path "case_11_step1.png"`
 **批量上传**：`--file_paths "step1.png,step2.png,step3.png"`（最多10张，逗号分隔）
+
+文件路径建议：
+- 优先传文件名，如 `case_11_step1.png`
+- 也可以传相对路径，如 `skill_runtime/screenshots/2/11/step1.png`
+- 不要传占位路径，如 `/path/to/screenshot.png`
 
 ## 功能测试执行时的职责边界
 

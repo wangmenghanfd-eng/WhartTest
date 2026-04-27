@@ -88,6 +88,10 @@
             批量删除{{ selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : '' }}
           </a-button>
         </a-popconfirm>
+        <a-button type="outline" style="margin-right: 12px" @click="showRecordingModal">
+          <template #icon><icon-thunderbolt /></template>
+          录制生成用例
+        </a-button>
         <a-button type="primary" @click="showAddModal">
           <template #icon><icon-plus /></template>
           新增用例
@@ -200,6 +204,13 @@
     >
       <CaseStepList v-if="currentTestCase" :test-case="currentTestCase" />
     </a-drawer>
+
+    <RecordingSessionModal
+      v-model:visible="recordingModalVisible"
+      :project-id="projectId"
+      :default-module-id="filters.module || props.selectedModuleId"
+      default-target-type="test_case"
+    />
   </div>
 </template>
 
@@ -213,6 +224,7 @@ import type { UiTestCase, UiTestCaseForm, UiModule, CaseLevel, ExecutionStatus, 
 import { STATUS_LABELS, extractListData, extractPaginationData, extractResponseData } from '../types'
 import { uiWebSocket, UiSocketEnum, type CaseResultModel } from '../services/websocket'
 import CaseStepList from './CaseStepList.vue'
+import RecordingSessionModal from '../components/RecordingSessionModal.vue'
 
 const props = defineProps<{
   selectedModuleId?: number
@@ -231,11 +243,13 @@ const testcaseData = ref<UiTestCase[]>([])
 const moduleOptions = ref<UiModule[]>([])
 const envConfigs = ref<UiEnvironmentConfig[]>([]) // 环境配置列表
 const actuators = ref<ActuatorInfo[]>([]) // 执行器列表
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 const selectedEnvConfig = ref<number | undefined>() // 选中的环境配置
 const selectedActuator = ref<string | undefined>() // 选中的执行器
 const selectedRowKeys = ref<number[]>([]) // 批量选中的用例ID
 const modalVisible = ref(false)
 const stepsDrawerVisible = ref(false)
+const recordingModalVisible = ref(false)
 const isEdit = ref(false)
 const currentTestCase = ref<UiTestCase | null>(null)
 const formRef = ref()
@@ -465,6 +479,21 @@ const viewSteps = (record: UiTestCase) => {
   stepsDrawerVisible.value = true
 }
 
+const showRecordingModal = async () => {
+  if (!projectId.value) {
+    Message.warning('请先选择项目')
+    return
+  }
+  if (!moduleOptions.value.length) {
+    await fetchModules()
+  }
+  if (!envConfigs.value.length) {
+    await fetchEnvConfigs()
+  }
+  await fetchActuators()
+  recordingModalVisible.value = true
+}
+
 const runTestCase = async (record: UiTestCase) => {
   // 先获取执行器列表
   await fetchActuators()
@@ -685,6 +714,11 @@ watch(projectId, async (newVal) => {
   }
 }, { immediate: true })
 
+watch(() => filters.search, () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(onSearch, 300)
+})
+
 const refresh = () => {
   fetchModules()
   fetchTestCases()
@@ -711,11 +745,60 @@ onUnmounted(() => {
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 12px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 .search-box {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+.action-buttons > *,
+.search-box > * {
+  margin-right: 0 !important;
+}
+
+@media (max-width: 1180px) {
+  .page-header {
+    flex-direction: column;
+  }
+
+  .search-box,
+  .action-buttons {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 960px) {
+  .action-buttons :deep(.arco-select) {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+
+  .action-buttons :deep(.arco-btn) {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .search-box :deep(.arco-select),
+  .search-box :deep(.arco-input-wrapper),
+  .action-buttons :deep(.arco-select),
+  .action-buttons :deep(.arco-btn) {
+    width: 100% !important;
+  }
 }
 </style>

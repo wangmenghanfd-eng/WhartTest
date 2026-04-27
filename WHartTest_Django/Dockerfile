@@ -210,6 +210,7 @@ RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 # 复制Django项目代码（仅复制必要的Python代码）
 COPY manage.py /app/
 COPY accounts/ /app/accounts/
+COPY api_automation/ /app/api_automation/
 COPY api_keys/ /app/api_keys/
 COPY knowledge/ /app/knowledge/
 COPY langgraph_integration/ /app/langgraph_integration/

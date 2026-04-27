@@ -178,7 +178,7 @@ export interface UiCaseStepsDetailed {
 }
 
 /** 触发类型 */
-export type TriggerType = 'manual' | 'scheduled' | 'api'
+export type TriggerType = 'manual' | 'scheduled'
 
 /** 执行记录 */
 export interface UiExecutionRecord {
@@ -186,6 +186,8 @@ export interface UiExecutionRecord {
   batch?: number
   test_case: number
   test_case_name?: string
+  test_case_module?: number
+  test_case_module_name?: string
   executor: number | null
   executor_name?: string
   status: ExecutionStatus | 4  // 含取消状态
@@ -231,6 +233,8 @@ export interface UiBatchExecutionRecord {
   duration?: number
   created_at: string
   success_rate?: number
+  completed_cases?: number
+  pending_cases?: number
   execution_records?: UiExecutionRecord[]
 }
 
@@ -357,6 +361,76 @@ export interface UiEnvironmentConfig extends TimeStampFields {
   is_default: boolean
   creator: number | null
   creator_name?: string
+}
+
+/** 录制目标类型 */
+export type UiRecordingTargetType = 'page_step' | 'test_case'
+
+/** 录制状态 */
+export type UiRecordingStatus = 'recording' | 'processing' | 'draft' | 'materialized' | 'failed' | 'cancelled'
+
+/** 录制动作 */
+export interface UiRecordingAction {
+  line_no?: number
+  operation: string
+  selector?: string
+  locator_type?: string
+  locator_value?: string
+  value?: string
+  description?: string
+}
+
+/** 录制草稿预览 */
+export interface UiRecordingPreview {
+  target_type: UiRecordingTargetType
+  unsupported_lines: string[]
+  warnings: string[]
+  summary: {
+    raw_action_count: number
+    unsupported_count: number
+    segment_count: number
+  }
+  page_steps: Array<{
+    index: number
+    name: string
+    page_name: string
+    url?: string
+    action_count: number
+    actions: UiRecordingAction[]
+  }>
+  test_case?: {
+    name: string
+    step_count: number
+  } | null
+}
+
+/** 录制会话 */
+export interface UiRecordingSession {
+  id: number
+  project: number
+  module: number
+  module_name?: string
+  page?: number | null
+  page_name?: string
+  target_type: UiRecordingTargetType
+  name: string
+  status: UiRecordingStatus
+  env_config: Record<string, unknown>
+  actuator_id?: string
+  executor?: number | null
+  executor_name?: string
+  base_url?: string
+  raw_script?: string
+  raw_actions: Array<{ line_no?: number; content: string }>
+  normalized_actions: UiRecordingAction[]
+  preview_payload: UiRecordingPreview
+  artifacts: Record<string, unknown>
+  generated_page_step_ids: number[]
+  generated_test_case_id?: number | null
+  error_message?: string
+  started_at: string
+  ended_at?: string | null
+  duration?: number | null
 }
 
 /** API 分页响应 */

@@ -15,6 +15,7 @@ class PromptType(models.TextChoices):
     CLARITY_ANALYSIS = 'clarity_analysis', _('清晰度分析')
     LOGIC_ANALYSIS = 'logic_analysis', _('逻辑分析')
     # 其他类型
+    TEST_CASE_GENERATION = 'test_case_generation', _('测试用例生成')
     TEST_CASE_EXECUTION = 'test_case_execution', _('测试用例执行')
     DIAGRAM_GENERATION = 'diagram_generation', _('图表生成')
 
@@ -31,6 +32,7 @@ class UserPrompt(models.Model):
         PromptType.FEASIBILITY_ANALYSIS,
         PromptType.CLARITY_ANALYSIS,
         PromptType.LOGIC_ANALYSIS,
+        PromptType.TEST_CASE_GENERATION,
         PromptType.TEST_CASE_EXECUTION,
         PromptType.DIAGRAM_GENERATION,
     ]
@@ -106,6 +108,7 @@ class UserPrompt(models.Model):
                     PromptType.FEASIBILITY_ANALYSIS.value,
                     PromptType.CLARITY_ANALYSIS.value,
                     PromptType.LOGIC_ANALYSIS.value,
+                    PromptType.TEST_CASE_GENERATION.value,
                     PromptType.TEST_CASE_EXECUTION.value,
                 ]),
                 name='unique_user_program_prompt_type'

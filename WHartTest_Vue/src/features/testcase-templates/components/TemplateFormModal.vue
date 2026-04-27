@@ -119,6 +119,9 @@
           <a-alert type="info" class="mapping-tip">
             将 Excel 列名映射到用例字段。带 * 的字段为必填。
           </a-alert>
+          <a-alert v-if="!hasSelectableHeaders" type="warning" class="mapping-tip">
+            当前模板没有可复用的样例文件来源，已切换为手动列名模式。可直接填写列名，或返回上一步上传样例文件后重新解析。
+          </a-alert>
 
           <a-form :model="form.field_mappings" layout="vertical">
             <a-row :gutter="16">
@@ -129,6 +132,7 @@
                     <span v-if="field.required" class="required-mark">*</span>
                   </template>
                   <a-select
+                    v-if="hasSelectableHeaders"
                     v-model="form.field_mappings[field.value]"
                     placeholder="请选择对应的 Excel 列"
                     allow-clear
@@ -141,20 +145,15 @@
                       请先在上一步解析表头或手动输入列名
                     </a-option>
                   </a-select>
+                  <a-input
+                    v-else
+                    v-model="form.field_mappings[field.value]"
+                    placeholder="请输入对应的 Excel 列名"
+                    allow-clear
+                  />
                 </a-form-item>
               </a-col>
             </a-row>
-
-            <!-- 手动输入列名 -->
-            <a-collapse v-if="parsedHeaders.length === 0">
-              <a-collapse-item header="手动输入 Excel 列名">
-                <a-input
-                  v-model="manualHeaders"
-                  placeholder="输入列名，用逗号分隔，如: 用例名称,模块,前置条件,步骤,预期结果"
-                  @blur="parseManualHeaders"
-                />
-              </a-collapse-item>
-            </a-collapse>
           </a-form>
         </div>
 
@@ -324,7 +323,11 @@ const sampleFileList = ref<FileItem[]>([]);
 const parsedHeaders = ref<string[]>([]);
 const sheetOptions = ref<{ value: string; label: string }[]>([]);
 const fieldOptions = ref<FieldOption[]>([]);
-const manualHeaders = ref('');
+const hasTemplateFile = ref(false);
+const hasParsedHeaders = computed(() => parsedHeaders.value.length > 0);
+const hasSelectableHeaders = computed(() => {
+  return hasParsedHeaders.value && (sampleFileList.value.length > 0 || hasTemplateFile.value);
+});
 
 // 等级转换数据
 const levelTransformData = ref<{ input: string; output: string }[]>([
@@ -374,12 +377,6 @@ const parseHeaders = async () => {
     }
   } finally {
     parsing.value = false;
-  }
-};
-
-const parseManualHeaders = () => {
-  if (manualHeaders.value) {
-    parsedHeaders.value = manualHeaders.value.split(',').map(h => h.trim()).filter(h => h);
   }
 };
 
@@ -487,7 +484,7 @@ const resetForm = () => {
   sampleFileList.value = [];
   parsedHeaders.value = [];
   sheetOptions.value = [];
-  manualHeaders.value = '';
+  hasTemplateFile.value = false;
   levelTransformData.value = [
     { input: '高', output: 'P0' },
     { input: '中', output: 'P1' },
@@ -530,11 +527,12 @@ const open = async (id?: number) => {
         form.step_config = data.step_config || {};
         form.module_path_delimiter = data.module_path_delimiter;
         form.is_active = data.is_active;
+        hasTemplateFile.value = Boolean(data.template_file);
 
         // 回填模版结构：优先使用后端保存的 template_headers
         parsedHeaders.value = (data.template_headers && data.template_headers.length > 0)
           ? data.template_headers
-          : (Object.values(data.field_mappings).filter(v => v) as string[]);
+          : [];
 
         // 解析等级转换规则
         if (data.value_transformations?.level) {

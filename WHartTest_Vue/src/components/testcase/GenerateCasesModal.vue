@@ -85,7 +85,7 @@
             </a-option>
             <template #not-found>
               <div style="padding: 10px; text-align: center;">
-                <a-empty description="没有可用的通用提示词，请先创建。" />
+                <a-empty description="没有可用的用例生成提示词，请先创建。" />
               </div>
             </template>
           </a-select>
@@ -133,7 +133,7 @@
             </a-option>
             <template #not-found>
               <div style="padding: 10px; text-align: center;">
-                <a-empty description="没有可用的通用提示词，请先创建。" />
+                <a-empty description="没有可用的用例生成提示词，请先创建。" />
               </div>
             </template>
           </a-select>
@@ -481,24 +481,30 @@ const handleDocumentChange = (value: any) => {
 const fetchPrompts = async () => {
   isPromptsLoading.value = true;
   try {
-    // 获取 "general" 类型的提示词
-    const response = await getUserPrompts({ prompt_type: 'general' });
-    if (response.status === 'success') {
-       // 根据您提供的实际返回，data可能直接是数组
-       if (Array.isArray(response.data)) {
-           prompts.value = response.data;
-       }
-       // 兼容旧的或分页的格式
-       else if ((response.data as UserPromptListResponseData)?.results) {
-           prompts.value = (response.data as UserPromptListResponseData).results;
-       }
-       else {
-           // 接口成功但数据格式不符或为空
-           prompts.value = [];
-       }
+    const extractPromptList = (payload: any) => {
+      if (Array.isArray(payload)) return payload;
+      if ((payload as UserPromptListResponseData)?.results) {
+        return (payload as UserPromptListResponseData).results;
+      }
+      return [];
+    };
+
+    // 优先获取专用的“测试用例生成”提示词，兼容历史数据时再回退到 general。
+    const generationResp = await getUserPrompts({ prompt_type: 'test_case_generation' });
+    if (generationResp.status === 'success') {
+      prompts.value = extractPromptList(generationResp.data);
     } else {
-      Message.error(response.message || '加载提示词列表失败');
       prompts.value = [];
+    }
+
+    if (prompts.value.length === 0) {
+      const fallbackResp = await getUserPrompts({ prompt_type: 'general' });
+      if (fallbackResp.status === 'success') {
+        prompts.value = extractPromptList(fallbackResp.data);
+      } else {
+        Message.error(fallbackResp.message || '加载提示词列表失败');
+        prompts.value = [];
+      }
     }
   } catch (error) {
     Message.error('加载提示词列表时发生错误');

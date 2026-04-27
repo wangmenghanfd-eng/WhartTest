@@ -2,8 +2,11 @@ from django.utils import timezone
 from rest_framework import serializers
 from .models import ScheduledTask, TaskExecution
 from ui_automation.models import UiTestCase
+from ui_automation.models import UiBatchExecutionRecord
+from api_automation.models import ApiTestCase
+from api_automation.models import ApiBatchExecutionRecord as ApiBatchRecord
 from testcases.models import TestExecution as SuiteExecution
-from .utils import extract_suite_execution_id, format_duration_value
+from .utils import extract_suite_execution_id, extract_ui_batch_id, extract_api_batch_id, format_duration_value
 
 
 class ScheduledTaskSerializer(serializers.ModelSerializer):
@@ -15,6 +18,10 @@ class ScheduledTaskSerializer(serializers.ModelSerializer):
         source='ui_testcases', many=True,
         queryset=UiTestCase.objects.all(), required=False
     )
+    api_testcase_ids = serializers.PrimaryKeyRelatedField(
+        source='api_testcases', many=True,
+        queryset=ApiTestCase.objects.all(), required=False
+    )
 
     class Meta:
         model = ScheduledTask
@@ -25,7 +32,7 @@ class ScheduledTaskSerializer(serializers.ModelSerializer):
             'task_timezone', 'retry_enabled', 'retry_count', 'retry_interval',
             'status', 'last_run_at', 'creator', 'creator_name',
             'schedule_display', 'created_at', 'updated_at',
-            'test_suite', 'test_suite_name', 'ui_testcase_ids',
+            'test_suite', 'test_suite_name', 'ui_testcase_ids', 'api_testcase_ids',
             'actuator_id', 'scheduler_timezone',
         ]
         read_only_fields = [
@@ -75,6 +82,12 @@ class ScheduledTaskSerializer(serializers.ModelSerializer):
             actuator_id = attrs.get('actuator_id', getattr(self.instance, 'actuator_id', ''))
             if not actuator_id:
                 raise serializers.ValidationError({'actuator_id': 'UI 自动化模块必须选择一个执行器'})
+        elif module == ScheduledTask.TaskModule.API_AUTOMATION:
+            api_testcases = attrs.get('api_testcases')
+            if api_testcases is None and self.instance is not None:
+                api_testcases = self.instance.api_testcases.all()
+            if not api_testcases:
+                raise serializers.ValidationError({'api_testcase_ids': '接口自动化模块必须至少关联一个接口用例'})
 
         if schedule_type == ScheduledTask.ScheduleType.ONCE:
             once_datetime = attrs.get('once_datetime', getattr(self.instance, 'once_datetime', None))
@@ -142,7 +155,57 @@ class TaskExecutionSerializer(serializers.ModelSerializer):
         setattr(obj, '_related_suite_execution_cache', suite_execution or False)
         return suite_execution
 
+    def _get_related_ui_batch(self, obj):
+        cached = getattr(obj, '_related_ui_batch_cache', None)
+        if cached is not None:
+            return cached
+
+        ui_batch = None
+        if obj.task.module == ScheduledTask.TaskModule.UI_AUTOMATION:
+            batch_id = extract_ui_batch_id(obj.log)
+            if batch_id:
+                ui_batch = UiBatchExecutionRecord.objects.filter(id=batch_id).first()
+
+        setattr(obj, '_related_ui_batch_cache', ui_batch or False)
+        return ui_batch
+
+    def _get_related_api_batch(self, obj):
+        cached = getattr(obj, '_related_api_batch_cache', None)
+        if cached is not None:
+            return cached
+
+        api_batch = None
+        if obj.task.module == ScheduledTask.TaskModule.API_AUTOMATION:
+            batch_id = extract_api_batch_id(obj.log)
+            if batch_id:
+                api_batch = ApiBatchRecord.objects.filter(id=batch_id).first()
+
+        setattr(obj, '_related_api_batch_cache', api_batch or False)
+        return api_batch
+
     def _get_actual_result_tuple(self, obj):
+        api_batch = self._get_related_api_batch(obj)
+        if api_batch:
+            mapping = {
+                0: ('pending', '待执行'),
+                1: ('running', '执行中'),
+                2: ('passed', '通过'),
+                3: ('failed', '部分失败'),
+                4: ('failed', '失败'),
+            }
+            return mapping.get(api_batch.status, (str(api_batch.status), api_batch.get_status_display()))
+
+        ui_batch = self._get_related_ui_batch(obj)
+        if ui_batch:
+            mapping = {
+                0: ('pending', '待执行'),
+                1: ('running', '执行中'),
+                2: ('passed', '通过'),
+                3: ('failed', '部分失败'),
+                4: ('failed', '失败'),
+            }
+            return mapping.get(ui_batch.status, (str(ui_batch.status), ui_batch.get_status_display()))
+
         suite_execution = self._get_related_suite_execution(obj)
         if not suite_execution:
             return None, None
@@ -181,6 +244,12 @@ class TaskExecutionSerializer(serializers.ModelSerializer):
         return mapping.get(self.get_display_status(obj), obj.get_status_display())
 
     def get_actual_execution_id(self, obj):
+        api_batch = self._get_related_api_batch(obj)
+        if api_batch:
+            return api_batch.id
+        ui_batch = self._get_related_ui_batch(obj)
+        if ui_batch:
+            return ui_batch.id
         suite_execution = self._get_related_suite_execution(obj)
         return suite_execution.id if suite_execution else None
 
@@ -193,12 +262,30 @@ class TaskExecutionSerializer(serializers.ModelSerializer):
         return text
 
     def get_actual_duration(self, obj):
+        api_batch = self._get_related_api_batch(obj)
+        if api_batch:
+            return format_duration_value(api_batch.duration)
+        ui_batch = self._get_related_ui_batch(obj)
+        if ui_batch:
+            return format_duration_value(ui_batch.duration)
         suite_execution = self._get_related_suite_execution(obj)
         if not suite_execution:
             return None
         return format_duration_value(suite_execution.duration)
 
     def get_actual_summary(self, obj):
+        api_batch = self._get_related_api_batch(obj)
+        if api_batch:
+            return (
+                f"总 {api_batch.total_cases} / 通过 {api_batch.passed_cases} / "
+                f"失败 {api_batch.failed_cases}"
+            )
+        ui_batch = self._get_related_ui_batch(obj)
+        if ui_batch:
+            return (
+                f"总 {ui_batch.total_cases} / 通过 {ui_batch.passed_cases} / "
+                f"失败 {ui_batch.failed_cases}"
+            )
         suite_execution = self._get_related_suite_execution(obj)
         if not suite_execution:
             return None

@@ -51,7 +51,7 @@
         <a-form-item label="API基础URL" field="api_base_url">
           <a-input
             v-model="formData.api_base_url"
-            placeholder="http://your-embedding-service.com/v1/embeddings"
+            placeholder="本机访问示例：http://127.0.0.1:8917；Docker 内部访问示例：http://xinference:9997"
           />
         </a-form-item>
 
@@ -123,7 +123,7 @@
         >
           <a-input
             v-model="formData.reranker_api_url"
-            placeholder="http://xinference:9997（不填则使用嵌入服务地址）"
+            placeholder="本机访问示例：http://127.0.0.1:8917；Docker 内部访问示例：http://xinference:9997（不填则使用嵌入服务地址）"
           />
         </a-form-item>
 
@@ -255,7 +255,7 @@ const formData = reactive<KnowledgeGlobalConfig>({
   reranker_service: 'none',
   reranker_api_url: '',
   reranker_api_key: '',
-  reranker_model_name: 'Qwen3-VL-Reranker-2B',
+  reranker_model_name: 'bge-reranker-v2-m3',
   chunk_size: 1000,
   chunk_overlap: 200,
   updated_at: '',
@@ -367,7 +367,7 @@ const handleEmbeddingServiceChange = (value: EmbeddingServiceType) => {
       break;
     case 'xinference':
       formData.api_base_url = 'http://127.0.0.1:8917';
-      formData.model_name = 'qwen3-vl-emb-2b';
+      formData.model_name = 'BAAI/bge-m3';
       formData.api_key = '';
       hasSavedApiKey.value = false;
       apiKeyTouched.value = true;
@@ -394,16 +394,16 @@ const handleRerankerServiceChange = (value: RerankerServiceType) => {
       formData.reranker_api_url = '';
       // 保留默认模型名，不清空
       if (!formData.reranker_model_name) {
-        formData.reranker_model_name = 'Qwen3-VL-Reranker-2B';
+        formData.reranker_model_name = 'bge-reranker-v2-m3';
       }
       break;
     case 'xinference':
       formData.reranker_api_url = '';
-      formData.reranker_model_name = 'Qwen3-VL-Reranker-2B';
+      formData.reranker_model_name = 'bge-reranker-v2-m3';
       break;
     case 'custom':
       formData.reranker_api_url = 'http://your-reranker-service:8080/v1/rerank';
-      formData.reranker_model_name = 'Qwen3-VL-Reranker-2B';
+      formData.reranker_model_name = 'bge-reranker-v2-m3';
       break;
   }
 };

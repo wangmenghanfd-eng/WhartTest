@@ -64,6 +64,9 @@ from projects.models import Project
 from prompts.models import UserPrompt
 from mcp_tools.models import RemoteMCPConfig
 from mcp_tools.persistent_client import mcp_session_manager
+from ui_automation.functional_case_bridge import (
+    generate_ui_case_from_functional_execution,
+)
 from requirements.context_limits import (
     MODEL_CONTEXT_LIMITS,
     context_checker,
@@ -857,8 +860,11 @@ def _extract_test_case_execution_signals(text: Any) -> set[str]:
         or "secure area page for automation testing practice" in lowered,
     }
     failure_markers = {
-        "invalid_username": "invalid username" in lowered,
-        "invalid_password": "invalid password" in lowered,
+        # 只把真实页面错误提示当成失败信号，避免把示例标题
+        # "Test Case 2: Invalid Username" / "Test Case 3: Invalid Password"
+        # 误识别成执行结果。
+        "invalid_username": "your username is invalid" in lowered,
+        "invalid_password": "your password is invalid" in lowered,
         "selector_timeout": "waitforselector: timeout" in lowered,
         "playwright_error": any(
             marker in lowered
@@ -930,23 +936,23 @@ def calculate_context_tokens(
     """
     计算当前上下文 Token
 
-    优先使用最后一条带 usage_metadata 的消息；
-    如果 provider 未返回 usage_metadata，则回退到内容估算（与中间件保持一致的 3x 系数）。
+    - input_tokens / output_tokens: 优先取最后一条带 usage_metadata 的模型调用统计，
+      用于记录最近一次 provider 实际消耗。
+    - total_tokens: 始终基于当前消息栈内容估算，
+      用于展示“当前上下文占用率”，避免把“上一轮调用消耗”误当成“当前上下文大小”。
     """
-    # 1) 优先使用 usage_metadata（最准确）
+    input_tokens = 0
+    output_tokens = 0
+
+    # 1) 提取最近一轮模型调用的 usage_metadata（用于日志与统计）
     for msg in reversed(messages):
         if hasattr(msg, "usage_metadata") and msg.usage_metadata:
             usage = msg.usage_metadata
             input_tokens = usage.get("input_tokens", 0) or 0
             output_tokens = usage.get("output_tokens", 0) or 0
-            total_tokens = usage.get("total_tokens", 0) or (
-                input_tokens + output_tokens
-            )
+            break
 
-            if total_tokens > 0:
-                return input_tokens, output_tokens, total_tokens
-
-    # 2) 回退到内容估算（避免 context_update 始终为 0）
+    # 2) 始终按当前消息内容估算上下文占用（避免 100%/80% 之类的假波动）
     content_tokens = 0
     for msg in messages:
         if hasattr(msg, "content") and msg.content:
@@ -954,7 +960,7 @@ def calculate_context_tokens(
             content_tokens += context_checker.count_tokens(content, model_name)
 
     estimated_total = content_tokens * 3
-    return 0, 0, estimated_total
+    return input_tokens, output_tokens, estimated_total
 
 
 def _is_unreliable_default_detected_limit(
@@ -1093,6 +1099,7 @@ class AgentLoopStreamAPIView(View):
         model_name: str,
         builtin_tools: List[Any],
         generate_playwright_script: bool,
+        creator_id: Optional[int],
     ):
         """
         专用测试用例执行器。
@@ -1118,6 +1125,7 @@ class AgentLoopStreamAPIView(View):
         final_summary = ""
         final_success = True
         observed_signals: set[str] = set()
+        executed_playwright_records: List[Dict[str, Any]] = []
 
         @langchain_tool
         def finish_test_case_execution(
@@ -1215,6 +1223,12 @@ class AgentLoopStreamAPIView(View):
             )
             goto_content, goto_summary = process_mcp_tool_output(goto_result)
             observed_signals.update(_extract_test_case_execution_signals(goto_content))
+            executed_playwright_records.append(
+                {
+                    "command": goto_command,
+                    "output": goto_content,
+                }
+            )
             yield create_sse_data(
                 {
                     "type": "tool_result",
@@ -1232,7 +1246,8 @@ class AgentLoopStreamAPIView(View):
             )
 
         script_generation_note = (
-            "\n当前请求还打开了“生成 UI 自动化用例”选项，但此专用执行器当前优先保证功能测试执行链路稳定；"
+            "\n当前请求还打开了“生成 UI 自动化用例”选项。功能测试执行完成后，"
+            "后端会基于真实浏览器步骤自动保存到 UI 自动化模块；"
             "如果你已经完成测试，再调用 finish_test_case_execution 结束。"
             if generate_playwright_script
             else ""
@@ -1251,8 +1266,11 @@ class AgentLoopStreamAPIView(View):
             "7. 如果是登录场景，必须先确认当前页面就是登录页，再执行输入。\n"
             "8. 不要复述测试用例 JSON，不要说“接下来我将”，直接调用工具。\n"
             "9. 验证跳转/登录成功时优先用 `await page.waitForURL('**/secure');` 或 `console.log(page.url());`；"
-            "禁止用不加 /i 的正则选择器如 `text=/secure/`，大小写不匹配会导致 30s 超时。\n"
-            "10. 当结论明确后，调用 finish_test_case_execution，总结必须基于真实执行结果。"
+            "禁止用不加 /i 的正则选择器如 `text=/secure/`，大小写不匹配会导致 30s 超时；"
+            "`waitForURL` 无异常完成即代表跳转成功，截图后立刻调用 finish_test_case_execution，不要再用 waitForSelector 重复验证。\n"
+            "10. 如果是错误用户名/密码等异常登录场景，优先验证页面仍停留在 `/login` 或未进入 `/secure`，"
+            "并结合截图或页面文本判断，不要硬编码完整英文报错句后长时间等待。\n"
+            "11. 当结论明确后，调用 finish_test_case_execution，总结必须基于真实执行结果。"
             + script_generation_note
         ).strip()
 
@@ -1303,24 +1321,24 @@ class AgentLoopStreamAPIView(View):
                 content = str(getattr(ai_msg, "content", "") or "").strip()
                 if len(content) > _MAX_TEST_CASE_AI_SNIPPET_CHARS:
                     content = f"{content[:_MAX_TEST_CASE_AI_SNIPPET_CHARS]}..."
-                clear_success = len(
-                    observed_signals
-                    & {
-                        "secure_area_text",
-                        "welcome_secure_area",
-                        "logout_found",
-                        "secure_path",
-                        "flash_success",
-                        "secure_heading",
-                    }
-                ) >= 2 or (
-                    "secure_path" in observed_signals
-                    and "secure_area_text" in observed_signals
-                ) or (
-                    "secure_heading" in observed_signals
-                    and "logout_found" in observed_signals
+                _positive_signals = observed_signals & {
+                    "secure_area_text",
+                    "welcome_secure_area",
+                    "logout_found",
+                    "secure_path",
+                    "flash_success",
+                    "secure_heading",
+                }
+                clear_success = (
+                    len(_positive_signals) >= 2
+                    or "secure_path" in observed_signals  # URL 跳转成功是登录成功的权威依据
+                    or (
+                        "secure_heading" in observed_signals
+                        and "logout_found" in observed_signals
+                    )
                 )
-                clear_failure = bool(
+                # clear_success 优先；只有未确认成功时才允许失败信号覆盖
+                clear_failure = not clear_success and bool(
                     observed_signals
                     & {
                         "invalid_username",
@@ -1415,9 +1433,26 @@ class AgentLoopStreamAPIView(View):
                     tool_result = f"错误: {str(e)}"
 
                 tool_content, tool_summary = process_mcp_tool_output(tool_result)
-                observed_signals.update(
-                    _extract_test_case_execution_signals(tool_content)
-                )
+                # 只从 playwright-skill 输出提取信号，避免测试用例元数据（whart-test）产生假阳性
+                _skill_name_arg = (tool_args.get("skill_name") or "").lower()
+                if "playwright" in _skill_name_arg:
+                    executed_playwright_records.append(
+                        {
+                            "command": tool_args.get("command") or "",
+                            "output": tool_content,
+                        }
+                    )
+                    observed_signals.update(
+                        _extract_test_case_execution_signals(tool_content)
+                    )
+                    # waitForURL 成功时直接注入 secure_path 信号（成功时无输出，无法靠文本检测）
+                    _cmd = (tool_args.get("command") or "").lower()
+                    _no_error = not any(
+                        k in tool_content.lower()
+                        for k in ("error", "timeout", "❌")
+                    )
+                    if "waitforurl" in _cmd and "/secure" in _cmd and _no_error:
+                        observed_signals.add("secure_path")
                 yield create_sse_data(
                     {
                         "type": "tool_result",
@@ -1495,6 +1530,85 @@ class AgentLoopStreamAPIView(View):
             )
             yield "data: [DONE]\n\n"
             return
+
+        _positive_generation_signals = observed_signals & {
+            "secure_area_text",
+            "welcome_secure_area",
+            "logout_found",
+            "secure_path",
+            "flash_success",
+            "secure_heading",
+        }
+        if (
+            not final_success
+            and (
+                len(_positive_generation_signals) >= 2
+                or "secure_path" in observed_signals
+            )
+        ):
+            final_success = True
+            if not final_summary or "未通过" in final_summary or "失败" in final_summary:
+                final_summary = "测试通过：已进入安全区域页面，并观察到登录成功相关页面信号。"
+
+        generation_meta: Optional[Dict[str, Any]] = None
+        generation_error = ""
+        generation_allowed = bool(executed_playwright_records)
+        if generate_playwright_script:
+            if generation_allowed:
+                try:
+                    generation_meta = await sync_to_async(
+                        generate_ui_case_from_functional_execution
+                    )(
+                        project_id=int(project_id),
+                        creator_id=creator_id,
+                        test_case_detail=detail_content,
+                        command_records=executed_playwright_records,
+                        observed_signals=sorted(observed_signals),
+                        target_url_hint=target_url_hint,
+                    )
+                    yield create_sse_data(
+                        {
+                            "type": "info",
+                            "message": (
+                                f"已保存 UI 自动化用例：{generation_meta['ui_testcase_name']} "
+                                f"(ID: {generation_meta['ui_testcase_id']})，"
+                                f"模块：{generation_meta['ui_module_name']}"
+                            ),
+                        }
+                    )
+                except Exception as generation_exc:
+                    generation_error = str(generation_exc)
+                    logger.warning(
+                        "AgentLoopStreamAPI: UI case generation failed. "
+                        "session_id=%s, test_case_id=%s, error=%s",
+                        session_id,
+                        test_case_id,
+                        generation_exc,
+                        exc_info=True,
+                    )
+                    yield create_sse_data(
+                        {
+                            "type": "warning",
+                            "message": f"UI 自动化用例生成失败：{generation_error}",
+                        }
+                    )
+            else:
+                generation_error = "本次执行未提取到足够稳定的浏览器动作，无法保存为 UI 自动化用例"
+                yield create_sse_data(
+                    {
+                        "type": "warning",
+                        "message": generation_error,
+                    }
+                )
+
+        if generation_meta:
+            suffix = (
+                f" 已生成 UI 自动化用例《{generation_meta['ui_testcase_name']}》"
+                f"（模块：{generation_meta['ui_module_name']}，ID: {generation_meta['ui_testcase_id']}）。"
+            )
+            final_summary = (final_summary or "测试执行完成。").rstrip("。") + "。" + suffix
+        elif generate_playwright_script and generation_error:
+            final_summary = (final_summary or "测试执行完成。").rstrip("。") + f"。{generation_error}。"
 
         if final_summary:
             yield create_sse_data({"type": "stream", "data": final_summary})
@@ -1786,6 +1900,7 @@ class AgentLoopStreamAPIView(View):
                     model_name=model_name,
                     builtin_tools=builtin_tools,
                     generate_playwright_script=generate_playwright_script,
+                    creator_id=request.user.id,
                 ):
                     yield chunk
                 return

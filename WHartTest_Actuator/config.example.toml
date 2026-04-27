@@ -3,21 +3,23 @@
 
 [server]
 # WebSocket服务器地址
-ws_url = "ws://127.0.0.1:8000/ws/ui/actuator/"
+ws_url = "ws://127.0.0.1:8912/ws/ui/actuator/"
 # API服务器地址
-api_url = "http://127.0.0.1:8000"
+api_url = "http://127.0.0.1:8912"
 # 是否启用 GUI 登录窗口（需要安装 PySide6）
-# true = 使用图形界面登录（推荐）
-# false = 使用配置文件中的账号密码，适合服务器无头部署
-use_gui = true
+# true = 使用图形界面登录
+# false = 使用配置文件中的账号密码，适合服务器无头部署或 launchd 常驻运行
+use_gui = false
 # API认证用户名（仅 use_gui=false 时有效）
 api_username = "admin"
 # API认证密码（仅 use_gui=false 时有效）
-api_password = "admin123"
+api_password = "admin123456"
 
 [actuator]
+# 执行器稳定 ID（推荐配置，便于后端精准识别）
+id = "WHartTest-001"
 # 执行器名称（可选，默认自动生成）
-# name = "my-actuator"
+name = "WHartTest-001"
 # 执行器描述（可选）
 # description = "测试执行器"
 

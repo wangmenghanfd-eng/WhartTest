@@ -938,7 +938,7 @@ class VectorStoreManager:
     # RRF 融合参数
     RRF_K = 60
     # Reranker 配置
-    RERANKER_MODEL = "Qwen3-VL-Reranker-2B"
+    RERANKER_MODEL = "bge-reranker-v2-m3"
     RERANKER_ENABLED = True  # 可通过环境变量控制
 
     # 类级别的缓存
@@ -1113,13 +1113,13 @@ class VectorStoreManager:
             base_url = config.api_base_url.rstrip("/")
 
         logger.info(
-            f"🚀 初始化Xinference嵌入模型: {config.model_name or 'qwen3-vl-emb-2b'}"
+            f"🚀 初始化Xinference嵌入模型: {config.model_name or 'BAAI/bge-m3'}"
         )
         return CustomAPIEmbeddings(
             api_base_url=f"{base_url}/v1/embeddings",
             api_key=config.api_key or "",
             custom_headers={},
-            model_name=config.model_name or "qwen3-vl-emb-2b",
+            model_name=config.model_name or "BAAI/bge-m3",
         )
 
     def _get_reranker_config(self) -> tuple:
@@ -1139,7 +1139,7 @@ class VectorStoreManager:
             else:
                 return None, None, None
 
-        reranker_model = getattr(config, "reranker_model_name", "Qwen3-VL-Reranker-2B")
+        reranker_model = getattr(config, "reranker_model_name", "bge-reranker-v2-m3")
         reranker_api_key = getattr(config, "reranker_api_key", None) or None
 
         base_url = reranker_api_url.rstrip("/")
