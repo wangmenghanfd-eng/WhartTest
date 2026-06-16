@@ -243,6 +243,12 @@ class ProjectViewSet(BaseModelViewSet):
         from skills.models import Skill
         from mcp_tools.models import RemoteMCPConfig
         from ui_automation.models import UiTestCase, UiExecutionRecord
+        from api_automation.models import (
+            ApiBatchExecutionRecord,
+            ApiExecutionRecord,
+            ApiModule,
+            ApiTestCase,
+        )
 
         # 1. 功能用例统计（按审核状态）
         testcase_stats = TestCase.objects.filter(project=project).aggregate(
@@ -287,30 +293,41 @@ class ProjectViewSet(BaseModelViewSet):
         thirty_days_ago = now - timedelta(days=30)
 
         # 近 7 天按天聚合执行趋势，供前端绘制趋势图。
+        # 聚合三类执行：功能用例 TestExecution、UI 自动化 UiExecutionRecord、接口自动化 ApiExecutionRecord
+        ui_executions_qs = UiExecutionRecord.objects.filter(test_case__project=project)
+        api_executions_qs = ApiExecutionRecord.objects.filter(project=project)
         daily_stats_7d = []
         for i in range(7):
             day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
             day_end = day_start + timedelta(days=1)
-            day_executions = executions.filter(created_at__gte=day_start, created_at__lt=day_end)
-            day_agg = day_executions.aggregate(
+            tc_agg = executions.filter(created_at__gte=day_start, created_at__lt=day_end).aggregate(
                 count=Count('id'),
                 passed=Sum('passed_count'),
                 failed=Sum('failed_count'),
             )
+            ui_day = ui_executions_qs.filter(created_at__gte=day_start, created_at__lt=day_end)
+            api_day = api_executions_qs.filter(created_at__gte=day_start, created_at__lt=day_end)
             daily_stats_7d.append({
                 'date': day_start.strftime('%Y-%m-%d'),
-                'execution_count': day_agg['count'] or 0,
-                'passed': day_agg['passed'] or 0,
-                'failed': day_agg['failed'] or 0,
+                'execution_count': (tc_agg['count'] or 0) + ui_day.count() + api_day.count(),
+                'passed': (tc_agg['passed'] or 0) + ui_day.filter(status=2).count() + api_day.filter(status=2).count(),
+                'failed': (tc_agg['failed'] or 0) + ui_day.filter(status=3).count() + api_day.filter(status=3).count(),
             })
         daily_stats_7d.reverse()
 
-        # 近30天统计汇总
-        stats_30d = executions.filter(created_at__gte=thirty_days_ago).aggregate(
+        # 近30天统计汇总（同样合并三类）
+        tc_30d = executions.filter(created_at__gte=thirty_days_ago).aggregate(
             execution_count=Count('id'),
             passed=Sum('passed_count'),
             failed=Sum('failed_count'),
         )
+        ui_30d = ui_executions_qs.filter(created_at__gte=thirty_days_ago)
+        api_30d = api_executions_qs.filter(created_at__gte=thirty_days_ago)
+        stats_30d = {
+            'execution_count': (tc_30d['execution_count'] or 0) + ui_30d.count() + api_30d.count(),
+            'passed': (tc_30d['passed'] or 0) + ui_30d.filter(status=2).count() + api_30d.filter(status=2).count(),
+            'failed': (tc_30d['failed'] or 0) + ui_30d.filter(status=3).count() + api_30d.filter(status=3).count(),
+        }
 
         # 5. MCP统计（全局共享的MCP配置）
         mcp_stats = {
@@ -334,6 +351,29 @@ class ProjectViewSet(BaseModelViewSet):
                 'success': ui_executions.filter(status=2).count(),
                 'failed': ui_executions.filter(status=3).count(),
                 'cancelled': ui_executions.filter(status=4).count(),
+            },
+        }
+
+        # 8. 接口自动化统计
+        api_modules_qs = ApiModule.objects.filter(project=project)
+        api_cases_qs = ApiTestCase.objects.filter(project=project)
+        api_execs_qs = ApiExecutionRecord.objects.filter(project=project)
+        api_batches_qs = ApiBatchExecutionRecord.objects.filter(project=project)
+        latest_batch = api_batches_qs.order_by('-id').first()
+        api_automation_stats = {
+            'total_modules': api_modules_qs.count(),
+            'total_cases': api_cases_qs.count(),
+            'total_executions': api_execs_qs.count(),
+            'total_batches': api_batches_qs.count(),
+            'by_status': {
+                'success': api_execs_qs.filter(status=2).count(),
+                'failed': api_execs_qs.filter(status=3).count(),
+            },
+            'last_batch': {
+                'id': latest_batch.id if latest_batch else None,
+                'name': latest_batch.name if latest_batch else '',
+                'success_rate': latest_batch.success_rate if latest_batch else 0,
+                'status': latest_batch.status if latest_batch else None,
             },
         }
 
@@ -379,6 +419,7 @@ class ProjectViewSet(BaseModelViewSet):
             'mcp': mcp_stats,
             'skills': skill_stats,
             'ui_automation': ui_automation_stats,
+            'api_automation': api_automation_stats,
         }
 
         return Response(response_data)

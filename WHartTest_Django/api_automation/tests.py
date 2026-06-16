@@ -1,3 +1,4 @@
+import json
 from unittest.mock import patch
 
 import httpx
@@ -209,6 +210,240 @@ class ApiServiceHelperTests(TestCase):
         from .services import _build_url
         with self.assertRaises(ValueError):
             _build_url(None, "/users")
+
+
+class ApiPathAccessTests(TestCase):
+    """_get_by_path 点路径访问"""
+
+    def test_dot_path_walks_dict(self):
+        from .services import _get_by_path
+        data = {"data": {"user": {"id": 7, "name": "Alice"}}}
+        self.assertEqual(_get_by_path(data, "data.user.name"), "Alice")
+        self.assertEqual(_get_by_path(data, "$.data.user.id"), 7)
+
+    def test_index_walks_list(self):
+        from .services import _get_by_path
+        data = {"items": [{"id": 1}, {"id": 2}]}
+        self.assertEqual(_get_by_path(data, "items[1].id"), 2)
+
+    def test_returns_none_for_missing_path(self):
+        from .services import _get_by_path
+        self.assertIsNone(_get_by_path({"a": 1}, "b.c"))
+        self.assertIsNone(_get_by_path([1, 2], "[5]"))
+        self.assertIsNone(_get_by_path(None, "a"))
+
+
+class ApiCompareOperatorTests(TestCase):
+    """_compare 各种运算符"""
+
+    def test_equality_operators(self):
+        from .services import _compare
+        self.assertTrue(_compare("abc", "eq", "abc"))
+        self.assertTrue(_compare(7, "eq", "7"))
+        self.assertTrue(_compare("abc", "neq", "xyz"))
+        self.assertFalse(_compare("abc", "neq", "abc"))
+
+    def test_numeric_operators(self):
+        from .services import _compare
+        self.assertTrue(_compare(5, "lt", 10))
+        self.assertTrue(_compare(10, "lte", 10))
+        self.assertTrue(_compare(11, "gt", 10))
+        self.assertTrue(_compare(10, "gte", 10))
+        self.assertFalse(_compare(10, "gt", 10))
+
+    def test_contains_and_regex(self):
+        from .services import _compare
+        self.assertTrue(_compare("hello world", "contains", "world"))
+        self.assertTrue(_compare("hello world", "not_contains", "xyz"))
+        self.assertTrue(_compare("abc123", "regex", r"\d+"))
+        self.assertFalse(_compare("abc", "regex", r"\d+"))
+
+    def test_emptiness_operators(self):
+        from .services import _compare
+        self.assertTrue(_compare(None, "is_empty", None))
+        self.assertTrue(_compare("", "is_empty", None))
+        self.assertTrue(_compare("x", "is_not_empty", None))
+        self.assertFalse(_compare(None, "is_not_empty", None))
+
+    def test_in_and_not_in(self):
+        from .services import _compare
+        self.assertTrue(_compare("a", "in", ["a", "b"]))
+        self.assertFalse(_compare("z", "in", ["a", "b"]))
+        self.assertTrue(_compare("z", "not_in", ["a", "b"]))
+
+
+class ApiJsonPathAssertionTests(TestCase):
+    """_assert_response 的 json_path / body_not_contains / header_value"""
+
+    def test_json_path_eq(self):
+        from .services import _assert_response
+
+        resp = httpx.Response(
+            200,
+            text='{"data": {"token": "abc", "user": {"id": 7}}}',
+            request=httpx.Request("GET", "https://x"),
+        )
+        ok, results = _assert_response(resp, [
+            {"type": "json_path", "path": "data.token", "operator": "eq", "expected": "abc"},
+            {"type": "json_path", "path": "data.user.id", "operator": "gte", "expected": 1},
+        ])
+        self.assertTrue(ok)
+        self.assertTrue(all(r["passed"] for r in results))
+
+    def test_json_path_missing_returns_none_actual(self):
+        from .services import _assert_response
+
+        resp = httpx.Response(
+            200,
+            text='{"data": {}}',
+            request=httpx.Request("GET", "https://x"),
+        )
+        ok, results = _assert_response(resp, [
+            {"type": "json_path", "path": "data.missing", "operator": "eq", "expected": "x"},
+            {"type": "json_path", "path": "data.missing", "operator": "is_empty", "expected": None},
+        ])
+        self.assertFalse(ok)
+        self.assertFalse(results[0]["passed"])
+        self.assertIsNone(results[0]["actual"])
+        self.assertTrue(results[1]["passed"])  # is_empty 通过
+
+    def test_body_not_contains(self):
+        from .services import _assert_response
+
+        resp = httpx.Response(
+            200,
+            text='success',
+            request=httpx.Request("GET", "https://x"),
+        )
+        ok, _r = _assert_response(resp, [
+            {"type": "body_not_contains", "expected": "error"},
+        ])
+        self.assertTrue(ok)
+
+    def test_header_value(self):
+        from .services import _assert_response
+
+        resp = httpx.Response(
+            200,
+            text='ok',
+            headers={"X-Total": "42"},
+            request=httpx.Request("GET", "https://x"),
+        )
+        ok, _r = _assert_response(resp, [
+            {"type": "header_value", "path": "X-Total", "operator": "eq", "expected": "42"},
+            {"type": "header_value", "path": "X-Total", "operator": "gt", "expected": 10},
+        ])
+        self.assertTrue(ok)
+
+    def test_unknown_type_passes_silently(self):
+        """未知断言类型不应导致失败（向后兼容）。"""
+        from .services import _assert_response
+        resp = httpx.Response(200, text="x", request=httpx.Request("GET", "https://x"))
+        ok, _r = _assert_response(resp, [
+            {"type": "future_unknown", "expected": "x"},
+        ])
+        self.assertTrue(ok)
+
+
+class ApiExtractorTests(TestCase):
+    """_extract_variables 三种来源 + execute_api_case 集成"""
+
+    def test_extract_json_path(self):
+        from .services import _extract_variables
+        resp = httpx.Response(
+            200,
+            text='{"data": {"token": "abc-123", "items": [{"id": 9}]}}',
+            request=httpx.Request("GET", "https://x"),
+        )
+        result = _extract_variables(resp, [
+            {"name": "token", "source": "json_path", "path": "data.token"},
+            {"name": "first_id", "source": "json_path", "path": "data.items[0].id"},
+            {"name": "missing", "source": "json_path", "path": "data.no.such.field"},
+        ])
+        self.assertEqual(result["token"], "abc-123")
+        self.assertEqual(result["first_id"], 9)
+        self.assertIsNone(result["missing"])
+
+    def test_extract_header(self):
+        from .services import _extract_variables
+        resp = httpx.Response(
+            200, text="x",
+            headers={"X-Request-Id": "rid-7"},
+            request=httpx.Request("GET", "https://x"),
+        )
+        result = _extract_variables(resp, [
+            {"name": "rid", "source": "header", "path": "X-Request-Id"},
+        ])
+        self.assertEqual(result["rid"], "rid-7")
+
+    def test_extract_regex_with_group_and_without(self):
+        from .services import _extract_variables
+        resp = httpx.Response(
+            200, text="user_id=42&token=abc",
+            request=httpx.Request("GET", "https://x"),
+        )
+        result = _extract_variables(resp, [
+            {"name": "uid", "source": "regex", "path": r"user_id=(\d+)"},
+            {"name": "raw", "source": "regex", "path": r"token=\w+"},
+            {"name": "miss", "source": "regex", "path": r"missing-(\d+)"},
+            {"name": "skip_no_name", "source": "regex", "path": r"x"},  # name=skip_no_name still works
+        ])
+        self.assertEqual(result["uid"], "42")
+        self.assertEqual(result["raw"], "token=abc")
+        self.assertIsNone(result["miss"])
+
+    def test_extract_skips_invalid_entries(self):
+        from .services import _extract_variables
+        resp = httpx.Response(200, text="x", request=httpx.Request("GET", "https://x"))
+        result = _extract_variables(resp, [
+            "not_a_dict",
+            {"name": "", "source": "json_path", "path": "x"},
+            None,
+        ])
+        self.assertEqual(result, {})
+
+    @patch("api_automation.services.httpx.Client")
+    def test_execute_api_case_persists_extracted(self, client_cls):
+        user = User.objects.create_user(username="extract_user", password="test123456")
+        project = Project.objects.create(name="extract-project", creator=user)
+        module = ApiModule.objects.create(project=project, name="m", creator=user)
+        env = ApiEnvironmentConfig.objects.create(
+            project=project,
+            name="E",
+            base_url="https://api.example.com",
+            is_default=True,
+            creator=user,
+        )
+        case = ApiTestCase.objects.create(
+            project=project,
+            module=module,
+            environment=env,
+            name="case",
+            method="GET",
+            path="/x",
+            assertions=[{"type": "status_code", "operator": "eq", "expected": 200}],
+            extractors=[{"name": "token", "source": "json_path", "path": "data.token"}],
+            creator=user,
+        )
+        record = ApiExecutionRecord.objects.create(
+            project=project,
+            test_case=case,
+            environment=env,
+            status=0,
+            trigger_type="manual",
+            executor=user,
+        )
+        response = httpx.Response(
+            200,
+            text='{"data": {"token": "T-123"}}',
+            request=httpx.Request("GET", "https://api.example.com/x"),
+        )
+        client_cls.return_value.__enter__.return_value.request.return_value = response
+
+        execute_api_case(record.id)
+
+        record.refresh_from_db()
+        self.assertEqual(record.response_data["extracted"], {"token": "T-123"})
 
 
 class ExecuteApiCaseExtraTests(TestCase):
@@ -455,3 +690,701 @@ class OpenApiImportExtraTests(TestCase):
         self.assertEqual(second["created_cases"], 0)
         self.assertEqual(ApiDefinition.objects.filter(project=self.project).count(), 1)
         self.assertEqual(ApiTestCase.objects.filter(project=self.project, source="openapi").count(), 1)
+
+
+# ----------------------------------------------------------------------------
+# Item 1: UI Trace 网络请求 → 接口用例
+# ----------------------------------------------------------------------------
+
+
+def _build_trace_data(network_requests):
+    """简易构造 trace_parser 风格的解析结果，用于测试。"""
+    return {
+        "title": "test trace",
+        "start_time": 0,
+        "end_time": 100,
+        "duration": 100,
+        "page_url": "https://example.com",
+        "actions": [],
+        "network_requests": network_requests,
+        "console_messages": [],
+        "snapshots": [],
+        "summary": {},
+    }
+
+
+SAMPLE_NETWORK_REQUESTS = [
+    {  # index 0: xhr POST 登录
+        "url": "https://api.example.com/v1/login?from=home",
+        "method": "POST",
+        "status": 200,
+        "mime_type": "application/json",
+        "request_headers": {
+            "Authorization": "Bearer secret-token",
+            "Content-Type": "application/json",
+            "Cookie": "sid=abc",
+            "Accept": "application/json",
+        },
+        "response_headers": {"X-Trace-Id": "rid-123"},
+        "request_body": '{"username": "alice", "password": "p"}',
+        "response_body": '{"token": "T"}',
+        "duration": 88,
+        "response_size": 100,
+    },
+    {  # index 1: xhr GET 列表
+        "url": "https://api.example.com/v1/items?page=1&size=20",
+        "method": "GET",
+        "status": 200,
+        "mime_type": "application/json",
+        "request_headers": {"Accept": "application/json"},
+        "response_headers": {},
+        "request_body": None,
+        "response_body": '[{"id": 1}]',
+        "duration": 10,
+        "response_size": 30,
+    },
+    {  # index 2: 静态 js
+        "url": "https://cdn.example.com/static/app.js",
+        "method": "GET",
+        "status": 200,
+        "mime_type": "application/javascript",
+        "request_headers": {},
+        "response_headers": {},
+        "duration": 1,
+        "response_size": 10000,
+    },
+    {  # index 3: 静态 png
+        "url": "https://cdn.example.com/static/logo.png",
+        "method": "GET",
+        "status": 200,
+        "mime_type": "image/png",
+        "request_headers": {},
+        "response_headers": {},
+        "duration": 1,
+    },
+    {  # index 4: OPTIONS 预检
+        "url": "https://api.example.com/v1/items",
+        "method": "OPTIONS",
+        "status": 204,
+        "mime_type": "",
+        "request_headers": {},
+        "response_headers": {},
+    },
+    {  # index 5: 非 http url
+        "url": "data:image/png;base64,xxx",
+        "method": "GET",
+        "status": 200,
+        "mime_type": "image/png",
+        "request_headers": {},
+        "response_headers": {},
+    },
+]
+
+
+class TraceCandidateExtractorTests(TestCase):
+    """trace_to_api_cases 纯函数行为"""
+
+    def test_extract_filters_static_options_and_invalid_urls(self):
+        from .trace_to_api_cases import extract_candidate_requests
+
+        candidates = extract_candidate_requests(_build_trace_data(SAMPLE_NETWORK_REQUESTS))
+        self.assertEqual([c["index"] for c in candidates], [0, 1])
+        self.assertEqual(candidates[0]["method"], "POST")
+        self.assertEqual(candidates[0]["base_url"], "https://api.example.com")
+        self.assertEqual(candidates[0]["path"], "/v1/login")
+        self.assertEqual(candidates[0]["query_params"], {"from": "home"})
+
+    def test_extract_keeps_static_when_skip_disabled(self):
+        from .trace_to_api_cases import extract_candidate_requests
+
+        candidates = extract_candidate_requests(
+            _build_trace_data(SAMPLE_NETWORK_REQUESTS),
+            skip_static=False,
+        )
+        # 关掉过滤后，js 和 png 也保留；OPTIONS / 非 http 仍然剔除
+        kept_indexes = [c["index"] for c in candidates]
+        self.assertIn(2, kept_indexes)
+        self.assertIn(3, kept_indexes)
+        self.assertNotIn(4, kept_indexes)
+        self.assertNotIn(5, kept_indexes)
+
+    def test_sanitize_strips_sensitive_headers(self):
+        from .trace_to_api_cases import extract_candidate_requests
+
+        candidates = extract_candidate_requests(_build_trace_data(SAMPLE_NETWORK_REQUESTS))
+        login = candidates[0]
+        keys = {k.lower() for k in login["request_headers"].keys()}
+        self.assertNotIn("authorization", keys)
+        self.assertNotIn("cookie", keys)
+        self.assertIn("content-type", keys)
+
+    def test_request_body_parsed_into_dict_when_json(self):
+        from .trace_to_api_cases import extract_candidate_requests
+
+        candidates = extract_candidate_requests(_build_trace_data(SAMPLE_NETWORK_REQUESTS))
+        login = candidates[0]
+        self.assertEqual(login["request_body"], {"username": "alice", "password": "p"})
+
+    def test_request_body_invalid_json_keeps_raw(self):
+        from .trace_to_api_cases import extract_candidate_requests
+
+        trace = _build_trace_data([
+            {
+                "url": "https://api.example.com/x",
+                "method": "POST",
+                "status": 200,
+                "mime_type": "application/json",
+                "request_headers": {},
+                "response_headers": {},
+                "request_body": "<not-json>",
+            },
+        ])
+        candidate = extract_candidate_requests(trace)[0]
+        self.assertEqual(candidate["request_body"], {"_raw": "<not-json>"})
+
+    def test_split_url_root_path(self):
+        from .trace_to_api_cases import _split_url
+
+        self.assertEqual(_split_url("https://api.example.com"), ("https://api.example.com", "/", {}))
+
+
+class TraceToApiCasesMaterializeTests(TestCase):
+    """materialize_from_execution 真正落库"""
+
+    def setUp(self):
+        from ui_automation.models import UiExecutionRecord, UiModule, UiTestCase
+
+        self.user = User.objects.create_user(username="trace_tester", password="test123456")
+        self.project = Project.objects.create(name="trace-project", creator=self.user)
+        self.api_module = ApiModule.objects.create(
+            project=self.project, name="导入接口", creator=self.user,
+        )
+
+        # UI 自动化端的 case + execution record
+        ui_module = UiModule.objects.create(
+            project=self.project, name="UI 模块", creator=self.user,
+        )
+        ui_case = UiTestCase.objects.create(
+            project=self.project, module=ui_module, name="登录用例", creator=self.user,
+        )
+        self.execution_record = UiExecutionRecord.objects.create(
+            test_case=ui_case,
+            status=2,
+            trigger_type="manual",
+            trace_data=_build_trace_data(SAMPLE_NETWORK_REQUESTS),
+        )
+
+    def test_materialize_creates_cases_for_all_candidates(self):
+        from .trace_to_api_cases import materialize_from_execution
+
+        result = materialize_from_execution(
+            self.execution_record,
+            project=self.project,
+            module=self.api_module,
+            creator=self.user,
+        )
+        self.assertEqual(result["created_count"], 2)
+        cases = list(ApiTestCase.objects.filter(module=self.api_module).order_by("id"))
+        self.assertEqual(len(cases), 2)
+        login = cases[0]
+        self.assertEqual(login.method, "POST")
+        self.assertEqual(login.path, "/v1/login")
+        self.assertEqual(login.query_params, {"from": "home"})
+        self.assertEqual(login.body, {"username": "alice", "password": "p"})
+        self.assertEqual(login.source, "ui_trace")
+        # 默认断言根据原始 status_code 生成
+        self.assertEqual(login.assertions, [{"type": "status_code", "operator": "eq", "expected": 200}])
+
+    def test_materialize_creates_environment_per_base_url(self):
+        from .trace_to_api_cases import materialize_from_execution
+
+        materialize_from_execution(
+            self.execution_record,
+            project=self.project,
+            module=self.api_module,
+            creator=self.user,
+        )
+        envs = list(ApiEnvironmentConfig.objects.filter(project=self.project))
+        self.assertEqual(len(envs), 1)
+        self.assertEqual(envs[0].base_url, "https://api.example.com")
+        self.assertTrue(envs[0].is_default)
+
+    def test_materialize_with_selected_indexes(self):
+        from .trace_to_api_cases import materialize_from_execution
+
+        result = materialize_from_execution(
+            self.execution_record,
+            project=self.project,
+            module=self.api_module,
+            creator=self.user,
+            selected_indexes=[1],  # 只选第二个候选
+        )
+        self.assertEqual(result["created_count"], 1)
+        case = ApiTestCase.objects.get(id=result["created_case_ids"][0])
+        self.assertEqual(case.method, "GET")
+        self.assertEqual(case.path, "/v1/items")
+
+    def test_materialize_uses_explicit_environment(self):
+        from .trace_to_api_cases import materialize_from_execution
+
+        explicit_env = ApiEnvironmentConfig.objects.create(
+            project=self.project,
+            name="explicit",
+            base_url="https://other.example.com",
+            is_default=False,
+            creator=self.user,
+        )
+        materialize_from_execution(
+            self.execution_record,
+            project=self.project,
+            module=self.api_module,
+            creator=self.user,
+            environment=explicit_env,
+        )
+        cases = list(ApiTestCase.objects.filter(module=self.api_module))
+        # 全部用例都使用显式 env，不再创建新环境
+        self.assertTrue(all(c.environment_id == explicit_env.id for c in cases))
+        self.assertEqual(ApiEnvironmentConfig.objects.filter(project=self.project).count(), 1)
+
+
+class GenerateFromUiTraceViewTests(TestCase):
+    """POST /api/api-automation/cases/generate-from-ui-trace/ 端到端"""
+
+    def setUp(self):
+        from rest_framework.test import APIClient
+        from ui_automation.models import UiExecutionRecord, UiModule, UiTestCase
+
+        self.user = User.objects.create_user(username="trace_view", password="test123456")
+        self.project = Project.objects.create(name="trace-view-project", creator=self.user)
+        self.api_module = ApiModule.objects.create(
+            project=self.project, name="导入", creator=self.user,
+        )
+        ui_module = UiModule.objects.create(project=self.project, name="ui", creator=self.user)
+        ui_case = UiTestCase.objects.create(
+            project=self.project, module=ui_module, name="ui case", creator=self.user,
+        )
+        self.execution_record = UiExecutionRecord.objects.create(
+            test_case=ui_case,
+            status=2,
+            trigger_type="manual",
+            trace_data=_build_trace_data(SAMPLE_NETWORK_REQUESTS),
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+
+    def _url(self):
+        return "/api/api-automation/testcases/generate-from-ui-trace/"
+
+    def test_returns_400_when_execution_record_id_missing(self):
+        resp = self.client.post(self._url(), {}, format="json")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_returns_404_when_execution_record_not_found(self):
+        resp = self.client.post(
+            self._url(),
+            {"execution_record_id": 9999999},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 404)
+
+    def test_dry_run_returns_candidates_without_persisting(self):
+        resp = self.client.post(
+            self._url(),
+            {"execution_record_id": self.execution_record.id},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["candidate_count"], 2)
+        self.assertEqual(ApiTestCase.objects.count(), 0)
+
+    def test_create_requires_project_and_module_when_not_dry_run(self):
+        resp = self.client.post(
+            self._url(),
+            {"execution_record_id": self.execution_record.id, "dry_run": False},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_create_persists_selected_cases(self):
+        resp = self.client.post(
+            self._url(),
+            {
+                "execution_record_id": self.execution_record.id,
+                "dry_run": False,
+                "project": self.project.id,
+                "module": self.api_module.id,
+                "selected_indexes": [0],
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["created_count"], 1)
+        case = ApiTestCase.objects.get(module=self.api_module)
+        self.assertEqual(case.method, "POST")
+        self.assertEqual(case.path, "/v1/login")
+
+
+class FunctionalCaseToApiCaseTests(TestCase):
+    """Item 2: 功能用例 → 接口用例 AI 辅助生成。
+
+    LLM 调用全部 mock，避免依赖外部模型。
+    """
+
+    def setUp(self):
+        from testcases.models import TestCase as FunctionalTestCase, TestCaseModule, TestCaseStep
+        self.user = User.objects.create_user(username="ai_user", password="test123456")
+        self.project = Project.objects.create(name="ai-project", creator=self.user)
+
+        self.api_module = ApiModule.objects.create(project=self.project, name="登录", creator=self.user)
+        # 已有定义供 LLM 参考
+        ApiDefinition.objects.create(
+            project=self.project,
+            module=self.api_module,
+            name="登录",
+            method="POST",
+            path="/v1/login",
+            summary="账号登录",
+            tags=["auth"],
+            creator=self.user,
+        )
+
+        # 功能用例
+        self.fn_module = TestCaseModule.objects.create(project=self.project, name="auth-fn", creator=self.user)
+        self.functional_case = FunctionalTestCase.objects.create(
+            project=self.project,
+            module=self.fn_module,
+            name="登录功能-正常账号密码登录成功",
+            level="P0",
+            test_type="smoke",
+            precondition="账号已注册",
+            creator=self.user,
+        )
+        TestCaseStep.objects.create(
+            test_case=self.functional_case,
+            step_number=1,
+            description="用合法账号密码请求登录接口",
+            expected_result="返回 200 + token",
+            creator=self.user,
+        )
+        TestCaseStep.objects.create(
+            test_case=self.functional_case,
+            step_number=2,
+            description="用错误密码再次请求",
+            expected_result="返回 401",
+            creator=self.user,
+        )
+
+    def _stub_llm_response(self, content: str):
+        class _Resp:
+            def __init__(self, c):
+                self.content = c
+        return _Resp(content)
+
+    def test_normalize_case_drops_invalid(self):
+        from .ai_from_functional import _normalize_case
+        self.assertIsNone(_normalize_case({"name": "x"}))  # 缺 method/path
+        self.assertIsNone(_normalize_case({"name": "x", "method": "INVALID", "path": "/p"}))
+        ok = _normalize_case({"name": "n", "method": "post", "path": "/p", "headers": "bad", "body": "x"})
+        self.assertEqual(ok["method"], "POST")  # 自动大写
+        self.assertEqual(ok["headers"], {})  # bad 类型被替换为 {}
+        self.assertEqual(ok["body"], {})
+
+    @patch("api_automation.ai_from_functional.safe_llm_invoke")
+    @patch("api_automation.ai_from_functional.create_llm_instance")
+    @patch("api_automation.ai_from_functional.LLMConfig")
+    def test_preview_returns_candidates(self, llm_config_cls, create_llm, safe_invoke):
+        from .ai_from_functional import preview_from_functional_case
+        llm_config_cls.objects.filter.return_value.first.return_value = object()
+        create_llm.return_value = object()
+        safe_invoke.return_value = self._stub_llm_response(json.dumps({
+            "cases": [
+                {
+                    "name": "登录-成功",
+                    "method": "POST",
+                    "path": "/v1/login",
+                    "headers": {"Content-Type": "application/json"},
+                    "query_params": {},
+                    "body": {"username": "demo", "password": "pwd"},
+                    "assertions": [{"type": "status_code", "operator": "eq", "expected": 200}],
+                    "extractors": [],
+                    "matched_definition_id": None,
+                    "rationale": "正向用例",
+                },
+                {
+                    "name": "登录-密码错",
+                    "method": "POST",
+                    "path": "/v1/login",
+                    "headers": {},
+                    "query_params": {},
+                    "body": {"username": "demo", "password": "wrong"},
+                    "assertions": [{"type": "status_code", "operator": "eq", "expected": 401}],
+                    "extractors": [],
+                    "matched_definition_id": None,
+                    "rationale": "异常用例",
+                },
+            ]
+        }))
+
+        result = preview_from_functional_case(self.functional_case.id)
+        self.assertEqual(result["testcase_id"], self.functional_case.id)
+        self.assertEqual(len(result["candidates"]), 2)
+        self.assertEqual(result["candidates"][0]["index"], 0)
+        self.assertEqual(result["candidates"][1]["assertions"][0]["expected"], 401)
+
+    @patch("api_automation.ai_from_functional.safe_llm_invoke")
+    @patch("api_automation.ai_from_functional.create_llm_instance")
+    @patch("api_automation.ai_from_functional.LLMConfig")
+    def test_preview_returns_empty_when_llm_returns_garbage(self, llm_config_cls, create_llm, safe_invoke):
+        from .ai_from_functional import preview_from_functional_case
+        llm_config_cls.objects.filter.return_value.first.return_value = object()
+        create_llm.return_value = object()
+        safe_invoke.return_value = self._stub_llm_response("这不是 JSON")
+
+        result = preview_from_functional_case(self.functional_case.id)
+        self.assertEqual(result["candidates"], [])
+
+    @patch("api_automation.ai_from_functional.LLMConfig")
+    def test_preview_returns_error_when_no_llm_config(self, llm_config_cls):
+        from .ai_from_functional import preview_from_functional_case
+        llm_config_cls.objects.filter.return_value.first.return_value = None
+
+        result = preview_from_functional_case(self.functional_case.id)
+        self.assertIn("LLM", result["error"])
+        self.assertEqual(result["candidates"], [])
+
+    @patch("api_automation.ai_from_functional.safe_llm_invoke")
+    @patch("api_automation.ai_from_functional.create_llm_instance")
+    @patch("api_automation.ai_from_functional.LLMConfig")
+    def test_materialize_creates_selected_cases(self, llm_config_cls, create_llm, safe_invoke):
+        from .ai_from_functional import materialize_from_functional_case
+        llm_config_cls.objects.filter.return_value.first.return_value = object()
+        create_llm.return_value = object()
+        safe_invoke.return_value = self._stub_llm_response(json.dumps({
+            "cases": [
+                {"name": "case1", "method": "POST", "path": "/v1/login",
+                 "headers": {}, "query_params": {}, "body": {},
+                 "assertions": [], "extractors": [], "matched_definition_id": None, "rationale": ""},
+                {"name": "case2", "method": "GET", "path": "/v1/me",
+                 "headers": {}, "query_params": {}, "body": {},
+                 "assertions": [], "extractors": [], "matched_definition_id": None, "rationale": ""},
+            ]
+        }))
+
+        result = materialize_from_functional_case(
+            testcase_id=self.functional_case.id,
+            module_id=self.api_module.id,
+            selected_indexes=[1],
+            environment_id=None,
+            creator=self.user,
+        )
+        self.assertEqual(result["created_count"], 1)
+        self.assertEqual(ApiTestCase.objects.filter(module=self.api_module).count(), 1)
+        api_case = ApiTestCase.objects.get(module=self.api_module)
+        self.assertEqual(api_case.name, "case2")
+        self.assertEqual(api_case.path, "/v1/me")
+        self.assertEqual(api_case.source, "ai_from_functional")
+
+
+class GenerateFromFunctionalCaseViewTests(TestCase):
+    """View: POST /api/api-automation/testcases/generate-from-functional-case/"""
+
+    def setUp(self):
+        from rest_framework.test import APIClient
+        from testcases.models import TestCase as FunctionalTestCase, TestCaseModule
+        self.user = User.objects.create_user(username="view_user", password="test123456")
+        self.project = Project.objects.create(name="view-project", creator=self.user)
+        self.api_module = ApiModule.objects.create(project=self.project, name="m", creator=self.user)
+        fn_module = TestCaseModule.objects.create(project=self.project, name="fn", creator=self.user)
+        self.functional_case = FunctionalTestCase.objects.create(
+            project=self.project,
+            module=fn_module,
+            name="登录功能",
+            creator=self.user,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+
+    def _url(self):
+        return "/api/api-automation/testcases/generate-from-functional-case/"
+
+    def test_returns_400_when_testcase_id_missing(self):
+        resp = self.client.post(self._url(), {}, format="json")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_returns_404_when_testcase_not_found(self):
+        resp = self.client.post(self._url(), {"testcase_id": 9999999}, format="json")
+        self.assertEqual(resp.status_code, 404)
+
+    @patch("api_automation.ai_from_functional.preview_from_functional_case")
+    def test_dry_run_calls_preview(self, preview_mock):
+        preview_mock.return_value = {"candidates": [{"index": 0, "name": "n"}]}
+        resp = self.client.post(
+            self._url(),
+            {"testcase_id": self.functional_case.id},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        preview_mock.assert_called_once_with(self.functional_case.id)
+
+    def test_create_requires_module(self):
+        resp = self.client.post(
+            self._url(),
+            {"testcase_id": self.functional_case.id, "dry_run": False},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 400)
+
+
+class GenerateCaseFromDefinitionTests(TestCase):
+    """ApiDefinitionViewSet.generate-case：根据接口定义一键生成用例。"""
+
+    def setUp(self):
+        from rest_framework.test import APIClient
+        self.user = User.objects.create_user(username="defgen_user", password="test123456")
+        self.project = Project.objects.create(name="defgen-project", creator=self.user)
+        self.module = ApiModule.objects.create(project=self.project, name="m", creator=self.user)
+        self.env = ApiEnvironmentConfig.objects.create(
+            project=self.project,
+            name="default",
+            base_url="https://api.example.com",
+            is_default=True,
+            creator=self.user,
+        )
+        self.definition = ApiDefinition.objects.create(
+            project=self.project,
+            module=self.module,
+            name="获取用户",
+            method="GET",
+            path="/users/{id}",
+            responses={"200": {"description": "OK"}},
+            source="manual",
+            creator=self.user,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+
+    def test_generate_case_creates_with_default_env(self):
+        resp = self.client.post(
+            f"/api/api-automation/definitions/{self.definition.id}/generate-case/", {}, format="json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        case = ApiTestCase.objects.get(id=resp.data["case_id"])
+        self.assertEqual(case.method, "GET")
+        self.assertEqual(case.path, "/users/{id}")
+        self.assertEqual(case.module_id, self.module.id)
+        self.assertEqual(case.environment_id, self.env.id)
+        self.assertEqual(case.source, "definition")
+        self.assertTrue(case.assertions, "应该自带默认断言")
+
+    def test_generate_case_returns_404_for_invalid_module(self):
+        resp = self.client.post(
+            f"/api/api-automation/definitions/{self.definition.id}/generate-case/",
+            {"module": 99999},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 404)
+
+
+class AiEnhanceCaseTests(TestCase):
+    """ai-enhance：mock LLM，验证 dedup + apply 逻辑。"""
+
+    def setUp(self):
+        from rest_framework.test import APIClient
+        self.user = User.objects.create_user(username="ai_enh", password="test123456")
+        self.project = Project.objects.create(name="ai-enh-project", creator=self.user)
+        self.module = ApiModule.objects.create(project=self.project, name="m", creator=self.user)
+        self.case = ApiTestCase.objects.create(
+            project=self.project,
+            module=self.module,
+            name="登录",
+            method="POST",
+            path="/v1/login",
+            assertions=[{"type": "status_code", "operator": "eq", "expected": 200}],
+            extractors=[],
+            creator=self.user,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+
+    def _stub_llm_response(self, content: str):
+        class _Resp:
+            def __init__(self, c):
+                self.content = c
+        return _Resp(content)
+
+    @patch("api_automation.ai_enhance.LLMConfig")
+    def test_returns_message_when_no_llm_config(self, llm_config_cls):
+        from api_automation.ai_enhance import enhance_api_case
+        llm_config_cls.objects.filter.return_value.first.return_value = None
+        result = enhance_api_case(self.case.id)
+        self.assertEqual(result["error"], "未找到激活的 LLM 配置")
+        self.assertFalse(result["applied"])
+
+    @patch("api_automation.ai_enhance.safe_llm_invoke")
+    @patch("api_automation.ai_enhance.create_llm_instance")
+    @patch("api_automation.ai_enhance.LLMConfig")
+    def test_apply_merges_and_dedups(self, llm_config_cls, create_llm, safe_invoke):
+        from api_automation.ai_enhance import enhance_api_case
+        llm_config_cls.objects.filter.return_value.first.return_value = object()
+        create_llm.return_value = object()
+        safe_invoke.return_value = self._stub_llm_response(json.dumps({
+            "assertions": [
+                {"type": "status_code", "operator": "eq", "expected": 200},
+                {"type": "json_path", "operator": "is_not_empty", "expected": None, "target": "data.token"},
+            ],
+            "extractors": [
+                {"name": "auth_token", "source": "json_path", "expression": "data.token"}
+            ],
+            "rationale": "补全字段提取与断言"
+        }))
+
+        result = enhance_api_case(self.case.id, apply=True)
+        self.assertTrue(result["applied"])
+        self.case.refresh_from_db()
+        self.assertEqual(len(self.case.assertions), 2)  # 原有 + 新增（重复的去重）
+        # POST 方法的 status_code eq 200 应被兜底改成 201
+        sc_assertions = [a for a in self.case.assertions if a["type"] == "status_code"]
+        self.assertEqual(len(sc_assertions), 1)
+        self.assertEqual(sc_assertions[0]["expected"], 201)
+        self.assertEqual(self.case.extractors[0]["name"], "auth_token")
+        self.assertIn("补全", result["rationale"])
+
+    @patch("api_automation.ai_enhance.safe_llm_invoke")
+    @patch("api_automation.ai_enhance.create_llm_instance")
+    @patch("api_automation.ai_enhance.LLMConfig")
+    def test_status_code_uses_last_execution_when_available(self, llm_config_cls, create_llm, safe_invoke):
+        from api_automation.ai_enhance import enhance_api_case
+        # 准备一条最近执行记录（真实 status_code=202）
+        ApiExecutionRecord.objects.create(
+            project=self.project,
+            test_case=self.case,
+            status=2,
+            response_data={"status_code": 202, "text": "ok", "headers": {}},
+        )
+        llm_config_cls.objects.filter.return_value.first.return_value = object()
+        create_llm.return_value = object()
+        safe_invoke.return_value = self._stub_llm_response(json.dumps({
+            "assertions": [{"type": "status_code", "operator": "eq", "expected": 200}],
+            "extractors": [],
+            "rationale": "",
+        }))
+        result = enhance_api_case(self.case.id, apply=False)
+        sugg_sc = [a for a in result["suggested"]["assertions"] if a["type"] == "status_code"]
+        self.assertEqual(sugg_sc[0]["expected"], 202)
+
+    @patch("api_automation.ai_enhance.safe_llm_invoke")
+    @patch("api_automation.ai_enhance.create_llm_instance")
+    @patch("api_automation.ai_enhance.LLMConfig")
+    def test_view_dry_run_does_not_modify(self, llm_config_cls, create_llm, safe_invoke):
+        llm_config_cls.objects.filter.return_value.first.return_value = object()
+        create_llm.return_value = object()
+        safe_invoke.return_value = self._stub_llm_response(json.dumps({
+            "assertions": [{"type": "json_path", "operator": "eq", "expected": True, "target": "ok"}],
+            "extractors": [],
+            "rationale": "x",
+        }))
+        resp = self.client.post(f"/api/api-automation/testcases/{self.case.id}/ai-enhance/", {}, format="json")
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.data["applied"])
+        self.case.refresh_from_db()
+        self.assertEqual(len(self.case.assertions), 1)  # 保持不变

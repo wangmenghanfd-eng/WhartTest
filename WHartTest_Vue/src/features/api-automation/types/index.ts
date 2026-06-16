@@ -32,6 +32,11 @@ export interface ApiDefinition {
   path: string
   operation_id?: string
   source?: string
+  summary?: string
+  description?: string
+  tags?: string[]
+  parameters?: Array<Record<string, unknown>>
+  responses?: Record<string, unknown>
 }
 
 export interface ApiTestCase {

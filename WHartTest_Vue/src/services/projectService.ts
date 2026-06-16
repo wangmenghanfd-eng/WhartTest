@@ -620,11 +620,6 @@ export interface ProjectStatistics {
       passed: number;
       failed: number;
     };
-    summary_30d?: {
-      execution_count: number;
-      passed: number;
-      failed: number;
-    };
   };
   mcp: {
     total: number;
@@ -641,6 +636,22 @@ export interface ProjectStatistics {
       success: number;
       failed: number;
       cancelled: number;
+    };
+  };
+  api_automation?: {
+    total_modules: number;
+    total_cases: number;
+    total_executions: number;
+    total_batches: number;
+    by_status: {
+      success: number;
+      failed: number;
+    };
+    last_batch: {
+      id: number | null;
+      name: string;
+      success_rate: number;
+      status: number | null;
     };
   };
 }

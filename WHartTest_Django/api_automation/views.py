@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from projects.models import Project
@@ -30,6 +31,12 @@ from .serializers import (
 )
 from .services import import_openapi_spec, load_openapi_spec
 from .tasks import execute_api_batch_task, execute_api_case_task
+from .trace_to_api_cases import (
+    materialize_from_execution,
+    preview_from_execution,
+)
+
+from ui_automation.models import UiExecutionRecord
 
 
 class CreatorMixin:
@@ -88,6 +95,55 @@ class ApiDefinitionViewSet(CreatorMixin, viewsets.ModelViewSet):
                 Q(operation_id__icontains=keyword)
             )
         return queryset
+
+    @action(detail=True, methods=["post"], url_path="generate-case", permission_classes=[IsAuthenticated])
+    def generate_case(self, request, pk=None):
+        """根据接口定义一键生成一条基础用例。
+
+        Body 可选：- module: 不传则使用 definition.module
+          - environment: 不传则取项目默认环境
+        """
+        from .services import _default_assertions  # type: ignore
+
+        definition: ApiDefinition = self.get_object()
+        module_id = request.data.get("module") or definition.module_id
+        if not module_id:
+            return Response(
+                {"error": "该接口定义未绑定模块，请传 module"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            module = ApiModule.objects.get(id=module_id, project=definition.project)
+        except ApiModule.DoesNotExist:
+            return Response(
+                {"error": f"接口模块 {module_id} 不存在或不属于该项目"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        env_id = request.data.get("environment")
+        env = None
+        if env_id:
+            env = ApiEnvironmentConfig.objects.filter(id=env_id, project=definition.project).first()
+        if env is None:
+            env = ApiEnvironmentConfig.objects.filter(project=definition.project, is_default=True).first()
+
+        case = ApiTestCase.objects.create(
+            project=definition.project,
+            module=module,
+            definition=definition,
+            environment=env,
+            name=f"{definition.method}-{definition.name or definition.path}"[:255],
+            method=definition.method,
+            path=definition.path,
+            assertions=_default_assertions(definition.responses or {}),
+            source="definition",
+            creator=request.user,
+        )
+        return Response({
+            "case_id": case.id,
+            "name": case.name,
+            "method": case.method,
+            "path": case.path,
+        })
 
     @action(detail=False, methods=["post"], url_path="import-openapi")
     def import_openapi(self, request):
@@ -177,32 +233,158 @@ class ApiTestCaseViewSet(CreatorMixin, viewsets.ModelViewSet):
         execute_api_batch_task.delay(batch.id)
         return Response({"batch_id": batch.id, "message": "接口批量执行已提交"})
 
-    @action(detail=False, methods=["post"], url_path="generate-from-functional-case")
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="generate-from-functional-case",
+        permission_classes=[IsAuthenticated],
+    )
     def generate_from_functional_case(self, request):
-        return Response(
-            {
-                "message": "已预留功能用例转接口用例入口。建议先通过 OpenAPI 或 UI Trace 导入真实接口，再由 AI 补全断言与参数化。",
-                "status": "planned",
-            }
-        )
+        """
+        把功能用例（testcases.TestCase）通过 LLM 翻译为接口用例草稿。
 
-    @action(detail=False, methods=["post"], url_path="generate-from-ui-trace")
+        Body:
+          - testcase_id (int, required)
+          - dry_run (bool, default true)
+          - module (int, required when dry_run=false): 接收新建用例的接口模块
+          - environment (int, optional)
+          - selected_indexes (list[int], optional)
+        """
+        from .ai_from_functional import (
+            materialize_from_functional_case,
+            preview_from_functional_case,
+        )
+        from testcases.models import TestCase
+
+        testcase_id = request.data.get("testcase_id")
+        if not testcase_id:
+            return Response({"error": "testcase_id 必填"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            TestCase.objects.get(id=testcase_id)
+        except TestCase.DoesNotExist:
+            return Response(
+                {"error": f"功能用例 {testcase_id} 不存在"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        dry_run = request.data.get("dry_run", True)
+        if dry_run:
+            return Response(preview_from_functional_case(int(testcase_id)))
+
+        module_id = request.data.get("module")
+        if not module_id:
+            return Response(
+                {"error": "创建用例时 module 必填"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        environment_id = request.data.get("environment")
+        selected_indexes = request.data.get("selected_indexes")
+        try:
+            payload = materialize_from_functional_case(
+                testcase_id=int(testcase_id),
+                module_id=int(module_id),
+                selected_indexes=selected_indexes,
+                environment_id=int(environment_id) if environment_id else None,
+                creator=request.user,
+            )
+        except ApiModule.DoesNotExist:
+            return Response(
+                {"error": f"接口模块 {module_id} 不存在或不属于该用例的项目"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(payload)
+
+    @action(detail=False, methods=["post"], url_path="generate-from-ui-trace", permission_classes=[IsAuthenticated])
     def generate_from_ui_trace(self, request):
-        return Response(
-            {
-                "message": "已预留 UI Trace 网络请求转接口用例入口。下一步会从 UI 执行 trace/network 产物提取请求并生成候选接口用例。",
-                "status": "planned",
-            }
-        )
+        """
+        从 UI 执行记录的 Playwright trace 中提取网络请求，转为接口用例。
 
-    @action(detail=True, methods=["post"], url_path="ai-enhance")
-    def ai_enhance(self, request, pk=None):
-        return Response(
-            {
-                "message": "已预留 AI 增强入口。V1 优先保持 OpenAPI 事实来源，AI 后续用于补全断言、提取器与参数化。",
-                "status": "planned",
-            }
+        Body:
+          - execution_record_id (required, int): UI 执行记录 ID
+          - dry_run (bool, default true): 只预览不入库
+          - project (int, required when dry_run=false): 目标项目
+          - module (int, required when dry_run=false): 目标接口模块
+          - environment (int, optional): 指定环境；不传则按 base_url 自动查找/创建
+          - selected_indexes (list[int], optional): 选中的候选下标；不传全部创建
+          - skip_static (bool, default true): 过滤静态资源
+        """
+        execution_record_id = request.data.get("execution_record_id")
+        if not execution_record_id:
+            return Response(
+                {"error": "execution_record_id 必填"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            record = UiExecutionRecord.objects.get(id=execution_record_id)
+        except UiExecutionRecord.DoesNotExist:
+            return Response(
+                {"error": f"UI 执行记录 {execution_record_id} 不存在"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        skip_static = request.data.get("skip_static", True)
+        dry_run = request.data.get("dry_run", True)
+
+        if dry_run:
+            payload = preview_from_execution(record, skip_static=bool(skip_static))
+            return Response(payload)
+
+        project_id = request.data.get("project")
+        module_id = request.data.get("module")
+        if not project_id or not module_id:
+            return Response(
+                {"error": "创建用例时 project 与 module 必填"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response(
+                {"error": f"项目 {project_id} 不存在"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        try:
+            module = ApiModule.objects.get(id=module_id, project_id=project.id)
+        except ApiModule.DoesNotExist:
+            return Response(
+                {"error": f"接口模块 {module_id} 不存在或不属于该项目"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        environment = None
+        env_id = request.data.get("environment")
+        if env_id:
+            environment = ApiEnvironmentConfig.objects.filter(
+                id=env_id, project=project,
+            ).first()
+        result = materialize_from_execution(
+            record,
+            project=project,
+            module=module,
+            creator=request.user if request.user.is_authenticated else None,
+            selected_indexes=request.data.get("selected_indexes"),
+            environment=environment,
+            skip_static=bool(skip_static),
         )
+        return Response(result)
+
+    @action(detail=True, methods=["post"], url_path="ai-enhance", permission_classes=[IsAuthenticated])
+    def ai_enhance(self, request, pk=None):
+        """调用 LLM 为当前用例补全 assertions / extractors。
+
+        Body:
+          - apply (bool, default false): 为 true 时将建议合并到用例
+        """
+        from .ai_enhance import enhance_api_case
+
+        case = self.get_object()
+        apply = bool(request.data.get("apply", False))
+        try:
+            payload = enhance_api_case(case.id, apply=apply)
+        except Exception as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(payload)
 
 
 class ApiPublicDataViewSet(CreatorMixin, viewsets.ModelViewSet):

@@ -43,6 +43,20 @@
 
           <div class="overview-card">
             <div class="overview-header">
+              <icon-code-block class="overview-icon" />
+              <span class="overview-title">接口自动化</span>
+            </div>
+            <div class="overview-value">{{ statistics?.api_automation?.total_cases || 0 }}</div>
+            <div class="overview-sub">
+              <span class="sub-item">模块 {{ statistics?.api_automation?.total_modules || 0 }}</span>
+              <span class="sub-item">执行 {{ statistics?.api_automation?.total_executions || 0 }}</span>
+              <span class="sub-item passed">成功 {{ statistics?.api_automation?.by_status?.success || 0 }}</span>
+              <span class="sub-item failed">失败 {{ statistics?.api_automation?.by_status?.failed || 0 }}</span>
+            </div>
+          </div>
+
+          <div class="overview-card">
+            <div class="overview-header">
               <icon-thunderbolt class="overview-icon" />
               <span class="overview-title">执行统计</span>
             </div>
@@ -406,7 +420,7 @@ onMounted(() => {
 /* 顶部概览卡片 */
 .overview-section {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px;
 }
 

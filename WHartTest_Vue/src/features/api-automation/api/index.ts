@@ -34,6 +34,13 @@ export const apiEnvApi = {
 export const apiDefinitionApi = {
   list: (params?: { project?: number; module?: number; method?: string; search?: string }) =>
     request.get<PaginatedResponse<ApiDefinition>>(`${BASE_URL}/definitions/`, { params }),
+  retrieve: (id: number) => request.get<ApiDefinition>(`${BASE_URL}/definitions/${id}/`),
+  create: (data: Partial<ApiDefinition>) => request.post<ApiDefinition>(`${BASE_URL}/definitions/`, data),
+  update: (id: number, data: Partial<ApiDefinition>) =>
+    request.patch<ApiDefinition>(`${BASE_URL}/definitions/${id}/`, data),
+  delete: (id: number) => request.delete(`${BASE_URL}/definitions/${id}/`),
+  generateCase: (id: number, data?: { module?: number; environment?: number }) =>
+    request.post(`${BASE_URL}/definitions/${id}/generate-case/`, data || {}),
   importOpenApi: (data: FormData | Record<string, unknown>) =>
     request.post(`${BASE_URL}/definitions/import-openapi/`, data),
 }
@@ -51,7 +58,8 @@ export const apiCaseApi = {
     request.post(`${BASE_URL}/testcases/generate-from-functional-case/`, data),
   generateFromUiTrace: (data: Record<string, unknown>) =>
     request.post(`${BASE_URL}/testcases/generate-from-ui-trace/`, data),
-  aiEnhance: (id: number) => request.post(`${BASE_URL}/testcases/${id}/ai-enhance/`),
+  aiEnhance: (id: number, data?: { apply?: boolean }) =>
+    request.post(`${BASE_URL}/testcases/${id}/ai-enhance/`, data || {}),
 }
 
 export const apiPublicDataApi = {
