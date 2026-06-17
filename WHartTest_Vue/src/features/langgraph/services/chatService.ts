@@ -91,6 +91,13 @@ const formatIsoTime = (isoString: string | null | undefined): string => {
   }
 };
 
+const summarizeReadSkillToolOutput = (toolName: string | undefined, content: string): string => {
+  if (toolName !== 'read_skill_content') return content;
+  const skillMatch = content.match(/name:\s*([^\n]+)/i);
+  const skillName = skillMatch?.[1]?.trim() || 'Skill';
+  return `已读取 ${skillName} 的说明，正在继续执行相关能力。`;
+};
+
 // 数字字段归一化（处理字符串或数字类型）
 const normalizeNumericField = (value: unknown): number | undefined => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -639,7 +646,10 @@ export async function sendChatMessageStream(
                 activeStreams.value[streamSessionId].content = '';
               }
               activeStreams.value[streamSessionId].messages.push({
-                content: toolPayload.content || '[工具返回了图片]',
+                content: summarizeReadSkillToolOutput(
+                  typeof parsed.tool_name === 'string' ? parsed.tool_name : undefined,
+                  toolPayload.content || '[工具返回了图片]'
+                ),
                 type: 'tool',
                 time: time,
                 toolName: typeof parsed.tool_name === 'string' ? parsed.tool_name : undefined,
@@ -678,7 +688,7 @@ export async function sendChatMessageStream(
                     
                     // 添加工具消息作为新的独立消息
                     activeStreams.value[streamSessionId].messages.push({
-                      content: toolContent,
+                      content: summarizeReadSkillToolOutput(undefined, toolContent),
                       type: 'tool',
                       time: time,
                       isExpanded: false

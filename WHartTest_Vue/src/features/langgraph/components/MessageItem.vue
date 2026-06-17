@@ -1097,17 +1097,17 @@ const formatToolMessage = (content: string) => {
 }
 
 .ai-message .message-bubble {
-  background-color: white;
-  color: #1d2129;
+  background-color: var(--theme-surface);
+  color: var(--theme-text);
   border-top-left-radius: 2px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--theme-shadow);
 }
 
 .tool-message .message-bubble {
-  background-color: #fff7e6;
-  color: #1d2129;
+  background-color: rgba(var(--theme-accent-rgb), 0.08);
+  color: var(--theme-text);
   border-top-left-radius: 2px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--theme-shadow);
   /* 增强工具消息的文本换行 */
   word-wrap: break-word;
   overflow-wrap: break-word;

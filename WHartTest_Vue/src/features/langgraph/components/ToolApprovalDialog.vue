@@ -388,7 +388,7 @@ const handleReject = async () => {
 .btn-reject:hover {
   border-color: #f53f3f;
   color: #f53f3f;
-  background: #fff1f0;
+  background: rgba(245, 63, 63, 0.12);
 }
 
 .btn-approve {

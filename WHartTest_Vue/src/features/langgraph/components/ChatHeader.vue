@@ -263,9 +263,9 @@ defineExpose({
 
 <style scoped>
 .chat-header-container {
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e6eb;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background-color: var(--theme-surface);
+  border-bottom: 1px solid var(--theme-border);
+  box-shadow: var(--theme-shadow);
   z-index: 1;
 }
 
@@ -281,7 +281,7 @@ defineExpose({
 .chat-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1d2129;
+  color: var(--theme-text);
   margin: 0;
   flex-shrink: 0;
 }
@@ -340,7 +340,7 @@ defineExpose({
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: var(--theme-fill-soft, rgba(0, 0, 0, 0.04));
   border-radius: 16px;
   font-size: 12px;
 }
@@ -350,7 +350,7 @@ defineExpose({
 }
 
 .toggle-label {
-  color: #4e5969;
+  color: var(--theme-text-secondary);
   font-weight: 500;
 }
 
@@ -360,8 +360,8 @@ defineExpose({
 }
 
 .kb-settings-panel {
-  border-top: 1px solid #e5e6eb;
-  background-color: #f7f8fa;
+  border-top: 1px solid var(--theme-border);
+  background-color: var(--theme-page-bg);
 }
 
 .prompt-selector {
@@ -372,7 +372,7 @@ defineExpose({
 
 .prompt-label {
   font-size: 13px;
-  color: #4e5969;
+  color: var(--theme-text-secondary);
   white-space: nowrap;
 }
 
@@ -382,8 +382,8 @@ defineExpose({
   gap: 8px;
   min-height: 32px;
   padding: 0 10px;
-  background: #f7f8fa;
-  border: 1px solid #e5e6eb;
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
   border-radius: 6px;
 }
 
@@ -393,7 +393,48 @@ defineExpose({
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
-  color: #1d2129;
+  color: var(--theme-text);
+}
+
+.prompt-selector :deep(.arco-select-view) {
+  background-color: var(--theme-surface);
+  border-color: var(--theme-border);
+  color: var(--theme-text);
+}
+
+.prompt-selector :deep(.arco-select-view-inner),
+.prompt-selector :deep(.arco-select-view-selector),
+.prompt-selector :deep(.arco-select-view-single),
+.prompt-selector :deep(.arco-select-view-multiple) {
+  background-color: transparent;
+  color: var(--theme-text);
+}
+
+.prompt-selector :deep(.arco-select-view-value),
+.prompt-selector :deep(.arco-select-view-single),
+.prompt-selector :deep(.arco-select-view-input),
+.prompt-selector :deep(.arco-select-view-input input) {
+  color: var(--theme-text);
+  background-color: transparent;
+}
+
+.prompt-selector :deep(.arco-select-view-suffix),
+.prompt-selector :deep(.arco-select-view-clear-btn) {
+  color: var(--theme-text-secondary);
+}
+
+:root[data-theme='black'] .prompt-selector :deep(.arco-select-view),
+:root[data-theme='black'] .single-prompt-display {
+  background: var(--theme-surface) !important;
+  border-color: var(--theme-border) !important;
+  box-shadow: none;
+}
+
+:root[data-theme='black'] .prompt-selector :deep(.arco-select-view-value),
+:root[data-theme='black'] .prompt-selector :deep(.arco-select-view-single),
+:root[data-theme='black'] .prompt-selector :deep(.arco-select-view-input input),
+:root[data-theme='black'] .single-prompt-name {
+  color: var(--theme-text) !important;
 }
 
 

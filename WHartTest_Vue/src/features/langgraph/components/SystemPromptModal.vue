@@ -31,6 +31,9 @@
                   </template>
                   同步内置提示词
                 </a-button>
+                <a-tooltip content="用于补齐系统自带提示词模板；如果选择“覆盖全部”，会用最新版内置模板覆盖当前内置提示词内容。">
+                  <icon-info-circle class="sync-info-icon" />
+                </a-tooltip>
                 <a-button type="primary" size="small" @click="showCreatePromptForm">
                   <template #icon>
                     <icon-plus />
@@ -831,6 +834,18 @@ const handlePromptTypeChange = (type: PromptType) => {
 }
 
 .type-info-icon:hover {
+  color: #0e42d2;
+}
+
+.sync-info-icon {
+  margin-right: 8px;
+  color: #165dff;
+  font-size: 16px;
+  cursor: help;
+  flex-shrink: 0;
+}
+
+.sync-info-icon:hover {
   color: #0e42d2;
 }
 </style>

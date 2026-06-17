@@ -183,15 +183,16 @@ const formatTime = (date: Date) => {
 <style scoped>
 .chat-sidebar {
   width: 280px;
-  background-color: #ffffff;
-  border-right: 1px solid #e5e6eb;
+  background-color: var(--theme-surface);
+  border-right: 1px solid var(--theme-border);
   display: flex;
   flex-direction: column;
+  color: var(--theme-text);
 }
 
 .sidebar-header {
   padding: 16px;
-  border-bottom: 1px solid #e5e6eb;
+  border-bottom: 1px solid var(--theme-border);
 }
 
 .header-row {
@@ -208,7 +209,7 @@ const formatTime = (date: Date) => {
 
 .empty-history {
   padding: 16px;
-  color: #86909c;
+  color: var(--theme-text-tertiary);
   text-align: center;
 }
 
