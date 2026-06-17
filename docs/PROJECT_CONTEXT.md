@@ -1,6 +1,6 @@
 # WHartTest 项目上下文交接文档
 
-> 给新会话 Cascade 使用——读完此文即可接手，无需再重新扫描整个工程。最后更新：2026-04-27。
+> 给新会话 Cascade 使用——读完此文即可接手，无需再重新扫描整个工程。最后更新：2026-06-17。
 
 ---
 
@@ -12,7 +12,7 @@
 - 存储：PostgreSQL + Redis + Qdrant（向量库）
 - AI：LLM（LangGraph 智能体）+ MCP 工具（Playwright、内置 WHartTest 工具、远程 MCP）+ RAG 知识库
 - 部署：Docker Compose，一键启动 6~7 个服务
-- 测试覆盖：3 个核心模块共 **74 个单元测试**（见 §10）
+- 测试覆盖：3 个核心模块共 **122 个单元测试**（见 §10）
 
 本地部署根目录：`/Users/wangmenghan/WHartTest`。用户时区：**UTC+4 (Asia/Dubai)**，Django 默认配置时区：**Asia/Shanghai (UTC+8)**（定时任务支持按任务覆盖时区，见 §5.2）。
 
@@ -24,7 +24,7 @@
 WHartTest/
 ├── WHartTest_Django/             # Django 后端（主要业务代码）
 │   ├── accounts/                 # 用户账户/认证
-│   ├── api_automation/           # ★ 接口自动化（新模块，OpenAPI 导入 + 用例 + 批量执行）
+│   ├── api_automation/           # ★ 接口自动化（OpenAPI 导入 + 用例 + 批量执行 + AI 增强 + 功能用例转换 + UI Trace 导入 + 报告/定时）
 │   ├── api_keys/                 # API Key 管理
 │   ├── knowledge/                # 知识库 + RAG + 嵌入
 │   ├── langgraph_integration/    # LLM 配置 + LangGraph 集成
@@ -57,7 +57,7 @@ WHartTest/
 | `mcp_tools` | 远程 MCP 配置、持久会话 | `RemoteMCPConfig`, `MCPTool` |
 | `task_center` | 定时任务调度（基于 django-celery-beat），支持 UI/API/Suite 三种模块 | `ScheduledTask`, `TaskExecution` |
 | `ui_automation` | UI 自动化页面/步骤/用例/执行 + 执行器 WebSocket 派单 | `UiTestCase`, `UiBatchExecutionRecord`, ... |
-| `api_automation` | 接口自动化（OpenAPI 导入、环境配置、用例、批次） | `ApiTestCase`, `ApiBatchExecutionRecord`, ... |
+| `api_automation` | 接口自动化（OpenAPI 导入、环境配置、用例、批次、AI 增强、功能用例转接口、UI Trace 转接口、报告/定时） | `ApiTestCase`, `ApiBatchExecutionRecord`, ... |
 | `testcases` | 功能测试用例、测试套件、AI 用例生成 | `TestCase`, `TestSuite` |
 
 ### 2.2 前端路由要点
@@ -65,7 +65,7 @@ WHartTest/
 - `/langgraph-chat` — LLM 对话
 - `/knowledge-management` — 知识库
 - `/ui-automation` — UI 自动化（Tab：页面/步骤/用例/执行记录/批量执行/公共数据/环境/执行器）
-- `/api-automation` — 接口自动化（OpenAPI 导入、用例编辑、批量执行）
+- `/api-automation` — 接口自动化（OpenAPI 导入、用例编辑、批量执行、AI 增强、功能用例/Trace 转换、报告、定时任务）
 - `/testcases` — 测试用例管理（含套件）
 - `/task-center` — 定时任务（UI/API/Suite 三种调度类型）
 - `/requirements` — 需求管理
@@ -105,9 +105,9 @@ WHartTest/
 | 测试用例 + 套件 | ✅ | AI 生成 + 手动编辑 |
 | UI 自动化（AI 驱动） | ✅ | the-internet.herokuapp.com 登录用例 |
 | UI 自动化（Actuator 派单） | ✅ | WebSocket 派单 + OPEN 任务调度开关 |
-| 接口自动化 | ✅ | OpenAPI 导入 + 单个/批量执行 + 默认环境自动创建 |
+| 接口自动化 | ✅ | OpenAPI 导入 + 单个/批量执行 + 默认环境自动创建 + AI 增强/功能用例转换/UI Trace 导入 + 报告/定时 |
 | 任务中心 | ✅ | UI/API/Suite 三种调度都通；时区支持按任务覆盖 |
-| 单元测试 | ✅ | 74 个测试覆盖 ui_automation/api_automation/task_center |
+| 单元测试 | ✅ | 122 个测试覆盖 ui_automation/api_automation/task_center |
 | Playwright-MCP | ✅ | 容器可运行 |
 
 ---
@@ -209,7 +209,10 @@ Skills 具备较高系统执行权限，**严禁公网暴露**，仅限内网/�
 | `WHartTest_Django/task_center/tasks.py` | `execute_scheduled_task` Celery task（UI/API/Suite 三分支） |
 | `WHartTest_Django/ui_automation/consumers.py` | WebSocket 派单 + `SocketUserManager`（OPEN 开关） |
 | `WHartTest_Django/ui_automation/views.py` | UI 自动化 REST + `trigger_batch_execution` 内部接口 |
-| `WHartTest_Django/api_automation/services.py` | 接口执行核心：`_render_value`、`_assert_response`、`_build_url`、OpenAPI 导入 |
+| `WHartTest_Django/api_automation/services.py` | 接口执行核心：`_render_value`、`_assert_response`、`_extract_variables`、`_compare`、`_get_by_path`、`_build_url`、OpenAPI 导入 |
+| `WHartTest_Django/api_automation/ai_enhance.py` | LLM 给用例补全 assertions/extractors（`enhance_api_case`） |
+| `WHartTest_Django/api_automation/ai_from_functional.py` | 功能用例 → 接口用例 AI 生成（preview / materialize） |
+| `WHartTest_Django/api_automation/trace_to_api_cases.py` | UI 执行 trace 的网络请求 → 接口用例（preview / materialize） |
 | `WHartTest_Django/api_automation/tasks.py` | `execute_api_batch_task`、`execute_api_case_task` |
 | `WHartTest_Django/langgraph_integration/models.py` | `LLMConfig` 定义 |
 
@@ -265,9 +268,9 @@ docker exec wharttest-backend python manage.py test ui_automation api_automation
 | 模块 | 测试文件 | 测试数 |
 |------|---------|--------|
 | `ui_automation` | `WHartTest_Django/ui_automation/tests.py` | 25 |
-| `api_automation` | `WHartTest_Django/api_automation/tests.py` | 20 |
+| `api_automation` | `WHartTest_Django/api_automation/tests.py` | 68 |
 | `task_center` | `WHartTest_Django/task_center/tests.py` | 29 |
-| **合计** | | **74** |
+| **合计** | | **122** |
 
 ### 关键覆盖点（每条都对应 §5 / §6 的修复，回归保护用）
 - **OPEN 开关**：`SocketUserManagerActuatorTests`、`TriggerBatchExecutionViewTests`
