@@ -42,10 +42,10 @@ SYSTEM_PROMPT = """你是 API 测试领域的资深工程师。给你一份现�
 严格输出如下 JSON：
 {
   "assertions": [
-    {"type": "status_code|json_path|header|body_text|response_time|json_path_length|json_path_type",
+    {"type": "status_code|body_contains|body_not_contains|header_exists|header_value|json_path",
      "operator": "eq|neq|gt|gte|lt|lte|contains|not_contains|regex|is_empty|is_not_empty|in|not_in",
      "expected": <值>,
-     "target": "可选：json_path 表达式或 header 名称"}
+     "path": "仅 json_path / header_value 需要：json_path 表达式（如 data.token）或响应头名"}
   ],
   "extractors": [
     {"name": "提取后变量名",
@@ -57,6 +57,8 @@ SYSTEM_PROMPT = """你是 API 测试领域的资深工程师。给你一份现�
 
 硬性要求：
 - 输出必须是合法 JSON，不要添加 Markdown 代码块以外的内容
+- type 只能是上面 6 种之一；不要使用其它类型
+- 字段约定：json_path / header_value 把 json 路径或响应头名写在 path 字段（不要用 target）；header_exists 把响应头名写在 expected；body_contains / body_not_contains 把子串写在 expected；status_code 把状态码写在 expected
 - 不要重复用户已有的 assertions/extractors
 - 如果没有需要新增的项，对应数组就给空 []
 - status_code 的期望值要按方法选择默认：POST 用 201，DELETE 用 204，PUT/PATCH 多数 200，GET 200。如果上次执行（last_execution）给出了真实 status_code，请优先以它为准。

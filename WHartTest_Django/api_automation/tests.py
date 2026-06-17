@@ -335,14 +335,15 @@ class ApiJsonPathAssertionTests(TestCase):
         ])
         self.assertTrue(ok)
 
-    def test_unknown_type_passes_silently(self):
-        """未知断言类型不应导致失败（向后兼容）。"""
+    def test_unknown_type_fails(self):
+        """未知断言类型应判失败，避免静默通过造成假绿。"""
         from .services import _assert_response
         resp = httpx.Response(200, text="x", request=httpx.Request("GET", "https://x"))
-        ok, _r = _assert_response(resp, [
+        ok, results = _assert_response(resp, [
             {"type": "future_unknown", "expected": "x"},
         ])
-        self.assertTrue(ok)
+        self.assertFalse(ok)
+        self.assertFalse(results[0]["passed"])
 
 
 class ApiExtractorTests(TestCase):

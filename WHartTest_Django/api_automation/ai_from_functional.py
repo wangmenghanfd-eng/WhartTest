@@ -67,6 +67,7 @@ SYSTEM_PROMPT = """你是一名资深 API 测试工程师。用户会给你一�
 4. 至少给出 1 条 happy-path 用例 + 1 条异常/边界用例（status_code != 200 的）
 5. 不要捏造业务，所有 path / 字段都要从 definitions 或功能用例文本中能找到依据
 6. assertions 里 operator 必须是这些之一：eq, neq, gt, gte, lt, lte, contains, not_contains, regex, is_empty, is_not_empty, in, not_in
+7. assertions 的 type 只能是：status_code, body_contains, body_not_contains, header_exists, header_value, json_path。其中 json_path / header_value 把 json 路径或响应头名写在 path 字段（不要用 target）；header_exists 与 body_contains / body_not_contains 把头名或子串写在 expected
 """
 
 

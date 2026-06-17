@@ -311,7 +311,7 @@ def _assert_response(response: httpx.Response, assertions: list[dict[str, Any]])
             passed = _compare(actual, operator, expected)
         else:
             actual = None
-            passed = True
+            passed = False
         ok = ok and passed
         results.append({**assertion, "actual": actual, "passed": passed})
     return ok, results
