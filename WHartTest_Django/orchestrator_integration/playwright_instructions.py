@@ -16,9 +16,11 @@ TEST_CASE_EXECUTION_INSTRUCTION = """
 4. 打开页面后，先调用 `helpers.describePageForAI(page)`，再根据真实返回的选择器执行操作。
 5. 截图必须先保存在 `process.env.SCREENSHOT_DIR`，上传时只能传真实文件名。
 6. `run.js` 双引号内必须是可执行 JavaScript 语句，例如 `await page.goto('https://example.com');`，绝对不能写成“输入用户名和密码”这种自然语言。
-7. 验证页面跳转/登录成功时，优先用 URL 检查，禁止用 `text=` 正则匹配跳转目标：
-   - 推荐：`await page.waitForURL('**/secure');` 或 `console.log(page.url());`
-   - 必须用文本匹配时，正则须加 `/i` 标志忽略大小写，例如 `text=/secure area/i`，禁止写 `text=/secure/`。
+7. 验证页面跳转/登录成功时，优先依据“当前用例的预期结果 + 实际观察到的页面”来判断，不要照搬历史站点示例：
+   - 推荐：先 `console.log(page.url());` 或 `await helpers.describePageForAI(page);`，再根据真实 URL / 页面标题 / 关键文本写断言。
+   - 只有在你已经从页面或用例预期中明确知道目标路径时，才使用 `waitForURL(...)`。
+   - 禁止默认写死 `**/secure`、`text=/secure area/i` 这类和当前站点无关的断言。
+   - 必须用文本匹配时，正则须加 `/i` 标志忽略大小写，并且文本必须来自当前页面实际可见内容。
 8. 默认不要在 `page.goto()` 中使用 `waitUntil: 'networkidle'`。很多站点会持续发请求，容易造成无意义的导航超时。优先 `page.goto()` 后配合 `waitForSelector` / `waitForURL`。
 9. 负向场景（如用户名错误、密码错误）先检查 `page.url()` 和页面实际文本，再写断言；禁止先凭空猜测完整报错文案后直接 `waitForSelector('text=...')` 30 秒。
 

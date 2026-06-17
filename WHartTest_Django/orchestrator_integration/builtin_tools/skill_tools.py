@@ -208,6 +208,9 @@ def _rewrite_or_validate_playwright_code(raw_code: str) -> tuple[Optional[str], 
     if not code:
         return None, "错误: playwright-skill 未收到任何可执行代码。"
 
+    # 兼容模型把 shell 内转义直接原样塞进 JS，导致 node run.js 收到非法的反斜杠引号。
+    code = code.replace("\\'", "'").replace('\\"', '"')
+
     if _PLAYWRIGHT_JS_HINT_RE.search(code):
         return code, None
 
@@ -553,6 +556,15 @@ def get_skill_tools(
             logger.info(f"[execute_skill_script] 在目录 {skill_dir} 执行: {command}")
 
             env = os.environ.copy()
+            venv_bin = "/opt/venv/bin"
+            existing_path = env.get("PATH", "")
+            path_parts = [part for part in existing_path.split(":") if part]
+            ordered_prefixes = [venv_bin, skill_dir]
+            for prefix in reversed(ordered_prefixes):
+                if prefix and prefix not in path_parts:
+                    path_parts.insert(0, prefix)
+            env["PATH"] = ":".join(path_parts)
+            env.setdefault("VIRTUAL_ENV", "/opt/venv")
             env["WHARTTEST_BACKEND_URL"] = (
                 getattr(settings, "WHARTTEST_BACKEND_URL", None)
                 or os.environ.get("WHARTTEST_BACKEND_URL")
@@ -853,8 +865,8 @@ def get_skill_tools(
         command: Optional[str] = None,
         session_id: Optional[str] = None,
         commands: Optional[list[dict[str, str]]] = None,
-        parallel: bool = True,
-        max_workers: int = 10,
+        parallel: Optional[bool] = True,
+        max_workers: Optional[int] = 10,
     ) -> str:
         """
         执行 Skill 命令，支持单个执行或批量并发执行。
@@ -881,6 +893,11 @@ def get_skill_tools(
         """
         import json
         from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        if parallel is None:
+            parallel = True
+        if max_workers is None:
+            max_workers = 10
 
         # 批量执行模式
         if commands:
