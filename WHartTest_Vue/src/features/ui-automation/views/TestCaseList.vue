@@ -619,7 +619,7 @@ const batchDeleteTestCases = async () => {
 
   try {
     const res = await testCaseApi.batchDelete(selectedRowKeys.value)
-    const result = extractResponseData(res)
+    const result = extractResponseData<any>(res)
     
     if (result) {
       Message.success(result.message || `成功删除 ${selectedRowKeys.value.length} 个用例`)

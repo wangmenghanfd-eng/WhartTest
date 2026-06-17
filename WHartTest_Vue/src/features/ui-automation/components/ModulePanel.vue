@@ -124,17 +124,12 @@ const filteredTreeData = computed(() => {
 // 加载模块树
 const fetchModules = async () => {
   if (!projectId.value) {
-    console.log('[ModulePanel] projectId is null, skipping fetch');
     return;
   }
-  console.log('[ModulePanel] fetching modules for project:', projectId.value);
   loading.value = true;
   try {
     const res = await moduleApi.tree(projectId.value);
-    console.log('[ModulePanel] API response:', res);
-    // 兼容两种响应格式
-    const data = res.data?.data || res.data || [];
-    console.log('[ModulePanel] extracted data:', data);
+    const data = Array.isArray((res as any).data) ? (res as any).data : [];
     treeData.value = Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('[ModulePanel] 获取模块失败:', error);

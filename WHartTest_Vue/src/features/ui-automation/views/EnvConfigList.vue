@@ -101,7 +101,15 @@
             </a-form-item>
           </a-col>
           <a-col :span="8">
-            <a-form-item field="is_default" label="设为默认">
+            <a-form-item field="is_default">
+              <template #label>
+                <span class="label-with-tip">
+                  设为项目默认
+                  <a-tooltip content="未指定环境时，系统会优先使用项目默认环境；如果不设默认，执行时需要手动选择环境。">
+                    <icon-question-circle class="help-icon" />
+                  </a-tooltip>
+                </span>
+              </template>
               <a-switch v-model="formData.is_default" />
             </a-form-item>
           </a-col>
@@ -123,20 +131,28 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-divider>数据库配置</a-divider>
+        <a-divider>
+          <span class="label-with-tip">
+            数据库配置
+            <a-tooltip content="仅在 UI 自动化需要做数据准备、校验或清理时使用；普通页面操作可以不填。新增和查改删分开，是为了分别控制前置造数与后置校验/清理。">
+              <icon-question-circle class="help-icon" />
+            </a-tooltip>
+          </span>
+        </a-divider>
         <a-row :gutter="16">
           <a-col :span="8">
-            <a-form-item field="db_c_status" label="启用新增">
+            <a-form-item field="db_c_status" label="数据准备（新增）">
               <a-switch v-model="formData.db_c_status" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
-            <a-form-item field="db_rud_status" label="启用查改删">
+            <a-form-item field="db_rud_status" label="校验/清理（查改删）">
               <a-switch v-model="formData.db_rud_status" />
             </a-form-item>
           </a-col>
         </a-row>
         <div v-if="formData.db_c_status || formData.db_rud_status" class="mysql-config-form">
+          <a-alert type="info" style="margin-bottom: 12px;">新增和查改删共用同一套连接信息，只是启用时机不同。</a-alert>
           <a-row :gutter="16">
             <a-col :span="12">
               <a-form-item label="主机地址">
@@ -173,7 +189,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { IconPlus, IconEdit, IconDelete, IconCheck } from '@arco-design/web-vue/es/icon'
+import { IconPlus, IconEdit, IconDelete, IconCheck, IconQuestionCircle } from '@arco-design/web-vue/es/icon'
 import { useProjectStore } from '@/store/projectStore'
 import { envConfigApi } from '../api'
 import type { UiEnvironmentConfig, UiEnvironmentConfigForm, BrowserType } from '../types'
@@ -230,7 +246,7 @@ const columns = [
   { title: '基础 URL', dataIndex: 'base_url', ellipsis: true, tooltip: true, width: 200, align: 'center' as const },
   { title: '浏览器', slotName: 'browser', width: 100, align: 'center' as const },
   { title: '模式', slotName: 'headless', width: 80, align: 'center' as const },
-  { title: '默认', slotName: 'is_default', width: 70, align: 'center' as const },
+  { title: '项目默认', slotName: 'is_default', width: 90, align: 'center' as const },
   { title: '创建者', dataIndex: 'creator_name', width: 100, align: 'center' as const },
   { title: '操作', slotName: 'operations', width: 200, fixed: 'right' as const, align: 'center' as const },
 ]
@@ -448,5 +464,16 @@ watch(projectId, () => {
 }
 .mysql-config-form :deep(.arco-form-item-label-col) {
   flex: 0 0 70px;
+}
+
+.label-with-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.help-icon {
+  color: rgb(var(--gray-6));
+  cursor: help;
 }
 </style>
