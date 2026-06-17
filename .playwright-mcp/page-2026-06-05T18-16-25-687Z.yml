@@ -1,0 +1,67 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img "WHartTest Logo" [ref=e7]
+        - generic [ref=e8]: WHartTest
+      - generic [ref=e10]:
+        - textbox "请选择项目" [disabled] [ref=e11]
+        - img [ref=e14]
+    - generic [ref=e16]:
+      - button "切换到黑色主题" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+      - 'button "当前版本: v2.2.0" [ref=e20] [cursor=pointer]'
+      - generic [ref=e22]: A
+      - generic [ref=e23] [cursor=pointer]:
+        - generic [ref=e24]: admin
+        - img [ref=e25]
+  - generic [ref=e27]:
+    - generic [ref=e29]:
+      - generic [ref=e31]:
+        - generic [ref=e32] [cursor=pointer]:
+          - img [ref=e34]
+          - link "首页" [ref=e38]:
+            - /url: /dashboard
+        - generic [ref=e39] [cursor=pointer]:
+          - img [ref=e41]
+          - link "项目管理" [ref=e47]:
+            - /url: /projects
+        - generic [ref=e48] [cursor=pointer]:
+          - img [ref=e50]
+          - link "需求管理" [ref=e53]:
+            - /url: "#"
+        - generic [ref=e54] [cursor=pointer]:
+          - img [ref=e56]
+          - link "UI自动化" [ref=e60]:
+            - /url: "#"
+        - generic [ref=e61] [cursor=pointer]:
+          - img [ref=e63]
+          - link "接口自动化" [ref=e66]:
+            - /url: "#"
+        - generic [ref=e67] [cursor=pointer]:
+          - img [ref=e69]
+          - link "任务中心" [ref=e73]:
+            - /url: "#"
+        - generic [ref=e75] [cursor=pointer]:
+          - img [ref=e77]
+          - generic [ref=e79]: 测试管理
+          - img [ref=e81]
+        - generic [ref=e83] [cursor=pointer]:
+          - img [ref=e85]
+          - link "LLM对话" [ref=e88]:
+            - /url: "#"
+        - generic [ref=e89] [cursor=pointer]:
+          - img [ref=e91]
+          - link "知识库管理" [ref=e94]:
+            - /url: "#"
+        - generic [ref=e96] [cursor=pointer]:
+          - img [ref=e98]
+          - generic [ref=e101]: 系统管理
+          - img [ref=e103]
+      - button "收起" [ref=e106] [cursor=pointer]:
+        - img [ref=e108]
+        - generic [ref=e110]: 收起
+    - main [ref=e111]:
+      - generic [ref=e114]:
+        - img [ref=e116]
+        - generic [ref=e118]: 请在顶部选择一个项目查看统计数据

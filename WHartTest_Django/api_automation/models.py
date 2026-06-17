@@ -83,7 +83,7 @@ class ApiDefinition(models.Model):
     class Meta:
         db_table = "api_definition"
         ordering = ["-id"]
-        unique_together = ("project", "method", "path")
+        unique_together = ("project", "module", "method", "path")
         verbose_name = _("接口定义")
         verbose_name_plural = _("接口定义")
 
@@ -139,6 +139,45 @@ class ApiTestCase(models.Model):
         ordering = ["-id"]
         verbose_name = _("接口测试用例")
         verbose_name_plural = _("接口测试用例")
+
+
+class ApiScenario(models.Model):
+    STATUS_CHOICES = [(0, _("未执行")), (1, _("执行中")), (2, _("成功")), (3, _("失败"))]
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="api_scenarios", verbose_name=_("所属项目"))
+    module = models.ForeignKey(ApiModule, on_delete=models.PROTECT, related_name="scenarios", verbose_name=_("所属模块"))
+    name = models.CharField(_("场景名称"), max_length=255)
+    description = models.TextField(_("场景描述"), blank=True, default="")
+    status = models.SmallIntegerField(_("状态"), choices=STATUS_CHOICES, default=0)
+    last_result = models.JSONField(_("最近执行结果"), default=dict, blank=True)
+    error_message = models.TextField(_("错误信息"), blank=True, default="")
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="created_api_scenarios", verbose_name=_("创建人"))
+    created_at = models.DateTimeField(_("创建时间"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("更新时间"), auto_now=True)
+
+    class Meta:
+        db_table = "api_scenario"
+        ordering = ["module_id", "name", "id"]
+        verbose_name = _("接口场景")
+        verbose_name_plural = _("接口场景")
+
+
+class ApiScenarioStep(models.Model):
+    scenario = models.ForeignKey(ApiScenario, on_delete=models.CASCADE, related_name="steps", verbose_name=_("所属场景"))
+    order = models.PositiveIntegerField(_("顺序"), default=1)
+    test_case = models.ForeignKey(ApiTestCase, on_delete=models.PROTECT, related_name="scenario_steps", verbose_name=_("接口用例"))
+    name = models.CharField(_("步骤名称"), max_length=255, blank=True, default="")
+    is_enabled = models.BooleanField(_("启用"), default=True)
+    stop_on_failure = models.BooleanField(_("失败即停止"), default=True)
+    created_at = models.DateTimeField(_("创建时间"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("更新时间"), auto_now=True)
+
+    class Meta:
+        db_table = "api_scenario_step"
+        ordering = ["order", "id"]
+        unique_together = ("scenario", "order")
+        verbose_name = _("接口场景步骤")
+        verbose_name_plural = _("接口场景步骤")
 
 
 class ApiScript(models.Model):
@@ -208,3 +247,51 @@ class ApiExecutionRecord(models.Model):
     class Meta:
         db_table = "api_execution_record"
         ordering = ["-id"]
+
+
+class ApiScenarioExecutionRecord(models.Model):
+    STATUS_CHOICES = [(0, _("待执行")), (1, _("执行中")), (2, _("成功")), (3, _("失败"))]
+    TRIGGER_TYPE_CHOICES = [("manual", _("手动执行")), ("scheduled", _("定时执行"))]
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="api_scenario_execution_records", verbose_name=_("所属项目"))
+    scenario = models.ForeignKey(ApiScenario, on_delete=models.CASCADE, related_name="execution_records", verbose_name=_("接口场景"))
+    environment = models.ForeignKey(ApiEnvironmentConfig, on_delete=models.SET_NULL, null=True, blank=True, related_name="scenario_execution_records", verbose_name=_("环境"))
+    status = models.SmallIntegerField(_("状态"), choices=STATUS_CHOICES, default=0)
+    trigger_type = models.CharField(_("触发类型"), max_length=20, choices=TRIGGER_TYPE_CHOICES, default="manual")
+    variables_snapshot = models.JSONField(_("变量快照"), default=dict, blank=True)
+    result_summary = models.JSONField(_("结果摘要"), default=dict, blank=True)
+    error_message = models.TextField(_("错误信息"), blank=True, default="")
+    duration = models.FloatField(_("耗时秒"), null=True, blank=True)
+    executor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="api_scenario_execution_records", verbose_name=_("执行人"))
+    created_at = models.DateTimeField(_("创建时间"), auto_now_add=True)
+    start_time = models.DateTimeField(_("开始时间"), null=True, blank=True)
+    end_time = models.DateTimeField(_("结束时间"), null=True, blank=True)
+
+    class Meta:
+        db_table = "api_scenario_execution_record"
+        ordering = ["-id"]
+        verbose_name = _("接口场景执行记录")
+        verbose_name_plural = _("接口场景执行记录")
+
+
+class ApiScenarioStepRecord(models.Model):
+    STATUS_CHOICES = [(0, _("待执行")), (1, _("执行中")), (2, _("成功")), (3, _("失败")), (4, _("跳过"))]
+
+    scenario_execution = models.ForeignKey(ApiScenarioExecutionRecord, on_delete=models.CASCADE, related_name="step_records", verbose_name=_("所属场景执行"))
+    step = models.ForeignKey(ApiScenarioStep, on_delete=models.CASCADE, related_name="step_records", verbose_name=_("场景步骤"))
+    test_case = models.ForeignKey(ApiTestCase, on_delete=models.SET_NULL, null=True, blank=True, related_name="scenario_step_records", verbose_name=_("接口用例"))
+    execution_record = models.ForeignKey(ApiExecutionRecord, on_delete=models.SET_NULL, null=True, blank=True, related_name="scenario_step_records", verbose_name=_("接口执行记录"))
+    order = models.PositiveIntegerField(_("顺序"), default=1)
+    status = models.SmallIntegerField(_("状态"), choices=STATUS_CHOICES, default=0)
+    extracted_variables = models.JSONField(_("提取变量"), default=dict, blank=True)
+    error_message = models.TextField(_("错误信息"), blank=True, default="")
+    duration = models.FloatField(_("耗时秒"), null=True, blank=True)
+    created_at = models.DateTimeField(_("创建时间"), auto_now_add=True)
+    start_time = models.DateTimeField(_("开始时间"), null=True, blank=True)
+    end_time = models.DateTimeField(_("结束时间"), null=True, blank=True)
+
+    class Meta:
+        db_table = "api_scenario_step_record"
+        ordering = ["order", "id"]
+        verbose_name = _("接口场景步骤执行记录")
+        verbose_name_plural = _("接口场景步骤执行记录")

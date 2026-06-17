@@ -1,0 +1,204 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e46]:
+    - generic [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - img "WHartTest Logo" [ref=e50]
+          - generic [ref=e51]: WHartTest
+        - generic "Expand Testing 练手项目" [ref=e53] [cursor=pointer]:
+          - textbox "请选择项目"
+          - generic [ref=e54]: Expand Testing 练手项目
+          - img [ref=e57]
+      - generic [ref=e59]:
+        - button "切换到黑色主题" [ref=e60] [cursor=pointer]:
+          - img [ref=e61]
+        - 'link "当前版本: v2.2.0" [ref=e63] [cursor=pointer]':
+          - /url: https://github.com/MGdaasLab/WHartTest/releases/tag/v2.4.0
+          - text: "当前版本: v2.2.0"
+        - generic [ref=e66]: A
+        - generic [ref=e67] [cursor=pointer]:
+          - generic [ref=e68]: admin
+          - img [ref=e69]
+    - generic [ref=e71]:
+      - generic [ref=e73]:
+        - generic [ref=e75]:
+          - generic [ref=e76] [cursor=pointer]:
+            - img [ref=e78]
+            - link "首页" [ref=e82]:
+              - /url: /dashboard
+          - generic [ref=e83] [cursor=pointer]:
+            - img [ref=e85]
+            - link "项目管理" [ref=e91]:
+              - /url: /projects
+          - generic [ref=e92] [cursor=pointer]:
+            - img [ref=e94]
+            - link "需求管理" [ref=e97]:
+              - /url: "#"
+          - generic [ref=e98] [cursor=pointer]:
+            - img [ref=e100]
+            - link "UI自动化" [ref=e104]:
+              - /url: "#"
+          - generic [ref=e105] [cursor=pointer]:
+            - img [ref=e107]
+            - link "接口自动化" [ref=e110]:
+              - /url: "#"
+          - generic [ref=e111] [cursor=pointer]:
+            - img [ref=e113]
+            - link "任务中心" [ref=e117]:
+              - /url: "#"
+          - generic [ref=e119] [cursor=pointer]:
+            - img [ref=e121]
+            - generic [ref=e123]: 测试管理
+            - img [ref=e125]
+          - generic [ref=e127] [cursor=pointer]:
+            - img [ref=e129]
+            - link "LLM对话" [ref=e132]:
+              - /url: "#"
+          - generic [ref=e133] [cursor=pointer]:
+            - img [ref=e135]
+            - link "知识库管理" [ref=e138]:
+              - /url: "#"
+          - generic [ref=e140] [cursor=pointer]:
+            - img [ref=e142]
+            - generic [ref=e145]: 系统管理
+            - img [ref=e147]
+        - button "收起" [ref=e150] [cursor=pointer]:
+          - img [ref=e152]
+          - generic [ref=e154]: 收起
+      - main [ref=e155]:
+        - generic [ref=e158]:
+          - generic [ref=e159]:
+            - generic [ref=e160]:
+              - generic [ref=e161]:
+                - img [ref=e162]
+                - generic [ref=e164]: 功能用例
+              - generic [ref=e166] [cursor=pointer]: "7"
+              - generic [ref=e167]:
+                - generic [ref=e168]: 通过 0
+                - generic [ref=e169]: 待审 7
+                - generic [ref=e170]: 待优化 0
+                - generic [ref=e171]: 优化待审 0
+            - generic [ref=e172]:
+              - generic [ref=e173]:
+                - img [ref=e174]
+                - generic [ref=e176]: UI自动化
+              - generic [ref=e178] [cursor=pointer]: "6"
+              - generic [ref=e179]:
+                - generic [ref=e180]: 执行 24
+                - generic [ref=e181]: 成功 16
+                - generic [ref=e182]: 失败 8
+            - generic [ref=e183]:
+              - generic [ref=e184]:
+                - img [ref=e185]
+                - generic [ref=e187]: 接口自动化
+              - generic [ref=e189] [cursor=pointer]: "13"
+              - generic [ref=e190]:
+                - generic [ref=e191]: 模块 4
+                - generic [ref=e192]: 执行 54
+                - generic [ref=e193]: 成功 40
+                - generic [ref=e194]: 失败 14
+            - generic [ref=e195]:
+              - generic [ref=e196]:
+                - img [ref=e197]
+                - generic [ref=e199]: 功能执行
+              - generic [ref=e201] [cursor=pointer]: "13"
+              - generic [ref=e202]:
+                - generic [ref=e203]: 通过 3
+                - generic [ref=e204]: 失败 7
+                - generic [ref=e205]: 跳过 0
+                - generic [ref=e206]: 错误 3
+            - generic [ref=e207]:
+              - generic [ref=e208]:
+                - img [ref=e209]
+                - generic [ref=e211]: MCP / Skills
+              - generic [ref=e213] [cursor=pointer]: "6"
+              - generic [ref=e214]:
+                - generic [ref=e215]: MCP 1/1
+                - generic [ref=e216]: Skills 5/5
+          - generic [ref=e217]:
+            - generic [ref=e218]:
+              - generic [ref=e219]:
+                - generic [ref=e220]: 用例审核状态
+                - generic [ref=e221]: 7 个
+              - generic [ref=e223]:
+                - generic [ref=e225] [cursor=pointer]:
+                  - generic [ref=e226]: 已通过
+                  - generic [ref=e227]: 0 (0%)
+                - generic [ref=e230] [cursor=pointer]:
+                  - generic [ref=e231]: 待审核
+                  - generic [ref=e232]: 7 (100%)
+                - generic [ref=e236] [cursor=pointer]:
+                  - generic [ref=e237]: 待优化
+                  - generic [ref=e238]: 0 (0%)
+                - generic [ref=e241] [cursor=pointer]:
+                  - generic [ref=e242]: 优化待审
+                  - generic [ref=e243]: 0 (0%)
+                - generic [ref=e246] [cursor=pointer]:
+                  - generic [ref=e247]: 不可用
+                  - generic [ref=e248]: 0 (0%)
+            - generic [ref=e250]:
+              - generic [ref=e251]:
+                - generic [ref=e252]: Token 统计（当前用户）
+                - generic [ref=e253]:
+                  - generic [ref=e254] [cursor=pointer]: 日
+                  - generic [ref=e255] [cursor=pointer]: 周
+                  - generic [ref=e256] [cursor=pointer]: 月
+              - generic [ref=e258]:
+                - generic [ref=e259]:
+                  - generic [ref=e260]: 总消耗
+                  - generic [ref=e261]: "0"
+                  - generic [ref=e262]:
+                    - generic [ref=e263]: 入 0
+                    - generic [ref=e264]: 出 0
+                - generic [ref=e265]:
+                  - generic [ref=e266]: 使用情况
+                  - generic [ref=e267]:
+                    - generic [ref=e268]:
+                      - generic [ref=e269]: 请求次数
+                      - generic [ref=e270]: "0"
+                    - generic [ref=e271]:
+                      - generic [ref=e272]: 会话数
+                      - generic [ref=e273]: "0"
+                    - generic [ref=e274]:
+                      - generic [ref=e275]: 平均/请求
+                      - generic [ref=e276]: "0"
+                - generic [ref=e277]:
+                  - generic [ref=e278]: 统计周期
+                  - generic [ref=e279]:
+                    - generic [ref=e280]:
+                      - generic [ref=e281]: 开始
+                      - generic [ref=e282]: 2026-06-02
+                    - generic [ref=e283]:
+                      - generic [ref=e284]: 结束
+                      - generic [ref=e285]: 2026-06-02
+          - generic [ref=e287]:
+            - generic [ref=e288]:
+              - generic [ref=e289]: 近7天执行趋势（功能 + UI + 接口）
+              - generic [ref=e290]:
+                - generic [ref=e291]:
+                  - text: "近7天:"
+                  - strong [ref=e292]: "9"
+                  - text: 次
+                - generic [ref=e293]:
+                  - text: 通过
+                  - strong [ref=e294]: "7"
+                - generic [ref=e295]:
+                  - text: 失败
+                  - strong [ref=e296]: "2"
+            - generic [ref=e297]:
+              - generic [ref=e298]:
+                - generic [ref=e303]: 5/27
+                - generic [ref=e308]: 5/28
+                - generic [ref=e313]: 5/29
+                - generic [ref=e318]: 5/30
+                - generic [ref=e323]: 5/31
+                - generic [ref=e328]: 6/1
+                - generic [ref=e333]: 6/2
+              - generic [ref=e334]:
+                - generic [ref=e335]: 通过
+                - generic [ref=e336]: 失败
+  - generic:
+    - list:
+      - alert [ref=e337]:
+        - img [ref=e339]
+        - generic [ref=e341]: 登录成功！

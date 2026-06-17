@@ -1,0 +1,366 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img "WHartTest Logo" [ref=e7]
+          - generic [ref=e8]: WHartTest
+        - generic [ref=e10]:
+          - textbox "请选择项目" [disabled] [ref=e11]
+          - img [ref=e14]
+      - generic [ref=e16]:
+        - button "切换到默认主题" [ref=e17] [cursor=pointer]:
+          - img [ref=e18]
+        - generic [ref=e21]: "当前版本: v2.2.0"
+        - generic [ref=e23]: A
+        - generic [ref=e24] [cursor=pointer]:
+          - generic [ref=e25]: admin
+          - img [ref=e26]
+    - generic [ref=e28]:
+      - generic [ref=e30]:
+        - generic [ref=e32]:
+          - generic [ref=e33] [cursor=pointer]:
+            - img [ref=e35]
+            - link "首页" [ref=e39]:
+              - /url: /dashboard
+          - generic [ref=e40] [cursor=pointer]:
+            - img [ref=e42]
+            - link "项目管理" [ref=e48]:
+              - /url: /projects
+          - generic [ref=e49] [cursor=pointer]:
+            - img [ref=e51]
+            - link "需求管理" [ref=e54]:
+              - /url: "#"
+          - generic [ref=e55] [cursor=pointer]:
+            - img [ref=e57]
+            - link "UI自动化" [ref=e61]:
+              - /url: "#"
+          - generic [ref=e62] [cursor=pointer]:
+            - img [ref=e64]
+            - link "接口自动化" [ref=e67]:
+              - /url: "#"
+          - generic [ref=e68] [cursor=pointer]:
+            - img [ref=e70]
+            - link "任务中心" [ref=e74]:
+              - /url: "#"
+          - generic [ref=e76] [cursor=pointer]:
+            - img [ref=e78]
+            - generic [ref=e80]: 测试管理
+            - img [ref=e82]
+          - generic [ref=e84] [cursor=pointer]:
+            - img [ref=e86]
+            - link "LLM对话" [ref=e89]:
+              - /url: "#"
+          - generic [ref=e90] [cursor=pointer]:
+            - img [ref=e92]
+            - link "知识库管理" [ref=e95]:
+              - /url: "#"
+          - generic [ref=e97] [cursor=pointer]:
+            - img [ref=e99]
+            - generic [ref=e102]: 系统管理
+            - img [ref=e104]
+        - button "收起" [ref=e107] [cursor=pointer]:
+          - img [ref=e109]
+          - generic [ref=e111]: 收起
+      - main [ref=e112]:
+        - generic [ref=e113]:
+          - complementary [ref=e114]:
+            - generic [ref=e115]: 接口项目/模块
+            - button "新增模块" [ref=e116] [cursor=pointer]
+          - generic [ref=e118]:
+            - generic [ref=e121]:
+              - generic [ref=e123] [cursor=pointer]: 接口定义
+              - generic [ref=e125] [cursor=pointer]: 接口用例
+              - generic [ref=e127] [cursor=pointer]: 前置/后置脚本
+              - generic [ref=e129] [cursor=pointer]: 公共数据
+              - generic [ref=e131] [cursor=pointer]: 环境配置
+              - generic [ref=e133] [cursor=pointer]: 批量执行
+              - generic [ref=e135] [cursor=pointer]: 执行记录
+              - generic [ref=e137] [cursor=pointer]: 报告
+              - generic [ref=e139] [cursor=pointer]: 定时任务
+            - generic [ref=e141]:
+              - generic [ref=e143]:
+                - generic [ref=e144]:
+                  - generic [ref=e145]:
+                    - textbox "搜索接口名称/路径" [ref=e146]
+                    - img [ref=e149] [cursor=pointer]
+                  - button "OpenAPI/Swagger 导入" [ref=e151] [cursor=pointer]
+                  - button "手动新增接口" [ref=e152] [cursor=pointer]
+                - generic [ref=e157]:
+                  - table [ref=e160]:
+                    - rowgroup [ref=e169]:
+                      - row "ID 方法 接口名称 路径 模块 来源 操作" [ref=e170]:
+                        - columnheader "ID" [ref=e171]:
+                          - generic [ref=e173]: ID
+                        - columnheader "方法" [ref=e174]:
+                          - generic [ref=e176]: 方法
+                        - columnheader "接口名称" [ref=e177]:
+                          - generic [ref=e180]: 接口名称
+                        - columnheader "路径" [ref=e181]:
+                          - generic [ref=e184]: 路径
+                        - columnheader "模块" [ref=e185]:
+                          - generic [ref=e187]: 模块
+                        - columnheader "来源" [ref=e188]:
+                          - generic [ref=e190]: 来源
+                        - columnheader "操作" [ref=e191]:
+                          - generic [ref=e193]: 操作
+                  - table [ref=e199]:
+                    - rowgroup [ref=e200]:
+                      - row "暂无数据" [ref=e201]:
+                        - cell "暂无数据" [ref=e202]:
+                          - generic [ref=e205]:
+                            - img [ref=e207]
+                            - generic [ref=e209]: 暂无数据
+              - generic [ref=e210]:
+                - generic [ref=e211]:
+                  - generic [ref=e212]:
+                    - textbox "搜索用例名称/路径" [ref=e213]
+                    - img [ref=e216] [cursor=pointer]
+                  - generic [ref=e218] [cursor=pointer]:
+                    - textbox "环境筛选" [ref=e219]
+                    - img [ref=e222]
+                  - generic [ref=e224] [cursor=pointer]:
+                    - textbox "执行环境（覆盖）" [ref=e225]
+                    - img [ref=e228]
+                  - button "UI Trace 转接口用例" [ref=e230] [cursor=pointer]
+                  - button "功能用例转接口用例" [ref=e231] [cursor=pointer]
+                  - button "新增用例" [ref=e232] [cursor=pointer]
+                  - button "批量执行" [disabled] [ref=e233]
+                - generic [ref=e238]:
+                  - table [ref=e241]:
+                    - rowgroup [ref=e251]:
+                      - row "ID 方法 用例名称 路径 默认环境 状态 操作" [ref=e252]:
+                        - columnheader [ref=e253]:
+                          - generic [ref=e255] [cursor=pointer]:
+                            - checkbox
+                        - columnheader "ID" [ref=e258]:
+                          - generic [ref=e260]: ID
+                        - columnheader "方法" [ref=e261]:
+                          - generic [ref=e263]: 方法
+                        - columnheader "用例名称" [ref=e264]:
+                          - generic [ref=e267]: 用例名称
+                        - columnheader "路径" [ref=e268]:
+                          - generic [ref=e271]: 路径
+                        - columnheader "默认环境" [ref=e272]:
+                          - generic [ref=e275]: 默认环境
+                        - columnheader "状态" [ref=e276]:
+                          - generic [ref=e278]: 状态
+                        - columnheader "操作" [ref=e279]:
+                          - generic [ref=e281]: 操作
+                  - table [ref=e287]:
+                    - rowgroup [ref=e288]:
+                      - row "暂无数据" [ref=e289]:
+                        - cell "暂无数据" [ref=e290]:
+                          - generic [ref=e293]:
+                            - img [ref=e295]
+                            - generic [ref=e297]: 暂无数据
+              - generic [ref=e298]:
+                - button "新增脚本" [ref=e300] [cursor=pointer]
+                - generic [ref=e305]:
+                  - table [ref=e308]:
+                    - rowgroup [ref=e315]:
+                      - row "脚本名称 类型 模块 内容 操作" [ref=e316]:
+                        - columnheader "脚本名称" [ref=e317]:
+                          - generic [ref=e319]: 脚本名称
+                        - columnheader "类型" [ref=e320]:
+                          - generic [ref=e322]: 类型
+                        - columnheader "模块" [ref=e323]:
+                          - generic [ref=e325]: 模块
+                        - columnheader "内容" [ref=e326]:
+                          - generic [ref=e329]: 内容
+                        - columnheader "操作" [ref=e330]:
+                          - generic [ref=e332]: 操作
+                  - table [ref=e335]:
+                    - rowgroup [ref=e336]:
+                      - row "暂无数据" [ref=e337]:
+                        - cell "暂无数据" [ref=e338]:
+                          - generic [ref=e341]:
+                            - img [ref=e343]
+                            - generic [ref=e345]: 暂无数据
+              - generic [ref=e346]:
+                - generic [ref=e347]:
+                  - generic [ref=e348]:
+                    - textbox "搜索变量名/变量值" [ref=e349]
+                    - img [ref=e352] [cursor=pointer]
+                  - button "新增公共数据" [ref=e354] [cursor=pointer]
+                - generic [ref=e359]:
+                  - table [ref=e362]:
+                    - rowgroup [ref=e368]:
+                      - row "变量名 变量值 状态 操作" [ref=e369]:
+                        - columnheader "变量名" [ref=e370]:
+                          - generic [ref=e372]: 变量名
+                        - columnheader "变量值" [ref=e373]:
+                          - generic [ref=e376]: 变量值
+                        - columnheader "状态" [ref=e377]:
+                          - generic [ref=e379]: 状态
+                        - columnheader "操作" [ref=e380]:
+                          - generic [ref=e382]: 操作
+                  - table [ref=e385]:
+                    - rowgroup [ref=e386]:
+                      - row "暂无数据" [ref=e387]:
+                        - cell "暂无数据" [ref=e388]:
+                          - generic [ref=e391]:
+                            - img [ref=e393]
+                            - generic [ref=e395]: 暂无数据
+              - generic [ref=e396]:
+                - generic [ref=e397]:
+                  - generic [ref=e398]:
+                    - textbox "搜索环境名称/URL" [ref=e399]
+                    - img [ref=e402] [cursor=pointer]
+                  - button "新增环境" [ref=e404] [cursor=pointer]
+                - generic [ref=e409]:
+                  - table [ref=e412]:
+                    - rowgroup [ref=e418]:
+                      - row "环境名称 基础 URL 默认 操作" [ref=e419]:
+                        - columnheader "环境名称" [ref=e420]:
+                          - generic [ref=e422]: 环境名称
+                        - columnheader "基础 URL" [ref=e423]:
+                          - generic [ref=e426]: 基础 URL
+                        - columnheader "默认" [ref=e427]:
+                          - generic [ref=e429]: 默认
+                        - columnheader "操作" [ref=e430]:
+                          - generic [ref=e432]: 操作
+                  - table [ref=e435]:
+                    - rowgroup [ref=e436]:
+                      - row "暂无数据" [ref=e437]:
+                        - cell "暂无数据" [ref=e438]:
+                          - generic [ref=e441]:
+                            - img [ref=e443]
+                            - generic [ref=e445]: 暂无数据
+              - generic [ref=e451]:
+                - table [ref=e454]:
+                  - rowgroup [ref=e461]:
+                    - row "ID 批次名称 状态 成功/失败/总计 成功率" [ref=e462]:
+                      - columnheader "ID" [ref=e463]:
+                        - generic [ref=e465]: ID
+                      - columnheader "批次名称" [ref=e466]:
+                        - generic [ref=e469]: 批次名称
+                      - columnheader "状态" [ref=e470]:
+                        - generic [ref=e472]: 状态
+                      - columnheader "成功/失败/总计" [ref=e473]:
+                        - generic [ref=e475]: 成功/失败/总计
+                      - columnheader "成功率" [ref=e476]:
+                        - generic [ref=e478]: 成功率
+                - table [ref=e481]:
+                  - rowgroup [ref=e482]:
+                    - row "暂无数据" [ref=e483]:
+                      - cell "暂无数据" [ref=e484]:
+                        - generic [ref=e487]:
+                          - img [ref=e489]
+                          - generic [ref=e491]: 暂无数据
+              - generic [ref=e497]:
+                - table [ref=e500]:
+                  - rowgroup [ref=e507]:
+                    - row "ID 用例名称 状态 耗时 错误" [ref=e508]:
+                      - columnheader "ID" [ref=e509]:
+                        - generic [ref=e511]: ID
+                      - columnheader "用例名称" [ref=e512]:
+                        - generic [ref=e515]: 用例名称
+                      - columnheader "状态" [ref=e516]:
+                        - generic [ref=e518]: 状态
+                      - columnheader "耗时" [ref=e519]:
+                        - generic [ref=e521]: 耗时
+                      - columnheader "错误" [ref=e522]:
+                        - generic [ref=e524]: 错误
+                - table [ref=e527]:
+                  - rowgroup [ref=e528]:
+                    - row "暂无数据" [ref=e529]:
+                      - cell "暂无数据" [ref=e530]:
+                        - generic [ref=e533]:
+                          - img [ref=e535]
+                          - generic [ref=e537]: 暂无数据
+              - generic [ref=e540]:
+                - generic [ref=e541]:
+                  - generic [ref=e545] [cursor=pointer]:
+                    - generic [ref=e546]: 累计执行
+                    - generic [ref=e548]: "0"
+                  - generic [ref=e552] [cursor=pointer]:
+                    - generic [ref=e553]: 通过
+                    - generic [ref=e555]: "0"
+                  - generic [ref=e559] [cursor=pointer]:
+                    - generic [ref=e560]: 失败
+                    - generic [ref=e562]: "0"
+                  - generic [ref=e565]:
+                    - generic [ref=e566]:
+                      - generic [ref=e567]: 成功率
+                      - generic [ref=e568]: 0.0%
+                    - generic [ref=e570]: 0.0%
+                    - generic [ref=e571]:
+                      - generic [ref=e574]: 通过 0
+                      - generic [ref=e577]: 失败 0
+                - separator [ref=e578]:
+                  - generic [ref=e579]: 近 7 天趋势
+                - generic [ref=e580]:
+                  - generic [ref=e585]: 05-27
+                  - generic [ref=e590]: 05-28
+                  - generic [ref=e595]: 05-29
+                  - generic [ref=e600]: 05-30
+                  - generic [ref=e605]: 05-31
+                  - generic [ref=e610]: 06-01
+                  - generic [ref=e615]: 06-02
+                - separator [ref=e616]:
+                  - generic [ref=e617]: 按接口聚合（最近执行优先）
+                - table [ref=e623]:
+                  - rowgroup [ref=e634]:
+                    - row "用例 方法 路径 最近执行 总数 通过 失败 成功率 详情" [ref=e635]:
+                      - columnheader "用例" [ref=e636]:
+                        - generic [ref=e639]: 用例
+                      - columnheader "方法" [ref=e640]:
+                        - generic [ref=e642]: 方法
+                      - columnheader "路径" [ref=e643]:
+                        - generic [ref=e646]: 路径
+                      - columnheader "最近执行" [ref=e647]:
+                        - generic [ref=e649]: 最近执行
+                      - columnheader "总数" [ref=e650]:
+                        - generic [ref=e652]: 总数
+                      - columnheader "通过" [ref=e653]:
+                        - generic [ref=e655]: 通过
+                      - columnheader "失败" [ref=e656]:
+                        - generic [ref=e658]: 失败
+                      - columnheader "成功率" [ref=e659]:
+                        - generic [ref=e661]: 成功率
+                      - columnheader "详情" [ref=e662]:
+                        - generic [ref=e664]: 详情
+                  - rowgroup [ref=e665]:
+                    - row "暂无数据" [ref=e666]:
+                      - cell "暂无数据" [ref=e667]:
+                        - generic [ref=e670]:
+                          - img [ref=e672]
+                          - generic [ref=e674]: 暂无数据
+                - separator [ref=e675]:
+                  - generic [ref=e676]: 最近 10 个批次
+                - table [ref=e682]:
+                  - rowgroup [ref=e691]:
+                    - row "ID 名称 状态 通过/失败/总计 成功率 触发 详情" [ref=e692]:
+                      - columnheader "ID" [ref=e693]:
+                        - generic [ref=e695]: ID
+                      - columnheader "名称" [ref=e696]:
+                        - generic [ref=e699]: 名称
+                      - columnheader "状态" [ref=e700]:
+                        - generic [ref=e702]: 状态
+                      - columnheader "通过/失败/总计" [ref=e703]:
+                        - generic [ref=e705]: 通过/失败/总计
+                      - columnheader "成功率" [ref=e706]:
+                        - generic [ref=e708]: 成功率
+                      - columnheader "触发" [ref=e709]:
+                        - generic [ref=e711]: 触发
+                      - columnheader "详情" [ref=e712]:
+                        - generic [ref=e714]: 详情
+                  - rowgroup [ref=e715]:
+                    - row "暂无数据" [ref=e716]:
+                      - cell "暂无数据" [ref=e717]:
+                        - generic [ref=e720]:
+                          - img [ref=e722]
+                          - generic [ref=e724]: 暂无数据
+              - generic [ref=e726]:
+                - alert [ref=e727]:
+                  - img [ref=e729]
+                  - generic [ref=e732]: 接口自动化的定时任务来自任务中心。这里只筛选出 module=api_automation 的任务，便于在接口自动化页面直接管理。如需新增请到「任务中心」。
+                  - button "Close" [ref=e733] [cursor=pointer]:
+                    - img [ref=e735]
+                - generic [ref=e738]:
+                  - img [ref=e740]
+                  - generic [ref=e742]: 该项目暂无接口自动化定时任务。可前往任务中心创建。
+  - generic [ref=e743]:
+    - alert
+    - alert

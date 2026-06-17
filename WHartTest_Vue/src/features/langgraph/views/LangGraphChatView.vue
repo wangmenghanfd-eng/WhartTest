@@ -708,6 +708,18 @@ const loadSessionsFromServer = async () => {
   }
 };
 
+const fallbackToLatestSession = async (invalidSessionId?: string) => {
+  const fallbackSession = chatSessions.value.find((session) => session.id !== invalidSessionId) || chatSessions.value[0];
+  if (!fallbackSession) {
+    localStorage.removeItem('langgraph_session_id');
+    sessionId.value = '';
+    messages.value = [];
+    return;
+  }
+  console.warn(`↩️ 当前会话 ${invalidSessionId || '(empty)'} 不可用，自动回退到最近会话 ${fallbackSession.id}`);
+  await switchSession(fallbackSession.id);
+};
+
 // ⭐ 纯函数: 为历史记录插入 Agent Loop 步骤分隔符
 // 用于统一处理步骤分隔符逻辑,避免代码重复
 const enrichMessagesWithSeparators = (rawHistory: ChatHistoryMessage[], formatHistoryTime: (timestamp: string) => string): ChatMessage[] => {
@@ -850,16 +862,18 @@ const loadChatHistory = async () => {
       // 🔧 修复：获取历史失败时静默处理，不显示错误提示
       // 可能是会话已被删除或过期，清除存储的会话ID即可
       console.warn('⚠️ 会话历史获取失败，可能已被删除');
-      localStorage.removeItem('langgraph_session_id');
-      sessionId.value = '';
+      await fallbackToLatestSession(storedSessionId);
     }
   } catch (error) {
     // 🔧 修复：网络错误等异常情况才显示错误提示
     console.error('❌ 加载聊天历史异常:', error);
-    // 只在真正的错误情况下提示用户
-    Message.error('加载聊天历史失败，将开始新的对话');
-    localStorage.removeItem('langgraph_session_id');
-    sessionId.value = '';
+    if (chatSessions.value.length > 0) {
+      await fallbackToLatestSession(storedSessionId);
+    } else {
+      Message.error('加载聊天历史失败，将开始新的对话');
+      localStorage.removeItem('langgraph_session_id');
+      sessionId.value = '';
+    }
   } finally {
     safeStopLoading();
   }
@@ -1806,7 +1820,10 @@ const handleNormalMessage = async (requestData: ChatRequest, originalMessage: st
         for (const toolResult of data.tool_results) {
           const toolPayload = parseToolResultDisplayPayload(toolResult.tool_output || toolResult.summary);
           messages.value.push({
-            content: toolPayload.content || toolResult.summary,
+            content: summarizeReadSkillToolOutput(
+              toolResult.tool_name,
+              toolPayload.content || toolResult.summary
+            ),
             isUser: false,
             time: getCurrentTime(),
             messageType: 'tool',
@@ -2178,6 +2195,10 @@ onMounted(async () => {
 
     // 尝试加载当前会话的历史记录（只加载消息，不更新会话列表）
     await loadChatHistory();
+
+    if (!sessionId.value && chatSessions.value.length > 0) {
+      await fallbackToLatestSession();
+    }
   }
 
   // 加载当前LLM配置（不依赖项目）
@@ -2238,6 +2259,13 @@ onUnmounted(() => {
   // 组件卸载时，终止任何正在进行的流式请求
   abortController.abort();
 });
+
+const summarizeReadSkillToolOutput = (toolName: string | undefined, content: string): string => {
+  if (toolName !== 'read_skill_content') return content;
+  const skillMatch = content.match(/name:\s*([^\n]+)/i);
+  const skillName = skillMatch?.[1]?.trim() || 'Skill';
+  return `已读取 ${skillName} 的说明，正在继续执行相关能力。`;
+};
 </script>
 
 <script lang="ts">
@@ -2250,7 +2278,7 @@ export default {
 .chat-layout {
   display: flex;
   height: 100%;
-  background-color: #f7f8fa;
+  background-color: var(--theme-page-bg);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -2261,7 +2289,7 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #f7f8fa;
+  background-color: var(--theme-page-bg);
   overflow: hidden;
   position: relative;
 }
@@ -2269,9 +2297,9 @@ export default {
 .diagram-preview-iframe {
   width: 100%;
   height: 72vh;
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--theme-surface);
 }
 
 .html-preview-wrapper {
@@ -2287,8 +2315,8 @@ export default {
   top: 12px;
   right: 12px;
   z-index: 2;
-  border: 1px solid #d9dce3 !important;
-  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid var(--theme-border) !important;
+  background-color: color-mix(in srgb, var(--theme-surface) 92%, transparent) !important;
 }
 
 /* 工具图片悬浮面板 */
@@ -2298,9 +2326,10 @@ export default {
   right: 16px;
   z-index: 100;
   width: 320px;
-  background: #fff;
+  background: var(--theme-surface);
   border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--theme-shadow);
+  border: 1px solid var(--theme-border);
   overflow: hidden;
   animation: float-in 0.25s ease;
 }

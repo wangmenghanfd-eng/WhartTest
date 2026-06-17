@@ -1,0 +1,2209 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img "WHartTest Logo" [ref=e7]
+          - generic [ref=e8]: WHartTest
+        - generic "MSS" [ref=e119] [cursor=pointer]:
+          - textbox "请选择项目"
+          - generic [ref=e120]: MSS
+          - img [ref=e121]
+      - generic [ref=e16]:
+        - button "切换到黑色主题" [ref=e17] [cursor=pointer]:
+          - img [ref=e18]
+        - 'button "当前版本: v2.2.0" [ref=e20] [cursor=pointer]'
+        - generic [ref=e22]: A
+        - generic [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: admin
+          - img [ref=e25]
+    - generic [ref=e27]:
+      - generic [ref=e29]:
+        - generic [ref=e31]:
+          - generic [ref=e32] [cursor=pointer]:
+            - img [ref=e34]
+            - link "首页" [ref=e38]:
+              - /url: /dashboard
+          - generic [ref=e39] [cursor=pointer]:
+            - img [ref=e41]
+            - link "项目管理" [ref=e47]:
+              - /url: /projects
+          - generic [ref=e48] [cursor=pointer]:
+            - img [ref=e50]
+            - link "需求管理" [ref=e53]:
+              - /url: "#"
+          - generic [ref=e54] [cursor=pointer]:
+            - img [ref=e56]
+            - link "UI自动化" [ref=e60]:
+              - /url: "#"
+          - generic [ref=e61] [cursor=pointer]:
+            - img [ref=e63]
+            - link "接口自动化" [active] [ref=e66]:
+              - /url: "#"
+          - generic [ref=e67] [cursor=pointer]:
+            - img [ref=e69]
+            - link "任务中心" [ref=e73]:
+              - /url: "#"
+          - generic [ref=e75] [cursor=pointer]:
+            - img [ref=e77]
+            - generic [ref=e79]: 测试管理
+            - img [ref=e81]
+          - generic [ref=e83] [cursor=pointer]:
+            - img [ref=e85]
+            - link "LLM对话" [ref=e88]:
+              - /url: "#"
+          - generic [ref=e89] [cursor=pointer]:
+            - img [ref=e91]
+            - link "知识库管理" [ref=e94]:
+              - /url: "#"
+          - generic [ref=e96] [cursor=pointer]:
+            - img [ref=e98]
+            - generic [ref=e101]: 系统管理
+            - img [ref=e103]
+        - button "收起" [ref=e106] [cursor=pointer]:
+          - img [ref=e108]
+          - generic [ref=e110]: 收起
+      - main [ref=e111]:
+        - generic [ref=e303]:
+          - complementary [ref=e304]:
+            - generic [ref=e305]: 接口项目/模块
+            - button "新增模块" [ref=e306] [cursor=pointer]
+            - generic [ref=e307]:
+              - generic [ref=e308] [cursor=pointer]:
+                - img [ref=e312]
+                - generic [ref=e315]: admin
+              - generic [ref=e316] [cursor=pointer]:
+                - img [ref=e320]
+                - generic [ref=e323]: csc
+              - generic [ref=e324] [cursor=pointer]:
+                - img [ref=e328]
+                - generic [ref=e331]: csc_admin
+              - generic [ref=e332] [cursor=pointer]:
+                - img [ref=e336]
+                - generic [ref=e339]: fp
+              - generic [ref=e340] [cursor=pointer]:
+                - img [ref=e344]
+                - generic [ref=e347]: fp_admin
+              - generic [ref=e348] [cursor=pointer]:
+                - img [ref=e352]
+                - generic [ref=e355]: mod
+              - generic [ref=e356] [cursor=pointer]:
+                - img [ref=e360]
+                - generic [ref=e363]: mod_admin
+              - generic [ref=e364] [cursor=pointer]:
+                - img [ref=e368]
+                - generic [ref=e371]: mod_di
+              - generic [ref=e372] [cursor=pointer]:
+                - img [ref=e376]
+                - generic [ref=e379]: mod_edi
+              - generic [ref=e380] [cursor=pointer]:
+                - img [ref=e384]
+                - generic [ref=e387]: mod_id
+              - generic [ref=e388] [cursor=pointer]:
+                - img [ref=e392]
+                - generic [ref=e395]: mod_mcs
+              - generic [ref=e396] [cursor=pointer]:
+                - img [ref=e400]
+                - generic [ref=e403]: mod_mhsd
+              - generic [ref=e404] [cursor=pointer]:
+                - img [ref=e408]
+                - generic [ref=e411]: mod_mp
+              - generic [ref=e412] [cursor=pointer]:
+                - img [ref=e416]
+                - generic [ref=e419]: mod_msd
+              - generic [ref=e420] [cursor=pointer]:
+                - img [ref=e424]
+                - generic [ref=e427]: mod_report
+              - generic [ref=e428] [cursor=pointer]:
+                - img [ref=e432]
+                - generic [ref=e435]: moei
+              - generic [ref=e436] [cursor=pointer]:
+                - img [ref=e440]
+                - generic [ref=e443]: moei_admin
+              - generic [ref=e444] [cursor=pointer]:
+                - img [ref=e448]
+                - generic [ref=e451]: moet
+              - generic [ref=e452] [cursor=pointer]:
+                - img [ref=e456]
+                - generic [ref=e459]: moet_admin
+              - generic [ref=e460] [cursor=pointer]:
+                - img [ref=e464]
+                - generic [ref=e467]: moi
+              - generic [ref=e468] [cursor=pointer]:
+                - img [ref=e472]
+                - generic [ref=e475]: moi_admin
+              - generic [ref=e476] [cursor=pointer]:
+                - img [ref=e480]
+                - generic [ref=e483]: moi_report
+              - generic [ref=e484] [cursor=pointer]:
+                - img [ref=e488]
+                - generic [ref=e491]: moj
+              - generic [ref=e492] [cursor=pointer]:
+                - img [ref=e496]
+                - generic [ref=e499]: moj_admin
+              - generic [ref=e500] [cursor=pointer]:
+                - img [ref=e504]
+                - generic [ref=e507]: ncema
+              - generic [ref=e508] [cursor=pointer]:
+                - img [ref=e512]
+                - generic [ref=e515]: ncema_admin
+              - generic [ref=e516] [cursor=pointer]:
+                - img [ref=e520]
+                - generic [ref=e523]: ssd
+              - generic [ref=e524] [cursor=pointer]:
+                - img [ref=e528]
+                - generic [ref=e531]: ssd_admin
+          - generic [ref=e533]:
+            - generic [ref=e534]:
+              - img [ref=e537] [cursor=pointer]
+              - generic [ref=e540]:
+                - generic [ref=e542] [cursor=pointer]: 接口定义
+                - generic [ref=e544] [cursor=pointer]: 接口用例
+                - generic [ref=e546] [cursor=pointer]: 前置/后置脚本
+                - generic [ref=e548] [cursor=pointer]: 接口场景
+                - generic [ref=e550] [cursor=pointer]: 公共数据
+                - generic [ref=e552] [cursor=pointer]: 环境配置
+                - generic [ref=e554] [cursor=pointer]: 批量执行
+                - generic [ref=e556] [cursor=pointer]: 执行记录
+                - generic [ref=e558] [cursor=pointer]: 报告
+                - generic [ref=e560] [cursor=pointer]: 定时任务
+              - img [ref=e563] [cursor=pointer]
+            - generic [ref=e566]:
+              - generic [ref=e568]:
+                - generic [ref=e569]:
+                  - generic [ref=e570]:
+                    - textbox "搜索接口名称/路径" [ref=e571]
+                    - img [ref=e574] [cursor=pointer]
+                  - button "OpenAPI/Swagger 导入" [ref=e576] [cursor=pointer]
+                  - button "手动新增接口" [ref=e577] [cursor=pointer]
+                - table [ref=e583]:
+                  - rowgroup [ref=e592]:
+                    - row "ID 方法 接口名称 路径 模块 来源 操作" [ref=e593]:
+                      - columnheader "ID" [ref=e594]:
+                        - generic [ref=e596]: ID
+                      - columnheader "方法" [ref=e597]:
+                        - generic [ref=e599]: 方法
+                      - columnheader "接口名称" [ref=e600]:
+                        - generic [ref=e603]: 接口名称
+                      - columnheader "路径" [ref=e604]:
+                        - generic [ref=e607]: 路径
+                      - columnheader "模块" [ref=e608]:
+                        - generic [ref=e610]: 模块
+                      - columnheader "来源" [ref=e611]:
+                        - generic [ref=e613]: 来源
+                      - columnheader "操作" [ref=e614]:
+                        - generic [ref=e616]: 操作
+                  - rowgroup [ref=e617]:
+                    - row "65 GET 04 Crises List /api/v1/admin/crises?page=0&size=20 crises backfill 生成用例 编辑 删除" [ref=e618]:
+                      - cell "65" [ref=e619]:
+                        - generic [ref=e621]: "65"
+                      - cell "GET" [ref=e622]:
+                        - generic [ref=e625]: GET
+                      - cell "04 Crises List" [ref=e626]:
+                        - generic [ref=e629]: 04 Crises List
+                      - cell "/api/v1/admin/crises?page=0&size=20" [ref=e630]:
+                        - generic [ref=e633]: /api/v1/admin/crises?page=0&size=20
+                      - cell "crises" [ref=e634]:
+                        - generic [ref=e636]: crises
+                      - cell "backfill" [ref=e637]:
+                        - generic [ref=e639]: backfill
+                      - cell "生成用例 编辑 删除" [ref=e640]:
+                        - generic [ref=e643]:
+                          - button "生成用例" [ref=e645] [cursor=pointer]
+                          - button "编辑" [ref=e647] [cursor=pointer]
+                          - button "删除" [ref=e649] [cursor=pointer]
+                    - row "64 GET Admin Users List /api/v1/admin/admin-users?page=0&size=50 users mss_capture 生成用例 编辑 删除" [ref=e650]:
+                      - cell "64" [ref=e651]:
+                        - generic [ref=e653]: "64"
+                      - cell "GET" [ref=e654]:
+                        - generic [ref=e657]: GET
+                      - cell "Admin Users List" [ref=e658]:
+                        - generic [ref=e661]: Admin Users List
+                      - cell "/api/v1/admin/admin-users?page=0&size=50" [ref=e662]:
+                        - generic [ref=e665]: /api/v1/admin/admin-users?page=0&size=50
+                      - cell "users" [ref=e666]:
+                        - generic [ref=e668]: users
+                      - cell "mss_capture" [ref=e669]:
+                        - generic [ref=e671]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e672]:
+                        - generic [ref=e675]:
+                          - button "生成用例" [ref=e677] [cursor=pointer]
+                          - button "编辑" [ref=e679] [cursor=pointer]
+                          - button "删除" [ref=e681] [cursor=pointer]
+                    - row "63 GET Dashboard Tactical Overview /api/v1/admin/dashboard/tactical-overview?portal=PLATFORM dashboard mss_capture 生成用例 编辑 删除" [ref=e682]:
+                      - cell "63" [ref=e683]:
+                        - generic [ref=e685]: "63"
+                      - cell "GET" [ref=e686]:
+                        - generic [ref=e689]: GET
+                      - cell "Dashboard Tactical Overview" [ref=e690]:
+                        - generic [ref=e693]: Dashboard Tactical Overview
+                      - cell "/api/v1/admin/dashboard/tactical-overview?portal=PLATFORM" [ref=e694]:
+                        - generic [ref=e697]: /api/v1/admin/dashboard/tactical-overview?portal=PLATFORM
+                      - cell "dashboard" [ref=e698]:
+                        - generic [ref=e700]: dashboard
+                      - cell "mss_capture" [ref=e701]:
+                        - generic [ref=e703]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e704]:
+                        - generic [ref=e707]:
+                          - button "生成用例" [ref=e709] [cursor=pointer]
+                          - button "编辑" [ref=e711] [cursor=pointer]
+                          - button "删除" [ref=e713] [cursor=pointer]
+                    - row "62 GET Dashboard Tactical Overview /api/v1/admin/dashboard/tactical-overview?portal=FP dashboard mss_capture 生成用例 编辑 删除" [ref=e714]:
+                      - cell "62" [ref=e715]:
+                        - generic [ref=e717]: "62"
+                      - cell "GET" [ref=e718]:
+                        - generic [ref=e721]: GET
+                      - cell "Dashboard Tactical Overview" [ref=e722]:
+                        - generic [ref=e725]: Dashboard Tactical Overview
+                      - cell "/api/v1/admin/dashboard/tactical-overview?portal=FP" [ref=e726]:
+                        - generic [ref=e729]: /api/v1/admin/dashboard/tactical-overview?portal=FP
+                      - cell "dashboard" [ref=e730]:
+                        - generic [ref=e732]: dashboard
+                      - cell "mss_capture" [ref=e733]:
+                        - generic [ref=e735]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e736]:
+                        - generic [ref=e739]:
+                          - button "生成用例" [ref=e741] [cursor=pointer]
+                          - button "编辑" [ref=e743] [cursor=pointer]
+                          - button "删除" [ref=e745] [cursor=pointer]
+                    - row "61 GET 03 Dashboard Tactical Overview /api/v1/admin/dashboard/tactical-overview?portal=MOET dashboard mss_capture 生成用例 编辑 删除" [ref=e746]:
+                      - cell "61" [ref=e747]:
+                        - generic [ref=e749]: "61"
+                      - cell "GET" [ref=e750]:
+                        - generic [ref=e753]: GET
+                      - cell "03 Dashboard Tactical Overview" [ref=e754]:
+                        - generic [ref=e757]: 03 Dashboard Tactical Overview
+                      - cell "/api/v1/admin/dashboard/tactical-overview?portal=MOET" [ref=e758]:
+                        - generic [ref=e761]: /api/v1/admin/dashboard/tactical-overview?portal=MOET
+                      - cell "dashboard" [ref=e762]:
+                        - generic [ref=e764]: dashboard
+                      - cell "mss_capture" [ref=e765]:
+                        - generic [ref=e767]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e768]:
+                        - generic [ref=e771]:
+                          - button "生成用例" [ref=e773] [cursor=pointer]
+                          - button "编辑" [ref=e775] [cursor=pointer]
+                          - button "删除" [ref=e777] [cursor=pointer]
+                    - row "60 GET Incident Facet Overview /api/v1/admin/incidents/facets/emirate?agency=MOEI incidents mss_capture 生成用例 编辑 删除" [ref=e778]:
+                      - cell "60" [ref=e779]:
+                        - generic [ref=e781]: "60"
+                      - cell "GET" [ref=e782]:
+                        - generic [ref=e785]: GET
+                      - cell "Incident Facet Overview" [ref=e786]:
+                        - generic [ref=e789]: Incident Facet Overview
+                      - cell "/api/v1/admin/incidents/facets/emirate?agency=MOEI" [ref=e790]:
+                        - generic [ref=e793]: /api/v1/admin/incidents/facets/emirate?agency=MOEI
+                      - cell "incidents" [ref=e794]:
+                        - generic [ref=e796]: incidents
+                      - cell "mss_capture" [ref=e797]:
+                        - generic [ref=e799]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e800]:
+                        - generic [ref=e803]:
+                          - button "生成用例" [ref=e805] [cursor=pointer]
+                          - button "编辑" [ref=e807] [cursor=pointer]
+                          - button "删除" [ref=e809] [cursor=pointer]
+                    - row "59 GET Dashboard Tactical Overview /api/v1/admin/dashboard/tactical-overview?portal=MOEI dashboard mss_capture 生成用例 编辑 删除" [ref=e810]:
+                      - cell "59" [ref=e811]:
+                        - generic [ref=e813]: "59"
+                      - cell "GET" [ref=e814]:
+                        - generic [ref=e817]: GET
+                      - cell "Dashboard Tactical Overview" [ref=e818]:
+                        - generic [ref=e821]: Dashboard Tactical Overview
+                      - cell "/api/v1/admin/dashboard/tactical-overview?portal=MOEI" [ref=e822]:
+                        - generic [ref=e825]: /api/v1/admin/dashboard/tactical-overview?portal=MOEI
+                      - cell "dashboard" [ref=e826]:
+                        - generic [ref=e828]: dashboard
+                      - cell "mss_capture" [ref=e829]:
+                        - generic [ref=e831]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e832]:
+                        - generic [ref=e835]:
+                          - button "生成用例" [ref=e837] [cursor=pointer]
+                          - button "编辑" [ref=e839] [cursor=pointer]
+                          - button "删除" [ref=e841] [cursor=pointer]
+                    - row "58 GET Incident Facet Overview /api/v1/admin/incidents/facets/emirate?agency=MOJ incidents mss_capture 生成用例 编辑 删除" [ref=e842]:
+                      - cell "58" [ref=e843]:
+                        - generic [ref=e845]: "58"
+                      - cell "GET" [ref=e846]:
+                        - generic [ref=e849]: GET
+                      - cell "Incident Facet Overview" [ref=e850]:
+                        - generic [ref=e853]: Incident Facet Overview
+                      - cell "/api/v1/admin/incidents/facets/emirate?agency=MOJ" [ref=e854]:
+                        - generic [ref=e857]: /api/v1/admin/incidents/facets/emirate?agency=MOJ
+                      - cell "incidents" [ref=e858]:
+                        - generic [ref=e860]: incidents
+                      - cell "mss_capture" [ref=e861]:
+                        - generic [ref=e863]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e864]:
+                        - generic [ref=e867]:
+                          - button "生成用例" [ref=e869] [cursor=pointer]
+                          - button "编辑" [ref=e871] [cursor=pointer]
+                          - button "删除" [ref=e873] [cursor=pointer]
+                    - row "57 GET Dashboard Tactical Overview /api/v1/admin/dashboard/tactical-overview?portal=MOJ dashboard mss_capture 生成用例 编辑 删除" [ref=e874]:
+                      - cell "57" [ref=e875]:
+                        - generic [ref=e877]: "57"
+                      - cell "GET" [ref=e878]:
+                        - generic [ref=e881]: GET
+                      - cell "Dashboard Tactical Overview" [ref=e882]:
+                        - generic [ref=e885]: Dashboard Tactical Overview
+                      - cell "/api/v1/admin/dashboard/tactical-overview?portal=MOJ" [ref=e886]:
+                        - generic [ref=e889]: /api/v1/admin/dashboard/tactical-overview?portal=MOJ
+                      - cell "dashboard" [ref=e890]:
+                        - generic [ref=e892]: dashboard
+                      - cell "mss_capture" [ref=e893]:
+                        - generic [ref=e895]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e896]:
+                        - generic [ref=e899]:
+                          - button "生成用例" [ref=e901] [cursor=pointer]
+                          - button "编辑" [ref=e903] [cursor=pointer]
+                          - button "删除" [ref=e905] [cursor=pointer]
+                    - row "56 GET Incident Facet Overview /api/v1/admin/incidents/facets/emirate?agency=SSD incidents mss_capture 生成用例 编辑 删除" [ref=e906]:
+                      - cell "56" [ref=e907]:
+                        - generic [ref=e909]: "56"
+                      - cell "GET" [ref=e910]:
+                        - generic [ref=e913]: GET
+                      - cell "Incident Facet Overview" [ref=e914]:
+                        - generic [ref=e917]: Incident Facet Overview
+                      - cell "/api/v1/admin/incidents/facets/emirate?agency=SSD" [ref=e918]:
+                        - generic [ref=e921]: /api/v1/admin/incidents/facets/emirate?agency=SSD
+                      - cell "incidents" [ref=e922]:
+                        - generic [ref=e924]: incidents
+                      - cell "mss_capture" [ref=e925]:
+                        - generic [ref=e927]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e928]:
+                        - generic [ref=e931]:
+                          - button "生成用例" [ref=e933] [cursor=pointer]
+                          - button "编辑" [ref=e935] [cursor=pointer]
+                          - button "删除" [ref=e937] [cursor=pointer]
+                    - row "55 GET Dashboard Tactical Overview /api/v1/admin/dashboard/tactical-overview?portal=SSD dashboard mss_capture 生成用例 编辑 删除" [ref=e938]:
+                      - cell "55" [ref=e939]:
+                        - generic [ref=e941]: "55"
+                      - cell "GET" [ref=e942]:
+                        - generic [ref=e945]: GET
+                      - cell "Dashboard Tactical Overview" [ref=e946]:
+                        - generic [ref=e949]: Dashboard Tactical Overview
+                      - cell "/api/v1/admin/dashboard/tactical-overview?portal=SSD" [ref=e950]:
+                        - generic [ref=e953]: /api/v1/admin/dashboard/tactical-overview?portal=SSD
+                      - cell "dashboard" [ref=e954]:
+                        - generic [ref=e956]: dashboard
+                      - cell "mss_capture" [ref=e957]:
+                        - generic [ref=e959]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e960]:
+                        - generic [ref=e963]:
+                          - button "生成用例" [ref=e965] [cursor=pointer]
+                          - button "编辑" [ref=e967] [cursor=pointer]
+                          - button "删除" [ref=e969] [cursor=pointer]
+                    - row "54 GET Incident Facet Overview /api/v1/admin/incidents/facets/emirate?agency=CSC incidents mss_capture 生成用例 编辑 删除" [ref=e970]:
+                      - cell "54" [ref=e971]:
+                        - generic [ref=e973]: "54"
+                      - cell "GET" [ref=e974]:
+                        - generic [ref=e977]: GET
+                      - cell "Incident Facet Overview" [ref=e978]:
+                        - generic [ref=e981]: Incident Facet Overview
+                      - cell "/api/v1/admin/incidents/facets/emirate?agency=CSC" [ref=e982]:
+                        - generic [ref=e985]: /api/v1/admin/incidents/facets/emirate?agency=CSC
+                      - cell "incidents" [ref=e986]:
+                        - generic [ref=e988]: incidents
+                      - cell "mss_capture" [ref=e989]:
+                        - generic [ref=e991]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e992]:
+                        - generic [ref=e995]:
+                          - button "生成用例" [ref=e997] [cursor=pointer]
+                          - button "编辑" [ref=e999] [cursor=pointer]
+                          - button "删除" [ref=e1001] [cursor=pointer]
+                    - row "53 GET Dashboard Tactical Overview /api/v1/admin/dashboard/tactical-overview?portal=CSC dashboard mss_capture 生成用例 编辑 删除" [ref=e1002]:
+                      - cell "53" [ref=e1003]:
+                        - generic [ref=e1005]: "53"
+                      - cell "GET" [ref=e1006]:
+                        - generic [ref=e1009]: GET
+                      - cell "Dashboard Tactical Overview" [ref=e1010]:
+                        - generic [ref=e1013]: Dashboard Tactical Overview
+                      - cell "/api/v1/admin/dashboard/tactical-overview?portal=CSC" [ref=e1014]:
+                        - generic [ref=e1017]: /api/v1/admin/dashboard/tactical-overview?portal=CSC
+                      - cell "dashboard" [ref=e1018]:
+                        - generic [ref=e1020]: dashboard
+                      - cell "mss_capture" [ref=e1021]:
+                        - generic [ref=e1023]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1024]:
+                        - generic [ref=e1027]:
+                          - button "生成用例" [ref=e1029] [cursor=pointer]
+                          - button "编辑" [ref=e1031] [cursor=pointer]
+                          - button "删除" [ref=e1033] [cursor=pointer]
+                    - row "52 GET Reports Summary /api/v1/admin/reports?workflowPolicyKey=MOD_MOET_INTERNAL&size=50&includeDraft=true reports mss_capture 生成用例 编辑 删除" [ref=e1034]:
+                      - cell "52" [ref=e1035]:
+                        - generic [ref=e1037]: "52"
+                      - cell "GET" [ref=e1038]:
+                        - generic [ref=e1041]: GET
+                      - cell "Reports Summary" [ref=e1042]:
+                        - generic [ref=e1045]: Reports Summary
+                      - cell "/api/v1/admin/reports?workflowPolicyKey=MOD_MOET_INTERNAL&size=50&includeDraft=true" [ref=e1046]:
+                        - generic [ref=e1049]: /api/v1/admin/reports?workflowPolicyKey=MOD_MOET_INTERNAL&size=50&includeDraft=true
+                      - cell "reports" [ref=e1050]:
+                        - generic [ref=e1052]: reports
+                      - cell "mss_capture" [ref=e1053]:
+                        - generic [ref=e1055]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1056]:
+                        - generic [ref=e1059]:
+                          - button "生成用例" [ref=e1061] [cursor=pointer]
+                          - button "编辑" [ref=e1063] [cursor=pointer]
+                          - button "删除" [ref=e1065] [cursor=pointer]
+                    - row "51 GET Internal Direct /api/v1/admin/form-templates/by-department/MOD_MOJ?flow=internal-direct internal-direct mss_capture 生成用例 编辑 删除" [ref=e1066]:
+                      - cell "51" [ref=e1067]:
+                        - generic [ref=e1069]: "51"
+                      - cell "GET" [ref=e1070]:
+                        - generic [ref=e1073]: GET
+                      - cell "Internal Direct" [ref=e1074]:
+                        - generic [ref=e1077]: Internal Direct
+                      - cell "/api/v1/admin/form-templates/by-department/MOD_MOJ?flow=internal-direct" [ref=e1078]:
+                        - generic [ref=e1081]: /api/v1/admin/form-templates/by-department/MOD_MOJ?flow=internal-direct
+                      - cell "internal-direct" [ref=e1082]:
+                        - generic [ref=e1084]: internal-direct
+                      - cell "mss_capture" [ref=e1085]:
+                        - generic [ref=e1087]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1088]:
+                        - generic [ref=e1091]:
+                          - button "生成用例" [ref=e1093] [cursor=pointer]
+                          - button "编辑" [ref=e1095] [cursor=pointer]
+                          - button "删除" [ref=e1097] [cursor=pointer]
+                    - row "50 GET Reports Summary /api/v1/admin/reports?workflowPolicyKey=MOD_MOJ_INTERNAL&size=50&includeDraft=true reports mss_capture 生成用例 编辑 删除" [ref=e1098]:
+                      - cell "50" [ref=e1099]:
+                        - generic [ref=e1101]: "50"
+                      - cell "GET" [ref=e1102]:
+                        - generic [ref=e1105]: GET
+                      - cell "Reports Summary" [ref=e1106]:
+                        - generic [ref=e1109]: Reports Summary
+                      - cell "/api/v1/admin/reports?workflowPolicyKey=MOD_MOJ_INTERNAL&size=50&includeDraft=true" [ref=e1110]:
+                        - generic [ref=e1113]: /api/v1/admin/reports?workflowPolicyKey=MOD_MOJ_INTERNAL&size=50&includeDraft=true
+                      - cell "reports" [ref=e1114]:
+                        - generic [ref=e1116]: reports
+                      - cell "mss_capture" [ref=e1117]:
+                        - generic [ref=e1119]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1120]:
+                        - generic [ref=e1123]:
+                          - button "生成用例" [ref=e1125] [cursor=pointer]
+                          - button "编辑" [ref=e1127] [cursor=pointer]
+                          - button "删除" [ref=e1129] [cursor=pointer]
+                    - row "49 GET Reports Summary /api/v1/admin/reports?workflowPolicyKey=MOD_MOET_INTERNAL&statusIn=UNDER_REVIEW&size=100 reports mss_capture 生成用例 编辑 删除" [ref=e1130]:
+                      - cell "49" [ref=e1131]:
+                        - generic [ref=e1133]: "49"
+                      - cell "GET" [ref=e1134]:
+                        - generic [ref=e1137]: GET
+                      - cell "Reports Summary" [ref=e1138]:
+                        - generic [ref=e1141]: Reports Summary
+                      - cell "/api/v1/admin/reports?workflowPolicyKey=MOD_MOET_INTERNAL&statusIn=UNDER_REVIEW&size=100" [ref=e1142]:
+                        - generic [ref=e1145]: /api/v1/admin/reports?workflowPolicyKey=MOD_MOET_INTERNAL&statusIn=UNDER_REVIEW&size=100
+                      - cell "reports" [ref=e1146]:
+                        - generic [ref=e1148]: reports
+                      - cell "mss_capture" [ref=e1149]:
+                        - generic [ref=e1151]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1152]:
+                        - generic [ref=e1155]:
+                          - button "生成用例" [ref=e1157] [cursor=pointer]
+                          - button "编辑" [ref=e1159] [cursor=pointer]
+                          - button "删除" [ref=e1161] [cursor=pointer]
+                    - row "48 GET Incident Facet Overview /api/v1/admin/incidents/facets/emirate?agency=MOD incidents mss_capture 生成用例 编辑 删除" [ref=e1162]:
+                      - cell "48" [ref=e1163]:
+                        - generic [ref=e1165]: "48"
+                      - cell "GET" [ref=e1166]:
+                        - generic [ref=e1169]: GET
+                      - cell "Incident Facet Overview" [ref=e1170]:
+                        - generic [ref=e1173]: Incident Facet Overview
+                      - cell "/api/v1/admin/incidents/facets/emirate?agency=MOD" [ref=e1174]:
+                        - generic [ref=e1177]: /api/v1/admin/incidents/facets/emirate?agency=MOD
+                      - cell "incidents" [ref=e1178]:
+                        - generic [ref=e1180]: incidents
+                      - cell "mss_capture" [ref=e1181]:
+                        - generic [ref=e1183]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1184]:
+                        - generic [ref=e1187]:
+                          - button "生成用例" [ref=e1189] [cursor=pointer]
+                          - button "编辑" [ref=e1191] [cursor=pointer]
+                          - button "删除" [ref=e1193] [cursor=pointer]
+                    - row "47 GET Dashboard Tactical Overview /api/v1/admin/dashboard/tactical-overview?portal=MOD dashboard mss_capture 生成用例 编辑 删除" [ref=e1194]:
+                      - cell "47" [ref=e1195]:
+                        - generic [ref=e1197]: "47"
+                      - cell "GET" [ref=e1198]:
+                        - generic [ref=e1201]: GET
+                      - cell "Dashboard Tactical Overview" [ref=e1202]:
+                        - generic [ref=e1205]: Dashboard Tactical Overview
+                      - cell "/api/v1/admin/dashboard/tactical-overview?portal=MOD" [ref=e1206]:
+                        - generic [ref=e1209]: /api/v1/admin/dashboard/tactical-overview?portal=MOD
+                      - cell "dashboard" [ref=e1210]:
+                        - generic [ref=e1212]: dashboard
+                      - cell "mss_capture" [ref=e1213]:
+                        - generic [ref=e1215]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1216]:
+                        - generic [ref=e1219]:
+                          - button "生成用例" [ref=e1221] [cursor=pointer]
+                          - button "编辑" [ref=e1223] [cursor=pointer]
+                          - button "删除" [ref=e1225] [cursor=pointer]
+                    - row "46 GET Incident Facet Overview /api/v1/admin/incidents/facets/emirate?agency=MOI incidents mss_capture 生成用例 编辑 删除" [ref=e1226]:
+                      - cell "46" [ref=e1227]:
+                        - generic [ref=e1229]: "46"
+                      - cell "GET" [ref=e1230]:
+                        - generic [ref=e1233]: GET
+                      - cell "Incident Facet Overview" [ref=e1234]:
+                        - generic [ref=e1237]: Incident Facet Overview
+                      - cell "/api/v1/admin/incidents/facets/emirate?agency=MOI" [ref=e1238]:
+                        - generic [ref=e1241]: /api/v1/admin/incidents/facets/emirate?agency=MOI
+                      - cell "incidents" [ref=e1242]:
+                        - generic [ref=e1244]: incidents
+                      - cell "mss_capture" [ref=e1245]:
+                        - generic [ref=e1247]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1248]:
+                        - generic [ref=e1251]:
+                          - button "生成用例" [ref=e1253] [cursor=pointer]
+                          - button "编辑" [ref=e1255] [cursor=pointer]
+                          - button "删除" [ref=e1257] [cursor=pointer]
+                    - row "45 GET Dashboard Tactical Overview /api/v1/admin/dashboard/tactical-overview?portal=MOI dashboard mss_capture 生成用例 编辑 删除" [ref=e1258]:
+                      - cell "45" [ref=e1259]:
+                        - generic [ref=e1261]: "45"
+                      - cell "GET" [ref=e1262]:
+                        - generic [ref=e1265]: GET
+                      - cell "Dashboard Tactical Overview" [ref=e1266]:
+                        - generic [ref=e1269]: Dashboard Tactical Overview
+                      - cell "/api/v1/admin/dashboard/tactical-overview?portal=MOI" [ref=e1270]:
+                        - generic [ref=e1273]: /api/v1/admin/dashboard/tactical-overview?portal=MOI
+                      - cell "dashboard" [ref=e1274]:
+                        - generic [ref=e1276]: dashboard
+                      - cell "mss_capture" [ref=e1277]:
+                        - generic [ref=e1279]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1280]:
+                        - generic [ref=e1283]:
+                          - button "生成用例" [ref=e1285] [cursor=pointer]
+                          - button "编辑" [ref=e1287] [cursor=pointer]
+                          - button "删除" [ref=e1289] [cursor=pointer]
+                    - row "44 GET Early Feedback Badge /api/v1/admin/early-review/badge early-feedback mss_capture 生成用例 编辑 删除" [ref=e1290]:
+                      - cell "44" [ref=e1291]:
+                        - generic [ref=e1293]: "44"
+                      - cell "GET" [ref=e1294]:
+                        - generic [ref=e1297]: GET
+                      - cell "Early Feedback Badge" [ref=e1298]:
+                        - generic [ref=e1301]: Early Feedback Badge
+                      - cell "/api/v1/admin/early-review/badge" [ref=e1302]:
+                        - generic [ref=e1305]: /api/v1/admin/early-review/badge
+                      - cell "early-feedback" [ref=e1306]:
+                        - generic [ref=e1308]: early-feedback
+                      - cell "mss_capture" [ref=e1309]:
+                        - generic [ref=e1311]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1312]:
+                        - generic [ref=e1315]:
+                          - button "生成用例" [ref=e1317] [cursor=pointer]
+                          - button "编辑" [ref=e1319] [cursor=pointer]
+                          - button "删除" [ref=e1321] [cursor=pointer]
+                    - row "43 GET Evidence Verification Outbox /api/v1/admin/evidence-verifications/outbox file-verification mss_capture 生成用例 编辑 删除" [ref=e1322]:
+                      - cell "43" [ref=e1323]:
+                        - generic [ref=e1325]: "43"
+                      - cell "GET" [ref=e1326]:
+                        - generic [ref=e1329]: GET
+                      - cell "Evidence Verification Outbox" [ref=e1330]:
+                        - generic [ref=e1333]: Evidence Verification Outbox
+                      - cell "/api/v1/admin/evidence-verifications/outbox" [ref=e1334]:
+                        - generic [ref=e1337]: /api/v1/admin/evidence-verifications/outbox
+                      - cell "file-verification" [ref=e1338]:
+                        - generic [ref=e1340]: file-verification
+                      - cell "mss_capture" [ref=e1341]:
+                        - generic [ref=e1343]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1344]:
+                        - generic [ref=e1347]:
+                          - button "生成用例" [ref=e1349] [cursor=pointer]
+                          - button "编辑" [ref=e1351] [cursor=pointer]
+                          - button "删除" [ref=e1353] [cursor=pointer]
+                    - row "42 GET Crisis Snapshots /api/v1/admin/crises/snapshots?page=0&size=20 reports mss_capture 生成用例 编辑 删除" [ref=e1354]:
+                      - cell "42" [ref=e1355]:
+                        - generic [ref=e1357]: "42"
+                      - cell "GET" [ref=e1358]:
+                        - generic [ref=e1361]: GET
+                      - cell "Crisis Snapshots" [ref=e1362]:
+                        - generic [ref=e1365]: Crisis Snapshots
+                      - cell "/api/v1/admin/crises/snapshots?page=0&size=20" [ref=e1366]:
+                        - generic [ref=e1369]: /api/v1/admin/crises/snapshots?page=0&size=20
+                      - cell "reports" [ref=e1370]:
+                        - generic [ref=e1372]: reports
+                      - cell "mss_capture" [ref=e1373]:
+                        - generic [ref=e1375]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1376]:
+                        - generic [ref=e1379]:
+                          - button "生成用例" [ref=e1381] [cursor=pointer]
+                          - button "编辑" [ref=e1383] [cursor=pointer]
+                          - button "删除" [ref=e1385] [cursor=pointer]
+                    - row "41 GET Dashboard Tactical Overview /api/v1/admin/dashboard/tactical-overview?portal=NCEMA dashboard mss_capture 生成用例 编辑 删除" [ref=e1386]:
+                      - cell "41" [ref=e1387]:
+                        - generic [ref=e1389]: "41"
+                      - cell "GET" [ref=e1390]:
+                        - generic [ref=e1393]: GET
+                      - cell "Dashboard Tactical Overview" [ref=e1394]:
+                        - generic [ref=e1397]: Dashboard Tactical Overview
+                      - cell "/api/v1/admin/dashboard/tactical-overview?portal=NCEMA" [ref=e1398]:
+                        - generic [ref=e1401]: /api/v1/admin/dashboard/tactical-overview?portal=NCEMA
+                      - cell "dashboard" [ref=e1402]:
+                        - generic [ref=e1404]: dashboard
+                      - cell "mss_capture" [ref=e1405]:
+                        - generic [ref=e1407]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1408]:
+                        - generic [ref=e1411]:
+                          - button "生成用例" [ref=e1413] [cursor=pointer]
+                          - button "编辑" [ref=e1415] [cursor=pointer]
+                          - button "删除" [ref=e1417] [cursor=pointer]
+                    - row "40 GET Notifications /api/v1/admin/notifications notifications mss_capture 生成用例 编辑 删除" [ref=e1418]:
+                      - cell "40" [ref=e1419]:
+                        - generic [ref=e1421]: "40"
+                      - cell "GET" [ref=e1422]:
+                        - generic [ref=e1425]: GET
+                      - cell "Notifications" [ref=e1426]:
+                        - generic [ref=e1429]: Notifications
+                      - cell "/api/v1/admin/notifications" [ref=e1430]:
+                        - generic [ref=e1433]: /api/v1/admin/notifications
+                      - cell "notifications" [ref=e1434]:
+                        - generic [ref=e1436]: notifications
+                      - cell "mss_capture" [ref=e1437]:
+                        - generic [ref=e1439]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1440]:
+                        - generic [ref=e1443]:
+                          - button "生成用例" [ref=e1445] [cursor=pointer]
+                          - button "编辑" [ref=e1447] [cursor=pointer]
+                          - button "删除" [ref=e1449] [cursor=pointer]
+                    - row "39 GET Current User Profile /api/v1/im/me profile mss_capture 生成用例 编辑 删除" [ref=e1450]:
+                      - cell "39" [ref=e1451]:
+                        - generic [ref=e1453]: "39"
+                      - cell "GET" [ref=e1454]:
+                        - generic [ref=e1457]: GET
+                      - cell "Current User Profile" [ref=e1458]:
+                        - generic [ref=e1461]: Current User Profile
+                      - cell "/api/v1/im/me" [ref=e1462]:
+                        - generic [ref=e1465]: /api/v1/im/me
+                      - cell "profile" [ref=e1466]:
+                        - generic [ref=e1468]: profile
+                      - cell "mss_capture" [ref=e1469]:
+                        - generic [ref=e1471]: mss_capture
+                      - cell "生成用例 编辑 删除" [ref=e1472]:
+                        - generic [ref=e1475]:
+                          - button "生成用例" [ref=e1477] [cursor=pointer]
+                          - button "编辑" [ref=e1479] [cursor=pointer]
+                          - button "删除" [ref=e1481] [cursor=pointer]
+                    - row "38 POST Create Crisis /api/v1/admin/crises crises manual 生成用例 编辑 删除" [ref=e1482]:
+                      - cell "38" [ref=e1483]:
+                        - generic [ref=e1485]: "38"
+                      - cell "POST" [ref=e1486]:
+                        - generic [ref=e1489]: POST
+                      - cell "Create Crisis" [ref=e1490]:
+                        - generic [ref=e1493]: Create Crisis
+                      - cell "/api/v1/admin/crises" [ref=e1494]:
+                        - generic [ref=e1497]: /api/v1/admin/crises
+                      - cell "crises" [ref=e1498]:
+                        - generic [ref=e1500]: crises
+                      - cell "manual" [ref=e1501]:
+                        - generic [ref=e1503]: manual
+                      - cell "生成用例 编辑 删除" [ref=e1504]:
+                        - generic [ref=e1507]:
+                          - button "生成用例" [ref=e1509] [cursor=pointer]
+                          - button "编辑" [ref=e1511] [cursor=pointer]
+                          - button "删除" [ref=e1513] [cursor=pointer]
+              - generic [ref=e1517]:
+                - generic [ref=e1518]:
+                  - generic [ref=e1519]:
+                    - textbox "搜索用例名称/路径" [ref=e1520]
+                    - img [ref=e1523] [cursor=pointer]
+                  - generic [ref=e1525] [cursor=pointer]:
+                    - textbox "环境筛选" [ref=e1526]
+                    - img [ref=e1529]
+                  - generic [ref=e1531] [cursor=pointer]:
+                    - textbox "执行环境（覆盖）" [ref=e1532]
+                    - img [ref=e1535]
+                  - button "UI Trace 转接口用例" [ref=e1537] [cursor=pointer]
+                  - button "功能用例转接口用例" [ref=e1538] [cursor=pointer]
+                  - button "新增用例" [ref=e1539] [cursor=pointer]
+                  - button "当前模块一键AI增强" [disabled] [ref=e1540]
+                  - button "批量AI增强" [disabled] [ref=e1541]
+                  - button "批量执行" [disabled] [ref=e1542]
+                - generic [ref=e1547]:
+                  - table [ref=e1550]:
+                    - rowgroup [ref=e1560]:
+                      - row "ID 方法 用例名称 路径 默认环境 状态 操作" [ref=e1561]:
+                        - columnheader [ref=e1562]:
+                          - generic [ref=e1564] [cursor=pointer]:
+                            - checkbox
+                        - columnheader "ID" [ref=e1567]:
+                          - generic [ref=e1569]: ID
+                        - columnheader "方法" [ref=e1570]:
+                          - generic [ref=e1572]: 方法
+                        - columnheader "用例名称" [ref=e1573]:
+                          - generic [ref=e1576]: 用例名称
+                        - columnheader "路径" [ref=e1577]:
+                          - generic [ref=e1580]: 路径
+                        - columnheader "默认环境" [ref=e1581]:
+                          - generic [ref=e1584]: 默认环境
+                        - columnheader "状态" [ref=e1585]:
+                          - generic [ref=e1587]: 状态
+                        - columnheader "操作" [ref=e1588]:
+                          - generic [ref=e1590]: 操作
+                  - table [ref=e1596]:
+                    - rowgroup [ref=e1597]:
+                      - row "暂无数据" [ref=e1598]:
+                        - cell "暂无数据" [ref=e1599]:
+                          - generic [ref=e1602]:
+                            - img [ref=e1604]
+                            - generic [ref=e1606]: 暂无数据
+              - generic [ref=e1607]:
+                - button "新增脚本" [ref=e1609] [cursor=pointer]
+                - generic [ref=e1614]:
+                  - table [ref=e1617]:
+                    - rowgroup [ref=e1624]:
+                      - row "脚本名称 类型 模块 内容 操作" [ref=e1625]:
+                        - columnheader "脚本名称" [ref=e1626]:
+                          - generic [ref=e1628]: 脚本名称
+                        - columnheader "类型" [ref=e1629]:
+                          - generic [ref=e1631]: 类型
+                        - columnheader "模块" [ref=e1632]:
+                          - generic [ref=e1634]: 模块
+                        - columnheader "内容" [ref=e1635]:
+                          - generic [ref=e1638]: 内容
+                        - columnheader "操作" [ref=e1639]:
+                          - generic [ref=e1641]: 操作
+                  - table [ref=e1647]:
+                    - rowgroup [ref=e1648]:
+                      - row "暂无数据" [ref=e1649]:
+                        - cell "暂无数据" [ref=e1650]:
+                          - generic [ref=e1653]:
+                            - img [ref=e1655]
+                            - generic [ref=e1657]: 暂无数据
+              - generic [ref=e1659]:
+                - generic [ref=e1660]:
+                  - generic [ref=e1661]:
+                    - textbox "搜索场景名称/描述" [ref=e1662]
+                    - img [ref=e1665] [cursor=pointer]
+                  - button "新增接口场景" [ref=e1667] [cursor=pointer]
+                - table [ref=e1673]:
+                  - rowgroup [ref=e1682]:
+                    - row "ID 场景名称 模块 步骤数 状态 创建时间 操作" [ref=e1683]:
+                      - columnheader "ID" [ref=e1684]:
+                        - generic [ref=e1686]: ID
+                      - columnheader "场景名称" [ref=e1687]:
+                        - generic [ref=e1690]: 场景名称
+                      - columnheader "模块" [ref=e1691]:
+                        - generic [ref=e1694]: 模块
+                      - columnheader "步骤数" [ref=e1695]:
+                        - generic [ref=e1697]: 步骤数
+                      - columnheader "状态" [ref=e1698]:
+                        - generic [ref=e1700]: 状态
+                      - columnheader "创建时间" [ref=e1701]:
+                        - generic [ref=e1703]: 创建时间
+                      - columnheader "操作" [ref=e1704]:
+                        - generic [ref=e1706]: 操作
+                  - rowgroup [ref=e1707]:
+                    - row "143 01 ncema Core Flow ncema 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e1708]:
+                      - cell "143" [ref=e1709]:
+                        - generic [ref=e1711]: "143"
+                      - cell "01 ncema Core Flow" [ref=e1712]:
+                        - generic [ref=e1715]: 01 ncema Core Flow
+                      - cell "ncema" [ref=e1716]:
+                        - generic [ref=e1719]: ncema
+                      - cell "5" [ref=e1720]:
+                        - generic [ref=e1722]: "5"
+                      - cell "成功" [ref=e1723]:
+                        - generic [ref=e1726]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e1727]:
+                        - generic [ref=e1729]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e1730]:
+                        - generic [ref=e1733]:
+                          - button "执行" [ref=e1735] [cursor=pointer]
+                          - button "编辑" [ref=e1737] [cursor=pointer]
+                          - button "删除" [ref=e1739] [cursor=pointer]
+                    - row "142 01 ncema_admin Core Flow ncema_admin 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e1740]:
+                      - cell "142" [ref=e1741]:
+                        - generic [ref=e1743]: "142"
+                      - cell "01 ncema_admin Core Flow" [ref=e1744]:
+                        - generic [ref=e1747]: 01 ncema_admin Core Flow
+                      - cell "ncema_admin" [ref=e1748]:
+                        - generic [ref=e1751]: ncema_admin
+                      - cell "5" [ref=e1752]:
+                        - generic [ref=e1754]: "5"
+                      - cell "成功" [ref=e1755]:
+                        - generic [ref=e1758]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e1759]:
+                        - generic [ref=e1761]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e1762]:
+                        - generic [ref=e1765]:
+                          - button "执行" [ref=e1767] [cursor=pointer]
+                          - button "编辑" [ref=e1769] [cursor=pointer]
+                          - button "删除" [ref=e1771] [cursor=pointer]
+                    - row "145 01 moi Core Flow moi 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e1772]:
+                      - cell "145" [ref=e1773]:
+                        - generic [ref=e1775]: "145"
+                      - cell "01 moi Core Flow" [ref=e1776]:
+                        - generic [ref=e1779]: 01 moi Core Flow
+                      - cell "moi" [ref=e1780]:
+                        - generic [ref=e1783]: moi
+                      - cell "5" [ref=e1784]:
+                        - generic [ref=e1786]: "5"
+                      - cell "成功" [ref=e1787]:
+                        - generic [ref=e1790]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e1791]:
+                        - generic [ref=e1793]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e1794]:
+                        - generic [ref=e1797]:
+                          - button "执行" [ref=e1799] [cursor=pointer]
+                          - button "编辑" [ref=e1801] [cursor=pointer]
+                          - button "删除" [ref=e1803] [cursor=pointer]
+                    - row "144 01 moi_admin Core Flow moi_admin 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e1804]:
+                      - cell "144" [ref=e1805]:
+                        - generic [ref=e1807]: "144"
+                      - cell "01 moi_admin Core Flow" [ref=e1808]:
+                        - generic [ref=e1811]: 01 moi_admin Core Flow
+                      - cell "moi_admin" [ref=e1812]:
+                        - generic [ref=e1815]: moi_admin
+                      - cell "5" [ref=e1816]:
+                        - generic [ref=e1818]: "5"
+                      - cell "成功" [ref=e1819]:
+                        - generic [ref=e1822]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e1823]:
+                        - generic [ref=e1825]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e1826]:
+                        - generic [ref=e1829]:
+                          - button "执行" [ref=e1831] [cursor=pointer]
+                          - button "编辑" [ref=e1833] [cursor=pointer]
+                          - button "删除" [ref=e1835] [cursor=pointer]
+                    - row "148 01 mod Core Flow mod 6 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e1836]:
+                      - cell "148" [ref=e1837]:
+                        - generic [ref=e1839]: "148"
+                      - cell "01 mod Core Flow" [ref=e1840]:
+                        - generic [ref=e1843]: 01 mod Core Flow
+                      - cell "mod" [ref=e1844]:
+                        - generic [ref=e1847]: mod
+                      - cell "6" [ref=e1848]:
+                        - generic [ref=e1850]: "6"
+                      - cell "成功" [ref=e1851]:
+                        - generic [ref=e1854]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e1855]:
+                        - generic [ref=e1857]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e1858]:
+                        - generic [ref=e1861]:
+                          - button "执行" [ref=e1863] [cursor=pointer]
+                          - button "编辑" [ref=e1865] [cursor=pointer]
+                          - button "删除" [ref=e1867] [cursor=pointer]
+                    - row "147 01 mod_admin Core Flow mod_admin 7 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e1868]:
+                      - cell "147" [ref=e1869]:
+                        - generic [ref=e1871]: "147"
+                      - cell "01 mod_admin Core Flow" [ref=e1872]:
+                        - generic [ref=e1875]: 01 mod_admin Core Flow
+                      - cell "mod_admin" [ref=e1876]:
+                        - generic [ref=e1879]: mod_admin
+                      - cell "7" [ref=e1880]:
+                        - generic [ref=e1882]: "7"
+                      - cell "成功" [ref=e1883]:
+                        - generic [ref=e1886]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e1887]:
+                        - generic [ref=e1889]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e1890]:
+                        - generic [ref=e1893]:
+                          - button "执行" [ref=e1895] [cursor=pointer]
+                          - button "编辑" [ref=e1897] [cursor=pointer]
+                          - button "删除" [ref=e1899] [cursor=pointer]
+                    - row "158 01 csc Core Flow csc 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e1900]:
+                      - cell "158" [ref=e1901]:
+                        - generic [ref=e1903]: "158"
+                      - cell "01 csc Core Flow" [ref=e1904]:
+                        - generic [ref=e1907]: 01 csc Core Flow
+                      - cell "csc" [ref=e1908]:
+                        - generic [ref=e1911]: csc
+                      - cell "5" [ref=e1912]:
+                        - generic [ref=e1914]: "5"
+                      - cell "成功" [ref=e1915]:
+                        - generic [ref=e1918]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e1919]:
+                        - generic [ref=e1921]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e1922]:
+                        - generic [ref=e1925]:
+                          - button "执行" [ref=e1927] [cursor=pointer]
+                          - button "编辑" [ref=e1929] [cursor=pointer]
+                          - button "删除" [ref=e1931] [cursor=pointer]
+                    - row "157 01 csc_admin Core Flow csc_admin 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e1932]:
+                      - cell "157" [ref=e1933]:
+                        - generic [ref=e1935]: "157"
+                      - cell "01 csc_admin Core Flow" [ref=e1936]:
+                        - generic [ref=e1939]: 01 csc_admin Core Flow
+                      - cell "csc_admin" [ref=e1940]:
+                        - generic [ref=e1943]: csc_admin
+                      - cell "5" [ref=e1944]:
+                        - generic [ref=e1946]: "5"
+                      - cell "成功" [ref=e1947]:
+                        - generic [ref=e1950]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e1951]:
+                        - generic [ref=e1953]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e1954]:
+                        - generic [ref=e1957]:
+                          - button "执行" [ref=e1959] [cursor=pointer]
+                          - button "编辑" [ref=e1961] [cursor=pointer]
+                          - button "删除" [ref=e1963] [cursor=pointer]
+                    - row "160 01 ssd Core Flow ssd 4 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e1964]:
+                      - cell "160" [ref=e1965]:
+                        - generic [ref=e1967]: "160"
+                      - cell "01 ssd Core Flow" [ref=e1968]:
+                        - generic [ref=e1971]: 01 ssd Core Flow
+                      - cell "ssd" [ref=e1972]:
+                        - generic [ref=e1975]: ssd
+                      - cell "4" [ref=e1976]:
+                        - generic [ref=e1978]: "4"
+                      - cell "成功" [ref=e1979]:
+                        - generic [ref=e1982]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e1983]:
+                        - generic [ref=e1985]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e1986]:
+                        - generic [ref=e1989]:
+                          - button "执行" [ref=e1991] [cursor=pointer]
+                          - button "编辑" [ref=e1993] [cursor=pointer]
+                          - button "删除" [ref=e1995] [cursor=pointer]
+                    - row "159 01 ssd_admin Core Flow ssd_admin 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e1996]:
+                      - cell "159" [ref=e1997]:
+                        - generic [ref=e1999]: "159"
+                      - cell "01 ssd_admin Core Flow" [ref=e2000]:
+                        - generic [ref=e2003]: 01 ssd_admin Core Flow
+                      - cell "ssd_admin" [ref=e2004]:
+                        - generic [ref=e2007]: ssd_admin
+                      - cell "5" [ref=e2008]:
+                        - generic [ref=e2010]: "5"
+                      - cell "成功" [ref=e2011]:
+                        - generic [ref=e2014]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2015]:
+                        - generic [ref=e2017]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2018]:
+                        - generic [ref=e2021]:
+                          - button "执行" [ref=e2023] [cursor=pointer]
+                          - button "编辑" [ref=e2025] [cursor=pointer]
+                          - button "删除" [ref=e2027] [cursor=pointer]
+                    - row "162 01 moj Core Flow moj 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2028]:
+                      - cell "162" [ref=e2029]:
+                        - generic [ref=e2031]: "162"
+                      - cell "01 moj Core Flow" [ref=e2032]:
+                        - generic [ref=e2035]: 01 moj Core Flow
+                      - cell "moj" [ref=e2036]:
+                        - generic [ref=e2039]: moj
+                      - cell "5" [ref=e2040]:
+                        - generic [ref=e2042]: "5"
+                      - cell "成功" [ref=e2043]:
+                        - generic [ref=e2046]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2047]:
+                        - generic [ref=e2049]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2050]:
+                        - generic [ref=e2053]:
+                          - button "执行" [ref=e2055] [cursor=pointer]
+                          - button "编辑" [ref=e2057] [cursor=pointer]
+                          - button "删除" [ref=e2059] [cursor=pointer]
+                    - row "161 01 moj_admin Core Flow moj_admin 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2060]:
+                      - cell "161" [ref=e2061]:
+                        - generic [ref=e2063]: "161"
+                      - cell "01 moj_admin Core Flow" [ref=e2064]:
+                        - generic [ref=e2067]: 01 moj_admin Core Flow
+                      - cell "moj_admin" [ref=e2068]:
+                        - generic [ref=e2071]: moj_admin
+                      - cell "5" [ref=e2072]:
+                        - generic [ref=e2074]: "5"
+                      - cell "成功" [ref=e2075]:
+                        - generic [ref=e2078]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2079]:
+                        - generic [ref=e2081]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2082]:
+                        - generic [ref=e2085]:
+                          - button "执行" [ref=e2087] [cursor=pointer]
+                          - button "编辑" [ref=e2089] [cursor=pointer]
+                          - button "删除" [ref=e2091] [cursor=pointer]
+                    - row "164 01 moei Core Flow moei 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2092]:
+                      - cell "164" [ref=e2093]:
+                        - generic [ref=e2095]: "164"
+                      - cell "01 moei Core Flow" [ref=e2096]:
+                        - generic [ref=e2099]: 01 moei Core Flow
+                      - cell "moei" [ref=e2100]:
+                        - generic [ref=e2103]: moei
+                      - cell "5" [ref=e2104]:
+                        - generic [ref=e2106]: "5"
+                      - cell "成功" [ref=e2107]:
+                        - generic [ref=e2110]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2111]:
+                        - generic [ref=e2113]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2114]:
+                        - generic [ref=e2117]:
+                          - button "执行" [ref=e2119] [cursor=pointer]
+                          - button "编辑" [ref=e2121] [cursor=pointer]
+                          - button "删除" [ref=e2123] [cursor=pointer]
+                    - row "163 01 moei_admin Core Flow moei_admin 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2124]:
+                      - cell "163" [ref=e2125]:
+                        - generic [ref=e2127]: "163"
+                      - cell "01 moei_admin Core Flow" [ref=e2128]:
+                        - generic [ref=e2131]: 01 moei_admin Core Flow
+                      - cell "moei_admin" [ref=e2132]:
+                        - generic [ref=e2135]: moei_admin
+                      - cell "5" [ref=e2136]:
+                        - generic [ref=e2138]: "5"
+                      - cell "成功" [ref=e2139]:
+                        - generic [ref=e2142]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2143]:
+                        - generic [ref=e2145]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2146]:
+                        - generic [ref=e2149]:
+                          - button "执行" [ref=e2151] [cursor=pointer]
+                          - button "编辑" [ref=e2153] [cursor=pointer]
+                          - button "删除" [ref=e2155] [cursor=pointer]
+                    - row "166 01 moet Core Flow moet 4 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2156]:
+                      - cell "166" [ref=e2157]:
+                        - generic [ref=e2159]: "166"
+                      - cell "01 moet Core Flow" [ref=e2160]:
+                        - generic [ref=e2163]: 01 moet Core Flow
+                      - cell "moet" [ref=e2164]:
+                        - generic [ref=e2167]: moet
+                      - cell "4" [ref=e2168]:
+                        - generic [ref=e2170]: "4"
+                      - cell "成功" [ref=e2171]:
+                        - generic [ref=e2174]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2175]:
+                        - generic [ref=e2177]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2178]:
+                        - generic [ref=e2181]:
+                          - button "执行" [ref=e2183] [cursor=pointer]
+                          - button "编辑" [ref=e2185] [cursor=pointer]
+                          - button "删除" [ref=e2187] [cursor=pointer]
+                    - row "165 01 moet_admin Core Flow moet_admin 3 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2188]:
+                      - cell "165" [ref=e2189]:
+                        - generic [ref=e2191]: "165"
+                      - cell "01 moet_admin Core Flow" [ref=e2192]:
+                        - generic [ref=e2195]: 01 moet_admin Core Flow
+                      - cell "moet_admin" [ref=e2196]:
+                        - generic [ref=e2199]: moet_admin
+                      - cell "3" [ref=e2200]:
+                        - generic [ref=e2202]: "3"
+                      - cell "成功" [ref=e2203]:
+                        - generic [ref=e2206]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2207]:
+                        - generic [ref=e2209]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2210]:
+                        - generic [ref=e2213]:
+                          - button "执行" [ref=e2215] [cursor=pointer]
+                          - button "编辑" [ref=e2217] [cursor=pointer]
+                          - button "删除" [ref=e2219] [cursor=pointer]
+                    - row "168 01 fp Core Flow fp 3 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2220]:
+                      - cell "168" [ref=e2221]:
+                        - generic [ref=e2223]: "168"
+                      - cell "01 fp Core Flow" [ref=e2224]:
+                        - generic [ref=e2227]: 01 fp Core Flow
+                      - cell "fp" [ref=e2228]:
+                        - generic [ref=e2231]: fp
+                      - cell "3" [ref=e2232]:
+                        - generic [ref=e2234]: "3"
+                      - cell "成功" [ref=e2235]:
+                        - generic [ref=e2238]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2239]:
+                        - generic [ref=e2241]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2242]:
+                        - generic [ref=e2245]:
+                          - button "执行" [ref=e2247] [cursor=pointer]
+                          - button "编辑" [ref=e2249] [cursor=pointer]
+                          - button "删除" [ref=e2251] [cursor=pointer]
+                    - row "167 01 fp_admin Core Flow fp_admin 4 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2252]:
+                      - cell "167" [ref=e2253]:
+                        - generic [ref=e2255]: "167"
+                      - cell "01 fp_admin Core Flow" [ref=e2256]:
+                        - generic [ref=e2259]: 01 fp_admin Core Flow
+                      - cell "fp_admin" [ref=e2260]:
+                        - generic [ref=e2263]: fp_admin
+                      - cell "4" [ref=e2264]:
+                        - generic [ref=e2266]: "4"
+                      - cell "成功" [ref=e2267]:
+                        - generic [ref=e2270]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2271]:
+                        - generic [ref=e2273]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2274]:
+                        - generic [ref=e2277]:
+                          - button "执行" [ref=e2279] [cursor=pointer]
+                          - button "编辑" [ref=e2281] [cursor=pointer]
+                          - button "删除" [ref=e2283] [cursor=pointer]
+                    - row "146 01 moi_report Core Flow moi_report 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2284]:
+                      - cell "146" [ref=e2285]:
+                        - generic [ref=e2287]: "146"
+                      - cell "01 moi_report Core Flow" [ref=e2288]:
+                        - generic [ref=e2291]: 01 moi_report Core Flow
+                      - cell "moi_report" [ref=e2292]:
+                        - generic [ref=e2295]: moi_report
+                      - cell "5" [ref=e2296]:
+                        - generic [ref=e2298]: "5"
+                      - cell "成功" [ref=e2299]:
+                        - generic [ref=e2302]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2303]:
+                        - generic [ref=e2305]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2306]:
+                        - generic [ref=e2309]:
+                          - button "执行" [ref=e2311] [cursor=pointer]
+                          - button "编辑" [ref=e2313] [cursor=pointer]
+                          - button "删除" [ref=e2315] [cursor=pointer]
+                    - row "149 01 mod_report Core Flow mod_report 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2316]:
+                      - cell "149" [ref=e2317]:
+                        - generic [ref=e2319]: "149"
+                      - cell "01 mod_report Core Flow" [ref=e2320]:
+                        - generic [ref=e2323]: 01 mod_report Core Flow
+                      - cell "mod_report" [ref=e2324]:
+                        - generic [ref=e2327]: mod_report
+                      - cell "5" [ref=e2328]:
+                        - generic [ref=e2330]: "5"
+                      - cell "成功" [ref=e2331]:
+                        - generic [ref=e2334]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2335]:
+                        - generic [ref=e2337]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2338]:
+                        - generic [ref=e2341]:
+                          - button "执行" [ref=e2343] [cursor=pointer]
+                          - button "编辑" [ref=e2345] [cursor=pointer]
+                          - button "删除" [ref=e2347] [cursor=pointer]
+                    - row "150 01 mod_mp Core Flow mod_mp 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2348]:
+                      - cell "150" [ref=e2349]:
+                        - generic [ref=e2351]: "150"
+                      - cell "01 mod_mp Core Flow" [ref=e2352]:
+                        - generic [ref=e2355]: 01 mod_mp Core Flow
+                      - cell "mod_mp" [ref=e2356]:
+                        - generic [ref=e2359]: mod_mp
+                      - cell "5" [ref=e2360]:
+                        - generic [ref=e2362]: "5"
+                      - cell "成功" [ref=e2363]:
+                        - generic [ref=e2366]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2367]:
+                        - generic [ref=e2369]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2370]:
+                        - generic [ref=e2373]:
+                          - button "执行" [ref=e2375] [cursor=pointer]
+                          - button "编辑" [ref=e2377] [cursor=pointer]
+                          - button "删除" [ref=e2379] [cursor=pointer]
+                    - row "151 01 mod_mcs Core Flow mod_mcs 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2380]:
+                      - cell "151" [ref=e2381]:
+                        - generic [ref=e2383]: "151"
+                      - cell "01 mod_mcs Core Flow" [ref=e2384]:
+                        - generic [ref=e2387]: 01 mod_mcs Core Flow
+                      - cell "mod_mcs" [ref=e2388]:
+                        - generic [ref=e2391]: mod_mcs
+                      - cell "5" [ref=e2392]:
+                        - generic [ref=e2394]: "5"
+                      - cell "成功" [ref=e2395]:
+                        - generic [ref=e2398]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2399]:
+                        - generic [ref=e2401]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2402]:
+                        - generic [ref=e2405]:
+                          - button "执行" [ref=e2407] [cursor=pointer]
+                          - button "编辑" [ref=e2409] [cursor=pointer]
+                          - button "删除" [ref=e2411] [cursor=pointer]
+                    - row "152 01 mod_msd Core Flow mod_msd 4 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2412]:
+                      - cell "152" [ref=e2413]:
+                        - generic [ref=e2415]: "152"
+                      - cell "01 mod_msd Core Flow" [ref=e2416]:
+                        - generic [ref=e2419]: 01 mod_msd Core Flow
+                      - cell "mod_msd" [ref=e2420]:
+                        - generic [ref=e2423]: mod_msd
+                      - cell "4" [ref=e2424]:
+                        - generic [ref=e2426]: "4"
+                      - cell "成功" [ref=e2427]:
+                        - generic [ref=e2430]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2431]:
+                        - generic [ref=e2433]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2434]:
+                        - generic [ref=e2437]:
+                          - button "执行" [ref=e2439] [cursor=pointer]
+                          - button "编辑" [ref=e2441] [cursor=pointer]
+                          - button "删除" [ref=e2443] [cursor=pointer]
+                    - row "153 01 mod_mhsd Core Flow mod_mhsd 6 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2444]:
+                      - cell "153" [ref=e2445]:
+                        - generic [ref=e2447]: "153"
+                      - cell "01 mod_mhsd Core Flow" [ref=e2448]:
+                        - generic [ref=e2451]: 01 mod_mhsd Core Flow
+                      - cell "mod_mhsd" [ref=e2452]:
+                        - generic [ref=e2455]: mod_mhsd
+                      - cell "6" [ref=e2456]:
+                        - generic [ref=e2458]: "6"
+                      - cell "成功" [ref=e2459]:
+                        - generic [ref=e2462]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2463]:
+                        - generic [ref=e2465]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2466]:
+                        - generic [ref=e2469]:
+                          - button "执行" [ref=e2471] [cursor=pointer]
+                          - button "编辑" [ref=e2473] [cursor=pointer]
+                          - button "删除" [ref=e2475] [cursor=pointer]
+                    - row "154 01 mod_id Core Flow mod_id 4 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2476]:
+                      - cell "154" [ref=e2477]:
+                        - generic [ref=e2479]: "154"
+                      - cell "01 mod_id Core Flow" [ref=e2480]:
+                        - generic [ref=e2483]: 01 mod_id Core Flow
+                      - cell "mod_id" [ref=e2484]:
+                        - generic [ref=e2487]: mod_id
+                      - cell "4" [ref=e2488]:
+                        - generic [ref=e2490]: "4"
+                      - cell "成功" [ref=e2491]:
+                        - generic [ref=e2494]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2495]:
+                        - generic [ref=e2497]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2498]:
+                        - generic [ref=e2501]:
+                          - button "执行" [ref=e2503] [cursor=pointer]
+                          - button "编辑" [ref=e2505] [cursor=pointer]
+                          - button "删除" [ref=e2507] [cursor=pointer]
+                    - row "155 01 mod_edi Core Flow mod_edi 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2508]:
+                      - cell "155" [ref=e2509]:
+                        - generic [ref=e2511]: "155"
+                      - cell "01 mod_edi Core Flow" [ref=e2512]:
+                        - generic [ref=e2515]: 01 mod_edi Core Flow
+                      - cell "mod_edi" [ref=e2516]:
+                        - generic [ref=e2519]: mod_edi
+                      - cell "5" [ref=e2520]:
+                        - generic [ref=e2522]: "5"
+                      - cell "成功" [ref=e2523]:
+                        - generic [ref=e2526]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2527]:
+                        - generic [ref=e2529]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2530]:
+                        - generic [ref=e2533]:
+                          - button "执行" [ref=e2535] [cursor=pointer]
+                          - button "编辑" [ref=e2537] [cursor=pointer]
+                          - button "删除" [ref=e2539] [cursor=pointer]
+                    - row "156 01 mod_di Core Flow mod_di 4 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2540]:
+                      - cell "156" [ref=e2541]:
+                        - generic [ref=e2543]: "156"
+                      - cell "01 mod_di Core Flow" [ref=e2544]:
+                        - generic [ref=e2547]: 01 mod_di Core Flow
+                      - cell "mod_di" [ref=e2548]:
+                        - generic [ref=e2551]: mod_di
+                      - cell "4" [ref=e2552]:
+                        - generic [ref=e2554]: "4"
+                      - cell "成功" [ref=e2555]:
+                        - generic [ref=e2558]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2559]:
+                        - generic [ref=e2561]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2562]:
+                        - generic [ref=e2565]:
+                          - button "执行" [ref=e2567] [cursor=pointer]
+                          - button "编辑" [ref=e2569] [cursor=pointer]
+                          - button "删除" [ref=e2571] [cursor=pointer]
+                    - row "169 01 admin Core Flow admin 5 成功 2026-06-05 17:13:04 执行 编辑 删除" [ref=e2572]:
+                      - cell "169" [ref=e2573]:
+                        - generic [ref=e2575]: "169"
+                      - cell "01 admin Core Flow" [ref=e2576]:
+                        - generic [ref=e2579]: 01 admin Core Flow
+                      - cell "admin" [ref=e2580]:
+                        - generic [ref=e2583]: admin
+                      - cell "5" [ref=e2584]:
+                        - generic [ref=e2586]: "5"
+                      - cell "成功" [ref=e2587]:
+                        - generic [ref=e2590]: 成功
+                      - cell "2026-06-05 17:13:04" [ref=e2591]:
+                        - generic [ref=e2593]: 2026-06-05 17:13:04
+                      - cell "执行 编辑 删除" [ref=e2594]:
+                        - generic [ref=e2597]:
+                          - button "执行" [ref=e2599] [cursor=pointer]
+                          - button "编辑" [ref=e2601] [cursor=pointer]
+                          - button "删除" [ref=e2603] [cursor=pointer]
+                    - row "1 01 Admin Crisis Flow crises 4 成功 2026-06-05 14:15:48 执行 编辑 删除" [ref=e2604]:
+                      - cell "1" [ref=e2605]:
+                        - generic [ref=e2607]: "1"
+                      - cell "01 Admin Crisis Flow" [ref=e2608]:
+                        - generic [ref=e2611]: 01 Admin Crisis Flow
+                      - cell "crises" [ref=e2612]:
+                        - generic [ref=e2615]: crises
+                      - cell "4" [ref=e2616]:
+                        - generic [ref=e2618]: "4"
+                      - cell "成功" [ref=e2619]:
+                        - generic [ref=e2622]: 成功
+                      - cell "2026-06-05 14:15:48" [ref=e2623]:
+                        - generic [ref=e2625]: 2026-06-05 14:15:48
+                      - cell "执行 编辑 删除" [ref=e2626]:
+                        - generic [ref=e2629]:
+                          - button "执行" [ref=e2631] [cursor=pointer]
+                          - button "编辑" [ref=e2633] [cursor=pointer]
+                          - button "删除" [ref=e2635] [cursor=pointer]
+                - generic [ref=e2639]: 场景执行记录
+                - table [ref=e2645]:
+                  - rowgroup [ref=e2654]:
+                    - row "ID 场景名称 状态 创建时间 耗时 结果概览" [ref=e2655]:
+                      - columnheader [ref=e2656]
+                      - columnheader "ID" [ref=e2657]:
+                        - generic [ref=e2659]: ID
+                      - columnheader "场景名称" [ref=e2660]:
+                        - generic [ref=e2663]: 场景名称
+                      - columnheader "状态" [ref=e2664]:
+                        - generic [ref=e2666]: 状态
+                      - columnheader "创建时间" [ref=e2667]:
+                        - generic [ref=e2669]: 创建时间
+                      - columnheader "耗时" [ref=e2670]:
+                        - generic [ref=e2672]: 耗时
+                      - columnheader "结果概览" [ref=e2673]:
+                        - generic [ref=e2676]: 结果概览
+              - generic [ref=e2680]:
+                - generic [ref=e2681]:
+                  - generic [ref=e2682]:
+                    - textbox "搜索变量名/变量值" [ref=e2683]
+                    - img [ref=e2686] [cursor=pointer]
+                  - button "新增公共数据" [ref=e2688] [cursor=pointer]
+                - generic [ref=e2693]:
+                  - table [ref=e2696]:
+                    - rowgroup [ref=e2702]:
+                      - row "变量名 变量值 状态 操作" [ref=e2703]:
+                        - columnheader "变量名" [ref=e2704]:
+                          - generic [ref=e2706]: 变量名
+                        - columnheader "变量值" [ref=e2707]:
+                          - generic [ref=e2710]: 变量值
+                        - columnheader "状态" [ref=e2711]:
+                          - generic [ref=e2713]: 状态
+                        - columnheader "操作" [ref=e2714]:
+                          - generic [ref=e2716]: 操作
+                  - table [ref=e2722]:
+                    - rowgroup [ref=e2723]:
+                      - row "暂无数据" [ref=e2724]:
+                        - cell "暂无数据" [ref=e2725]:
+                          - generic [ref=e2728]:
+                            - img [ref=e2730]
+                            - generic [ref=e2732]: 暂无数据
+              - generic [ref=e2733]:
+                - generic [ref=e2734]:
+                  - generic [ref=e2735]:
+                    - textbox "搜索环境名称/URL" [ref=e2736]
+                    - img [ref=e2739] [cursor=pointer]
+                  - button "新增环境" [ref=e2741] [cursor=pointer]
+                - table [ref=e2747]:
+                  - rowgroup [ref=e2753]:
+                    - row "环境名称 基础 URL 默认 操作" [ref=e2754]:
+                      - columnheader "环境名称" [ref=e2755]:
+                        - generic [ref=e2757]: 环境名称
+                      - columnheader "基础 URL" [ref=e2758]:
+                        - generic [ref=e2761]: 基础 URL
+                      - columnheader "默认" [ref=e2762]:
+                        - generic [ref=e2764]: 默认
+                      - columnheader "操作" [ref=e2765]:
+                        - generic [ref=e2767]: 操作
+                  - rowgroup [ref=e2768]:
+                    - row "MSS Admin Dev https://mss-admin-dev.marchbu.com 默认 编辑 删除" [ref=e2769]:
+                      - cell "MSS Admin Dev" [ref=e2770]:
+                        - generic [ref=e2772]: MSS Admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2773]:
+                        - generic [ref=e2776]: https://mss-admin-dev.marchbu.com
+                      - cell "默认" [ref=e2777]:
+                        - generic [ref=e2780]: 默认
+                      - cell "编辑 删除" [ref=e2781]:
+                        - generic [ref=e2784]:
+                          - button "编辑" [ref=e2786] [cursor=pointer]
+                          - button "删除" [ref=e2788] [cursor=pointer]
+                    - row "MSS admin Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2789]:
+                      - cell "MSS admin Dev" [ref=e2790]:
+                        - generic [ref=e2792]: MSS admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2793]:
+                        - generic [ref=e2796]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e2797]:
+                        - generic [ref=e2799]: "-"
+                      - cell "编辑 删除" [ref=e2800]:
+                        - generic [ref=e2803]:
+                          - button "编辑" [ref=e2805] [cursor=pointer]
+                          - button "删除" [ref=e2807] [cursor=pointer]
+                    - row "MSS fp Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2808]:
+                      - cell "MSS fp Dev" [ref=e2809]:
+                        - generic [ref=e2811]: MSS fp Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2812]:
+                        - generic [ref=e2815]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e2816]:
+                        - generic [ref=e2818]: "-"
+                      - cell "编辑 删除" [ref=e2819]:
+                        - generic [ref=e2822]:
+                          - button "编辑" [ref=e2824] [cursor=pointer]
+                          - button "删除" [ref=e2826] [cursor=pointer]
+                    - row "MSS fp_admin Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2827]:
+                      - cell "MSS fp_admin Dev" [ref=e2828]:
+                        - generic [ref=e2830]: MSS fp_admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2831]:
+                        - generic [ref=e2834]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e2835]:
+                        - generic [ref=e2837]: "-"
+                      - cell "编辑 删除" [ref=e2838]:
+                        - generic [ref=e2841]:
+                          - button "编辑" [ref=e2843] [cursor=pointer]
+                          - button "删除" [ref=e2845] [cursor=pointer]
+                    - row "MSS moet Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2846]:
+                      - cell "MSS moet Dev" [ref=e2847]:
+                        - generic [ref=e2849]: MSS moet Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2850]:
+                        - generic [ref=e2853]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e2854]:
+                        - generic [ref=e2856]: "-"
+                      - cell "编辑 删除" [ref=e2857]:
+                        - generic [ref=e2860]:
+                          - button "编辑" [ref=e2862] [cursor=pointer]
+                          - button "删除" [ref=e2864] [cursor=pointer]
+                    - row "MSS moet_admin Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2865]:
+                      - cell "MSS moet_admin Dev" [ref=e2866]:
+                        - generic [ref=e2868]: MSS moet_admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2869]:
+                        - generic [ref=e2872]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e2873]:
+                        - generic [ref=e2875]: "-"
+                      - cell "编辑 删除" [ref=e2876]:
+                        - generic [ref=e2879]:
+                          - button "编辑" [ref=e2881] [cursor=pointer]
+                          - button "删除" [ref=e2883] [cursor=pointer]
+                    - row "MSS moei Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2884]:
+                      - cell "MSS moei Dev" [ref=e2885]:
+                        - generic [ref=e2887]: MSS moei Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2888]:
+                        - generic [ref=e2891]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e2892]:
+                        - generic [ref=e2894]: "-"
+                      - cell "编辑 删除" [ref=e2895]:
+                        - generic [ref=e2898]:
+                          - button "编辑" [ref=e2900] [cursor=pointer]
+                          - button "删除" [ref=e2902] [cursor=pointer]
+                    - row "MSS moei_admin Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2903]:
+                      - cell "MSS moei_admin Dev" [ref=e2904]:
+                        - generic [ref=e2906]: MSS moei_admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2907]:
+                        - generic [ref=e2910]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e2911]:
+                        - generic [ref=e2913]: "-"
+                      - cell "编辑 删除" [ref=e2914]:
+                        - generic [ref=e2917]:
+                          - button "编辑" [ref=e2919] [cursor=pointer]
+                          - button "删除" [ref=e2921] [cursor=pointer]
+                    - row "MSS moj Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2922]:
+                      - cell "MSS moj Dev" [ref=e2923]:
+                        - generic [ref=e2925]: MSS moj Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2926]:
+                        - generic [ref=e2929]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e2930]:
+                        - generic [ref=e2932]: "-"
+                      - cell "编辑 删除" [ref=e2933]:
+                        - generic [ref=e2936]:
+                          - button "编辑" [ref=e2938] [cursor=pointer]
+                          - button "删除" [ref=e2940] [cursor=pointer]
+                    - row "MSS moj_admin Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2941]:
+                      - cell "MSS moj_admin Dev" [ref=e2942]:
+                        - generic [ref=e2944]: MSS moj_admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2945]:
+                        - generic [ref=e2948]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e2949]:
+                        - generic [ref=e2951]: "-"
+                      - cell "编辑 删除" [ref=e2952]:
+                        - generic [ref=e2955]:
+                          - button "编辑" [ref=e2957] [cursor=pointer]
+                          - button "删除" [ref=e2959] [cursor=pointer]
+                    - row "MSS ssd Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2960]:
+                      - cell "MSS ssd Dev" [ref=e2961]:
+                        - generic [ref=e2963]: MSS ssd Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2964]:
+                        - generic [ref=e2967]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e2968]:
+                        - generic [ref=e2970]: "-"
+                      - cell "编辑 删除" [ref=e2971]:
+                        - generic [ref=e2974]:
+                          - button "编辑" [ref=e2976] [cursor=pointer]
+                          - button "删除" [ref=e2978] [cursor=pointer]
+                    - row "MSS ssd_admin Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2979]:
+                      - cell "MSS ssd_admin Dev" [ref=e2980]:
+                        - generic [ref=e2982]: MSS ssd_admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e2983]:
+                        - generic [ref=e2986]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e2987]:
+                        - generic [ref=e2989]: "-"
+                      - cell "编辑 删除" [ref=e2990]:
+                        - generic [ref=e2993]:
+                          - button "编辑" [ref=e2995] [cursor=pointer]
+                          - button "删除" [ref=e2997] [cursor=pointer]
+                    - row "MSS csc Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e2998]:
+                      - cell "MSS csc Dev" [ref=e2999]:
+                        - generic [ref=e3001]: MSS csc Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3002]:
+                        - generic [ref=e3005]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3006]:
+                        - generic [ref=e3008]: "-"
+                      - cell "编辑 删除" [ref=e3009]:
+                        - generic [ref=e3012]:
+                          - button "编辑" [ref=e3014] [cursor=pointer]
+                          - button "删除" [ref=e3016] [cursor=pointer]
+                    - row "MSS csc_admin Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3017]:
+                      - cell "MSS csc_admin Dev" [ref=e3018]:
+                        - generic [ref=e3020]: MSS csc_admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3021]:
+                        - generic [ref=e3024]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3025]:
+                        - generic [ref=e3027]: "-"
+                      - cell "编辑 删除" [ref=e3028]:
+                        - generic [ref=e3031]:
+                          - button "编辑" [ref=e3033] [cursor=pointer]
+                          - button "删除" [ref=e3035] [cursor=pointer]
+                    - row "MSS mod_di Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3036]:
+                      - cell "MSS mod_di Dev" [ref=e3037]:
+                        - generic [ref=e3039]: MSS mod_di Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3040]:
+                        - generic [ref=e3043]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3044]:
+                        - generic [ref=e3046]: "-"
+                      - cell "编辑 删除" [ref=e3047]:
+                        - generic [ref=e3050]:
+                          - button "编辑" [ref=e3052] [cursor=pointer]
+                          - button "删除" [ref=e3054] [cursor=pointer]
+                    - row "MSS mod_edi Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3055]:
+                      - cell "MSS mod_edi Dev" [ref=e3056]:
+                        - generic [ref=e3058]: MSS mod_edi Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3059]:
+                        - generic [ref=e3062]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3063]:
+                        - generic [ref=e3065]: "-"
+                      - cell "编辑 删除" [ref=e3066]:
+                        - generic [ref=e3069]:
+                          - button "编辑" [ref=e3071] [cursor=pointer]
+                          - button "删除" [ref=e3073] [cursor=pointer]
+                    - row "MSS mod_id Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3074]:
+                      - cell "MSS mod_id Dev" [ref=e3075]:
+                        - generic [ref=e3077]: MSS mod_id Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3078]:
+                        - generic [ref=e3081]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3082]:
+                        - generic [ref=e3084]: "-"
+                      - cell "编辑 删除" [ref=e3085]:
+                        - generic [ref=e3088]:
+                          - button "编辑" [ref=e3090] [cursor=pointer]
+                          - button "删除" [ref=e3092] [cursor=pointer]
+                    - row "MSS mod_mhsd Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3093]:
+                      - cell "MSS mod_mhsd Dev" [ref=e3094]:
+                        - generic [ref=e3096]: MSS mod_mhsd Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3097]:
+                        - generic [ref=e3100]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3101]:
+                        - generic [ref=e3103]: "-"
+                      - cell "编辑 删除" [ref=e3104]:
+                        - generic [ref=e3107]:
+                          - button "编辑" [ref=e3109] [cursor=pointer]
+                          - button "删除" [ref=e3111] [cursor=pointer]
+                    - row "MSS mod_msd Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3112]:
+                      - cell "MSS mod_msd Dev" [ref=e3113]:
+                        - generic [ref=e3115]: MSS mod_msd Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3116]:
+                        - generic [ref=e3119]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3120]:
+                        - generic [ref=e3122]: "-"
+                      - cell "编辑 删除" [ref=e3123]:
+                        - generic [ref=e3126]:
+                          - button "编辑" [ref=e3128] [cursor=pointer]
+                          - button "删除" [ref=e3130] [cursor=pointer]
+                    - row "MSS mod_mcs Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3131]:
+                      - cell "MSS mod_mcs Dev" [ref=e3132]:
+                        - generic [ref=e3134]: MSS mod_mcs Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3135]:
+                        - generic [ref=e3138]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3139]:
+                        - generic [ref=e3141]: "-"
+                      - cell "编辑 删除" [ref=e3142]:
+                        - generic [ref=e3145]:
+                          - button "编辑" [ref=e3147] [cursor=pointer]
+                          - button "删除" [ref=e3149] [cursor=pointer]
+                    - row "MSS mod_mp Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3150]:
+                      - cell "MSS mod_mp Dev" [ref=e3151]:
+                        - generic [ref=e3153]: MSS mod_mp Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3154]:
+                        - generic [ref=e3157]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3158]:
+                        - generic [ref=e3160]: "-"
+                      - cell "编辑 删除" [ref=e3161]:
+                        - generic [ref=e3164]:
+                          - button "编辑" [ref=e3166] [cursor=pointer]
+                          - button "删除" [ref=e3168] [cursor=pointer]
+                    - row "MSS mod_report Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3169]:
+                      - cell "MSS mod_report Dev" [ref=e3170]:
+                        - generic [ref=e3172]: MSS mod_report Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3173]:
+                        - generic [ref=e3176]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3177]:
+                        - generic [ref=e3179]: "-"
+                      - cell "编辑 删除" [ref=e3180]:
+                        - generic [ref=e3183]:
+                          - button "编辑" [ref=e3185] [cursor=pointer]
+                          - button "删除" [ref=e3187] [cursor=pointer]
+                    - row "MSS mod Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3188]:
+                      - cell "MSS mod Dev" [ref=e3189]:
+                        - generic [ref=e3191]: MSS mod Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3192]:
+                        - generic [ref=e3195]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3196]:
+                        - generic [ref=e3198]: "-"
+                      - cell "编辑 删除" [ref=e3199]:
+                        - generic [ref=e3202]:
+                          - button "编辑" [ref=e3204] [cursor=pointer]
+                          - button "删除" [ref=e3206] [cursor=pointer]
+                    - row "MSS mod_admin Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3207]:
+                      - cell "MSS mod_admin Dev" [ref=e3208]:
+                        - generic [ref=e3210]: MSS mod_admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3211]:
+                        - generic [ref=e3214]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3215]:
+                        - generic [ref=e3217]: "-"
+                      - cell "编辑 删除" [ref=e3218]:
+                        - generic [ref=e3221]:
+                          - button "编辑" [ref=e3223] [cursor=pointer]
+                          - button "删除" [ref=e3225] [cursor=pointer]
+                    - row "MSS moi_report Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3226]:
+                      - cell "MSS moi_report Dev" [ref=e3227]:
+                        - generic [ref=e3229]: MSS moi_report Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3230]:
+                        - generic [ref=e3233]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3234]:
+                        - generic [ref=e3236]: "-"
+                      - cell "编辑 删除" [ref=e3237]:
+                        - generic [ref=e3240]:
+                          - button "编辑" [ref=e3242] [cursor=pointer]
+                          - button "删除" [ref=e3244] [cursor=pointer]
+                    - row "MSS moi Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3245]:
+                      - cell "MSS moi Dev" [ref=e3246]:
+                        - generic [ref=e3248]: MSS moi Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3249]:
+                        - generic [ref=e3252]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3253]:
+                        - generic [ref=e3255]: "-"
+                      - cell "编辑 删除" [ref=e3256]:
+                        - generic [ref=e3259]:
+                          - button "编辑" [ref=e3261] [cursor=pointer]
+                          - button "删除" [ref=e3263] [cursor=pointer]
+                    - row "MSS moi_admin Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3264]:
+                      - cell "MSS moi_admin Dev" [ref=e3265]:
+                        - generic [ref=e3267]: MSS moi_admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3268]:
+                        - generic [ref=e3271]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3272]:
+                        - generic [ref=e3274]: "-"
+                      - cell "编辑 删除" [ref=e3275]:
+                        - generic [ref=e3278]:
+                          - button "编辑" [ref=e3280] [cursor=pointer]
+                          - button "删除" [ref=e3282] [cursor=pointer]
+                    - row "MSS ncema Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3283]:
+                      - cell "MSS ncema Dev" [ref=e3284]:
+                        - generic [ref=e3286]: MSS ncema Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3287]:
+                        - generic [ref=e3290]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3291]:
+                        - generic [ref=e3293]: "-"
+                      - cell "编辑 删除" [ref=e3294]:
+                        - generic [ref=e3297]:
+                          - button "编辑" [ref=e3299] [cursor=pointer]
+                          - button "删除" [ref=e3301] [cursor=pointer]
+                    - row "MSS ncema_admin Dev https://mss-admin-dev.marchbu.com - 编辑 删除" [ref=e3302]:
+                      - cell "MSS ncema_admin Dev" [ref=e3303]:
+                        - generic [ref=e3305]: MSS ncema_admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e3306]:
+                        - generic [ref=e3309]: https://mss-admin-dev.marchbu.com
+                      - cell "-" [ref=e3310]:
+                        - generic [ref=e3312]: "-"
+                      - cell "编辑 删除" [ref=e3313]:
+                        - generic [ref=e3316]:
+                          - button "编辑" [ref=e3318] [cursor=pointer]
+                          - button "删除" [ref=e3320] [cursor=pointer]
+              - generic [ref=e3329]:
+                - table [ref=e3332]:
+                  - rowgroup [ref=e3341]:
+                    - row "ID 批次名称 状态 创建时间 耗时 成功/失败/总计 成功率" [ref=e3342]:
+                      - columnheader "ID" [ref=e3343]:
+                        - generic [ref=e3345]: ID
+                      - columnheader "批次名称" [ref=e3346]:
+                        - generic [ref=e3349]: 批次名称
+                      - columnheader "状态" [ref=e3350]:
+                        - generic [ref=e3352]: 状态
+                      - columnheader "创建时间" [ref=e3353]:
+                        - generic [ref=e3355]: 创建时间
+                      - columnheader "耗时" [ref=e3356]:
+                        - generic [ref=e3358]: 耗时
+                      - columnheader "成功/失败/总计" [ref=e3359]:
+                        - generic [ref=e3361]: 成功/失败/总计
+                      - columnheader "成功率" [ref=e3362]:
+                        - generic [ref=e3364]: 成功率
+                - table [ref=e3370]:
+                  - rowgroup [ref=e3371]:
+                    - row "暂无数据" [ref=e3372]:
+                      - cell "暂无数据" [ref=e3373]:
+                        - generic [ref=e3376]:
+                          - img [ref=e3378]
+                          - generic [ref=e3380]: 暂无数据
+              - generic [ref=e3386]:
+                - table [ref=e3389]:
+                  - rowgroup [ref=e3397]:
+                    - row "ID 用例名称 状态 创建时间 耗时 错误" [ref=e3398]:
+                      - columnheader "ID" [ref=e3399]:
+                        - generic [ref=e3401]: ID
+                      - columnheader "用例名称" [ref=e3402]:
+                        - generic [ref=e3405]: 用例名称
+                      - columnheader "状态" [ref=e3406]:
+                        - generic [ref=e3408]: 状态
+                      - columnheader "创建时间" [ref=e3409]:
+                        - generic [ref=e3411]: 创建时间
+                      - columnheader "耗时" [ref=e3412]:
+                        - generic [ref=e3414]: 耗时
+                      - columnheader "错误" [ref=e3415]:
+                        - generic [ref=e3417]: 错误
+                - table [ref=e3423]:
+                  - rowgroup [ref=e3424]:
+                    - row "暂无数据" [ref=e3425]:
+                      - cell "暂无数据" [ref=e3426]:
+                        - generic [ref=e3429]:
+                          - img [ref=e3431]
+                          - generic [ref=e3433]: 暂无数据
+              - generic [ref=e3436]:
+                - generic [ref=e3437]:
+                  - generic [ref=e3441] [cursor=pointer]:
+                    - generic [ref=e3442]: 累计执行
+                    - generic [ref=e3444]: "1789"
+                  - generic [ref=e3448] [cursor=pointer]:
+                    - generic [ref=e3449]: 通过
+                    - generic [ref=e3451]: "1753"
+                  - generic [ref=e3455] [cursor=pointer]:
+                    - generic [ref=e3456]: 失败
+                    - generic [ref=e3458]: "36"
+                  - generic [ref=e3461]:
+                    - generic [ref=e3462]:
+                      - generic [ref=e3463]: 成功率
+                      - generic [ref=e3464]: 98.0%
+                    - generic [ref=e3466]: 98.0%
+                    - generic [ref=e3467]:
+                      - generic [ref=e3470]: 通过 1753
+                      - generic [ref=e3473]: 失败 36
+                - separator [ref=e3474]:
+                  - generic [ref=e3475]: 近 7 天趋势
+                - generic [ref=e3476]:
+                  - generic [ref=e3481]: 05-30
+                  - generic [ref=e3486]: 05-31
+                  - generic [ref=e3491]: 06-01
+                  - generic [ref=e3496]: 06-02
+                  - generic [ref=e3501]: 06-03
+                  - generic [ref=e3506]: 06-04
+                  - generic [ref=e3511]: 06-05
+                - separator [ref=e3512]:
+                  - generic [ref=e3513]: 按接口聚合（最近执行优先）
+                - generic [ref=e3515]:
+                  - table [ref=e3519]:
+                    - rowgroup [ref=e3528]:
+                      - row "用例 方法 路径 最近执行 总数 通过 失败 成功率 详情" [ref=e3529]:
+                        - columnheader "用例":
+                          - generic [ref=e3531]: 用例
+                        - columnheader "方法" [ref=e3532]:
+                          - generic [ref=e3534]: 方法
+                        - columnheader "路径":
+                          - generic [ref=e3536]: 路径
+                        - columnheader "最近执行" [ref=e3537]:
+                          - generic [ref=e3539]: 最近执行
+                        - columnheader "总数" [ref=e3540]:
+                          - generic [ref=e3542]: 总数
+                        - columnheader "通过" [ref=e3543]:
+                          - generic [ref=e3545]: 通过
+                        - columnheader "失败" [ref=e3546]:
+                          - generic [ref=e3548]: 失败
+                        - columnheader "成功率" [ref=e3549]:
+                          - generic [ref=e3551]: 成功率
+                        - columnheader "详情" [ref=e3552]:
+                          - generic [ref=e3554]: 详情
+                    - rowgroup [ref=e3555]:
+                      - row "04 Incident Facet Overview GET https://mss-admin-dev.marchbu.com/api/v1/admin/incidents/facets/emirate?agency=MOD 2026/06/05 17:57:32 91 91 0 100.0% 查看详情" [ref=e3556]:
+                        - cell "04 Incident Facet Overview":
+                          - generic [ref=e3558]: 04 Incident Facet Overview
+                        - cell "GET" [ref=e3559]:
+                          - generic [ref=e3561]: GET
+                        - cell "https://mss-admin-dev.marchbu.com/api/v1/admin/incidents/facets/emirate?agency=MOD":
+                          - generic [ref=e3563]: https://mss-admin-dev.marchbu.com/api/v1/admin/incidents/facets/emirate?agency=MOD
+                        - cell "2026/06/05 17:57:32" [ref=e3564]:
+                          - generic [ref=e3566]: 2026/06/05 17:57:32
+                        - cell "91" [ref=e3567]:
+                          - generic [ref=e3569]: "91"
+                        - cell "91" [ref=e3570]:
+                          - generic [ref=e3572]: "91"
+                        - cell "0" [ref=e3573]:
+                          - generic [ref=e3575]: "0"
+                        - cell "100.0%" [ref=e3576]:
+                          - generic [ref=e3579]: 100.0%
+                        - cell "查看详情" [ref=e3580]:
+                          - button "查看详情" [ref=e3583] [cursor=pointer]
+                      - row "04 Evidence Verification Outbox GET https://mss-admin-dev.marchbu.com/api/v1/admin/evidence-verifications/outbox 2026/06/05 17:30:01 92 92 0 100.0% 查看详情" [ref=e3584]:
+                        - cell "04 Evidence Verification Outbox":
+                          - generic [ref=e3586]: 04 Evidence Verification Outbox
+                        - cell "GET" [ref=e3587]:
+                          - generic [ref=e3589]: GET
+                        - cell "https://mss-admin-dev.marchbu.com/api/v1/admin/evidence-verifications/outbox":
+                          - generic [ref=e3591]: https://mss-admin-dev.marchbu.com/api/v1/admin/evidence-verifications/outbox
+                        - cell "2026/06/05 17:30:01" [ref=e3592]:
+                          - generic [ref=e3594]: 2026/06/05 17:30:01
+                        - cell "92" [ref=e3595]:
+                          - generic [ref=e3597]: "92"
+                        - cell "92" [ref=e3598]:
+                          - generic [ref=e3600]: "92"
+                        - cell "0" [ref=e3601]:
+                          - generic [ref=e3603]: "0"
+                        - cell "100.0%" [ref=e3604]:
+                          - generic [ref=e3607]: 100.0%
+                        - cell "查看详情" [ref=e3608]:
+                          - button "查看详情" [ref=e3611] [cursor=pointer]
+                      - row "02 Notifications GET https://mss-admin-dev.marchbu.com/api/v1/admin/notifications 2026/06/05 17:30:00 458 452 6 98.7% 查看详情" [ref=e3612]:
+                        - cell "02 Notifications":
+                          - generic [ref=e3614]: 02 Notifications
+                        - cell "GET" [ref=e3615]:
+                          - generic [ref=e3617]: GET
+                        - cell "https://mss-admin-dev.marchbu.com/api/v1/admin/notifications":
+                          - generic [ref=e3619]: https://mss-admin-dev.marchbu.com/api/v1/admin/notifications
+                        - cell "2026/06/05 17:30:00" [ref=e3620]:
+                          - generic [ref=e3622]: 2026/06/05 17:30:00
+                        - cell "458" [ref=e3623]:
+                          - generic [ref=e3625]: "458"
+                        - cell "452" [ref=e3626]:
+                          - generic [ref=e3628]: "452"
+                        - cell "6" [ref=e3629]:
+                          - generic [ref=e3631]: "6"
+                        - cell "98.7%" [ref=e3632]:
+                          - generic [ref=e3635]: 98.7%
+                        - cell "查看详情" [ref=e3636]:
+                          - button "查看详情" [ref=e3639] [cursor=pointer]
+                      - row "01 Current User Profile GET https://mss-admin-dev.marchbu.com/api/v1/im/me 2026/06/05 17:30:00 457 454 3 99.3% 查看详情" [ref=e3640]:
+                        - cell "01 Current User Profile":
+                          - generic [ref=e3642]: 01 Current User Profile
+                        - cell "GET" [ref=e3643]:
+                          - generic [ref=e3645]: GET
+                        - cell "https://mss-admin-dev.marchbu.com/api/v1/im/me":
+                          - generic [ref=e3647]: https://mss-admin-dev.marchbu.com/api/v1/im/me
+                        - cell "2026/06/05 17:30:00" [ref=e3648]:
+                          - generic [ref=e3650]: 2026/06/05 17:30:00
+                        - cell "457" [ref=e3651]:
+                          - generic [ref=e3653]: "457"
+                        - cell "454" [ref=e3654]:
+                          - generic [ref=e3656]: "454"
+                        - cell "3" [ref=e3657]:
+                          - generic [ref=e3659]: "3"
+                        - cell "99.3%" [ref=e3660]:
+                          - generic [ref=e3663]: 99.3%
+                        - cell "查看详情" [ref=e3664]:
+                          - button "查看详情" [ref=e3667] [cursor=pointer]
+                      - row "05 Admin Users List GET https://mss-admin-dev.marchbu.com/api/v1/admin/admin-users?page=0&size=50 2026/06/05 17:15:23 17 17 0 100.0% 查看详情" [ref=e3668]:
+                        - cell "05 Admin Users List":
+                          - generic [ref=e3670]: 05 Admin Users List
+                        - cell "GET" [ref=e3671]:
+                          - generic [ref=e3673]: GET
+                        - cell "https://mss-admin-dev.marchbu.com/api/v1/admin/admin-users?page=0&size=50":
+                          - generic [ref=e3675]: https://mss-admin-dev.marchbu.com/api/v1/admin/admin-users?page=0&size=50
+                        - cell "2026/06/05 17:15:23" [ref=e3676]:
+                          - generic [ref=e3678]: 2026/06/05 17:15:23
+                        - cell "17" [ref=e3679]:
+                          - generic [ref=e3681]: "17"
+                        - cell "17" [ref=e3682]:
+                          - generic [ref=e3684]: "17"
+                        - cell "0" [ref=e3685]:
+                          - generic [ref=e3687]: "0"
+                        - cell "100.0%" [ref=e3688]:
+                          - generic [ref=e3691]: 100.0%
+                        - cell "查看详情" [ref=e3692]:
+                          - button "查看详情" [ref=e3695] [cursor=pointer]
+                      - row "03 Dashboard Tactical Overview GET https://mss-admin-dev.marchbu.com/api/v1/admin/dashboard/tactical-overview?portal=PLATFORM 2026/06/05 17:15:20 68 61 7 89.7% 查看详情" [ref=e3696]:
+                        - cell "03 Dashboard Tactical Overview":
+                          - generic [ref=e3698]: 03 Dashboard Tactical Overview
+                        - cell "GET" [ref=e3699]:
+                          - generic [ref=e3701]: GET
+                        - cell "https://mss-admin-dev.marchbu.com/api/v1/admin/dashboard/tactical-overview?portal=PLATFORM":
+                          - generic [ref=e3703]: https://mss-admin-dev.marchbu.com/api/v1/admin/dashboard/tactical-overview?portal=PLATFORM
+                        - cell "2026/06/05 17:15:20" [ref=e3704]:
+                          - generic [ref=e3706]: 2026/06/05 17:15:20
+                        - cell "68" [ref=e3707]:
+                          - generic [ref=e3709]: "68"
+                        - cell "61" [ref=e3710]:
+                          - generic [ref=e3712]: "61"
+                        - cell "7" [ref=e3713]:
+                          - generic [ref=e3715]: "7"
+                        - cell "89.7%" [ref=e3716]:
+                          - generic [ref=e3719]: 89.7%
+                        - cell "查看详情" [ref=e3720]:
+                          - button "查看详情" [ref=e3723] [cursor=pointer]
+                      - row "03 Incident Facet Overview GET https://mss-admin-dev.marchbu.com/api/v1/admin/incidents/facets/emirate?agency=MOD 2026/06/05 17:15:15 225 225 0 100.0% 查看详情" [ref=e3724]:
+                        - cell "03 Incident Facet Overview":
+                          - generic [ref=e3726]: 03 Incident Facet Overview
+                        - cell "GET" [ref=e3727]:
+                          - generic [ref=e3729]: GET
+                        - cell "https://mss-admin-dev.marchbu.com/api/v1/admin/incidents/facets/emirate?agency=MOD":
+                          - generic [ref=e3731]: https://mss-admin-dev.marchbu.com/api/v1/admin/incidents/facets/emirate?agency=MOD
+                        - cell "2026/06/05 17:15:15" [ref=e3732]:
+                          - generic [ref=e3734]: 2026/06/05 17:15:15
+                        - cell "225" [ref=e3735]:
+                          - generic [ref=e3737]: "225"
+                        - cell "225" [ref=e3738]:
+                          - generic [ref=e3740]: "225"
+                        - cell "0" [ref=e3741]:
+                          - generic [ref=e3743]: "0"
+                        - cell "100.0%" [ref=e3744]:
+                          - generic [ref=e3747]: 100.0%
+                        - cell "查看详情" [ref=e3748]:
+                          - button "查看详情" [ref=e3751] [cursor=pointer]
+                      - row "05 Evidence Verification Outbox GET https://mss-admin-dev.marchbu.com/api/v1/admin/evidence-verifications/outbox 2026/06/05 17:15:14 69 69 0 100.0% 查看详情" [ref=e3752]:
+                        - cell "05 Evidence Verification Outbox":
+                          - generic [ref=e3754]: 05 Evidence Verification Outbox
+                        - cell "GET" [ref=e3755]:
+                          - generic [ref=e3757]: GET
+                        - cell "https://mss-admin-dev.marchbu.com/api/v1/admin/evidence-verifications/outbox":
+                          - generic [ref=e3759]: https://mss-admin-dev.marchbu.com/api/v1/admin/evidence-verifications/outbox
+                        - cell "2026/06/05 17:15:14" [ref=e3760]:
+                          - generic [ref=e3762]: 2026/06/05 17:15:14
+                        - cell "69" [ref=e3763]:
+                          - generic [ref=e3765]: "69"
+                        - cell "69" [ref=e3766]:
+                          - generic [ref=e3768]: "69"
+                        - cell "0" [ref=e3769]:
+                          - generic [ref=e3771]: "0"
+                        - cell "100.0%" [ref=e3772]:
+                          - generic [ref=e3775]: 100.0%
+                        - cell "查看详情" [ref=e3776]:
+                          - button "查看详情" [ref=e3779] [cursor=pointer]
+                      - row "04 Reports Summary GET https://mss-admin-dev.marchbu.com/api/v1/admin/reports?workflowPolicyKey=MOD_MOET_INTERNAL&size=50&includeDraft=true 2026/06/05 17:15:14 45 45 0 100.0% 查看详情" [ref=e3780]:
+                        - cell "04 Reports Summary":
+                          - generic [ref=e3782]: 04 Reports Summary
+                        - cell "GET" [ref=e3783]:
+                          - generic [ref=e3785]: GET
+                        - cell "https://mss-admin-dev.marchbu.com/api/v1/admin/reports?workflowPolicyKey=MOD_MOET_INTERNAL&size=50&includeDraft=true":
+                          - generic [ref=e3787]: https://mss-admin-dev.marchbu.com/api/v1/admin/reports?workflowPolicyKey=MOD_MOET_INTERNAL&size=50&includeDraft=true
+                        - cell "2026/06/05 17:15:14" [ref=e3788]:
+                          - generic [ref=e3790]: 2026/06/05 17:15:14
+                        - cell "45" [ref=e3791]:
+                          - generic [ref=e3793]: "45"
+                        - cell "45" [ref=e3794]:
+                          - generic [ref=e3796]: "45"
+                        - cell "0" [ref=e3797]:
+                          - generic [ref=e3799]: "0"
+                        - cell "100.0%" [ref=e3800]:
+                          - generic [ref=e3803]: 100.0%
+                        - cell "查看详情" [ref=e3804]:
+                          - button "查看详情" [ref=e3807] [cursor=pointer]
+                      - row "07 Early Feedback Badge GET https://mss-admin-dev.marchbu.com/api/v1/admin/early-review/badge 2026/06/05 17:15:03 24 24 0 100.0% 查看详情" [ref=e3808]:
+                        - cell "07 Early Feedback Badge":
+                          - generic [ref=e3810]: 07 Early Feedback Badge
+                        - cell "GET" [ref=e3811]:
+                          - generic [ref=e3813]: GET
+                        - cell "https://mss-admin-dev.marchbu.com/api/v1/admin/early-review/badge":
+                          - generic [ref=e3815]: https://mss-admin-dev.marchbu.com/api/v1/admin/early-review/badge
+                        - cell "2026/06/05 17:15:03" [ref=e3816]:
+                          - generic [ref=e3818]: 2026/06/05 17:15:03
+                        - cell "24" [ref=e3819]:
+                          - generic [ref=e3821]: "24"
+                        - cell "24" [ref=e3822]:
+                          - generic [ref=e3824]: "24"
+                        - cell "0" [ref=e3825]:
+                          - generic [ref=e3827]: "0"
+                        - cell "100.0%" [ref=e3828]:
+                          - generic [ref=e3831]: 100.0%
+                        - cell "查看详情" [ref=e3832]:
+                          - button "查看详情" [ref=e3835] [cursor=pointer]
+                  - list [ref=e3838]:
+                    - generic [ref=e3839]:
+                      - img [ref=e3840]
+                      - text: .
+                    - listitem [ref=e3842] [cursor=pointer]: "1"
+                    - listitem [ref=e3843] [cursor=pointer]: "2"
+                    - generic [ref=e3844] [cursor=pointer]:
+                      - img [ref=e3845]
+                      - text: .
+                - separator [ref=e3847]:
+                  - generic [ref=e3848]: 最近 10 个批次
+                - table [ref=e3854]:
+                  - rowgroup [ref=e3863]:
+                    - row "ID 名称 状态 通过/失败/总计 成功率 触发 详情" [ref=e3864]:
+                      - columnheader "ID" [ref=e3865]:
+                        - generic [ref=e3867]: ID
+                      - columnheader "名称" [ref=e3868]:
+                        - generic [ref=e3871]: 名称
+                      - columnheader "状态" [ref=e3872]:
+                        - generic [ref=e3874]: 状态
+                      - columnheader "通过/失败/总计" [ref=e3875]:
+                        - generic [ref=e3877]: 通过/失败/总计
+                      - columnheader "成功率" [ref=e3878]:
+                        - generic [ref=e3880]: 成功率
+                      - columnheader "触发" [ref=e3881]:
+                        - generic [ref=e3883]: 触发
+                      - columnheader "详情" [ref=e3884]:
+                        - generic [ref=e3886]: 详情
+                  - rowgroup [ref=e3887]:
+                    - row "50 接口批量执行-20260605075013 全部成功 5/0/5 100.0% manual 查看详情" [ref=e3888]:
+                      - cell "50" [ref=e3889]:
+                        - generic [ref=e3891]: "50"
+                      - cell "接口批量执行-20260605075013" [ref=e3892]:
+                        - generic [ref=e3895]: 接口批量执行-20260605075013
+                      - cell "全部成功" [ref=e3896]:
+                        - generic [ref=e3899]: 全部成功
+                      - cell "5/0/5" [ref=e3900]:
+                        - generic [ref=e3902]: 5/0/5
+                      - cell "100.0%" [ref=e3903]:
+                        - generic [ref=e3906]: 100.0%
+                      - cell "manual" [ref=e3907]:
+                        - generic [ref=e3909]: manual
+                      - cell "查看详情" [ref=e3910]:
+                        - button "查看详情" [ref=e3913] [cursor=pointer]
+                    - row "49 接口批量执行-20260605072836 全部成功 5/0/5 100.0% manual 查看详情" [ref=e3914]:
+                      - cell "49" [ref=e3915]:
+                        - generic [ref=e3917]: "49"
+                      - cell "接口批量执行-20260605072836" [ref=e3918]:
+                        - generic [ref=e3921]: 接口批量执行-20260605072836
+                      - cell "全部成功" [ref=e3922]:
+                        - generic [ref=e3925]: 全部成功
+                      - cell "5/0/5" [ref=e3926]:
+                        - generic [ref=e3928]: 5/0/5
+                      - cell "100.0%" [ref=e3929]:
+                        - generic [ref=e3932]: 100.0%
+                      - cell "manual" [ref=e3933]:
+                        - generic [ref=e3935]: manual
+                      - cell "查看详情" [ref=e3936]:
+                        - button "查看详情" [ref=e3939] [cursor=pointer]
+                    - row "48 接口批量执行-20260604190709 全部失败 0/5/5 0.0% manual 查看详情" [ref=e3940]:
+                      - cell "48" [ref=e3941]:
+                        - generic [ref=e3943]: "48"
+                      - cell "接口批量执行-20260604190709" [ref=e3944]:
+                        - generic [ref=e3947]: 接口批量执行-20260604190709
+                      - cell "全部失败" [ref=e3948]:
+                        - generic [ref=e3951]: 全部失败
+                      - cell "0/5/5" [ref=e3952]:
+                        - generic [ref=e3954]: 0/5/5
+                      - cell "0.0%" [ref=e3955]:
+                        - generic [ref=e3958]: 0.0%
+                      - cell "manual" [ref=e3959]:
+                        - generic [ref=e3961]: manual
+                      - cell "查看详情" [ref=e3962]:
+                        - button "查看详情" [ref=e3965] [cursor=pointer]
+                    - row "47 接口批量执行-20260604125357 全部成功 5/0/5 100.0% manual 查看详情" [ref=e3966]:
+                      - cell "47" [ref=e3967]:
+                        - generic [ref=e3969]: "47"
+                      - cell "接口批量执行-20260604125357" [ref=e3970]:
+                        - generic [ref=e3973]: 接口批量执行-20260604125357
+                      - cell "全部成功" [ref=e3974]:
+                        - generic [ref=e3977]: 全部成功
+                      - cell "5/0/5" [ref=e3978]:
+                        - generic [ref=e3980]: 5/0/5
+                      - cell "100.0%" [ref=e3981]:
+                        - generic [ref=e3984]: 100.0%
+                      - cell "manual" [ref=e3985]:
+                        - generic [ref=e3987]: manual
+                      - cell "查看详情" [ref=e3988]:
+                        - button "查看详情" [ref=e3991] [cursor=pointer]
+                    - row "46 接口批量执行-20260604123737 部分失败 3/2/5 60.0% manual 查看详情" [ref=e3992]:
+                      - cell "46" [ref=e3993]:
+                        - generic [ref=e3995]: "46"
+                      - cell "接口批量执行-20260604123737" [ref=e3996]:
+                        - generic [ref=e3999]: 接口批量执行-20260604123737
+                      - cell "部分失败" [ref=e4000]:
+                        - generic [ref=e4003]: 部分失败
+                      - cell "3/2/5" [ref=e4004]:
+                        - generic [ref=e4006]: 3/2/5
+                      - cell "60.0%" [ref=e4007]:
+                        - generic [ref=e4010]: 60.0%
+                      - cell "manual" [ref=e4011]:
+                        - generic [ref=e4013]: manual
+                      - cell "查看详情" [ref=e4014]:
+                        - button "查看详情" [ref=e4017] [cursor=pointer]
+                    - row "45 接口批量执行-20260604113536 全部成功 5/0/5 100.0% manual 查看详情" [ref=e4018]:
+                      - cell "45" [ref=e4019]:
+                        - generic [ref=e4021]: "45"
+                      - cell "接口批量执行-20260604113536" [ref=e4022]:
+                        - generic [ref=e4025]: 接口批量执行-20260604113536
+                      - cell "全部成功" [ref=e4026]:
+                        - generic [ref=e4029]: 全部成功
+                      - cell "5/0/5" [ref=e4030]:
+                        - generic [ref=e4032]: 5/0/5
+                      - cell "100.0%" [ref=e4033]:
+                        - generic [ref=e4036]: 100.0%
+                      - cell "manual" [ref=e4037]:
+                        - generic [ref=e4039]: manual
+                      - cell "查看详情" [ref=e4040]:
+                        - button "查看详情" [ref=e4043] [cursor=pointer]
+                    - row "44 接口批量执行-20260604112535 部分失败 4/1/5 80.0% manual 查看详情" [ref=e4044]:
+                      - cell "44" [ref=e4045]:
+                        - generic [ref=e4047]: "44"
+                      - cell "接口批量执行-20260604112535" [ref=e4048]:
+                        - generic [ref=e4051]: 接口批量执行-20260604112535
+                      - cell "部分失败" [ref=e4052]:
+                        - generic [ref=e4055]: 部分失败
+                      - cell "4/1/5" [ref=e4056]:
+                        - generic [ref=e4058]: 4/1/5
+                      - cell "80.0%" [ref=e4059]:
+                        - generic [ref=e4062]: 80.0%
+                      - cell "manual" [ref=e4063]:
+                        - generic [ref=e4065]: manual
+                      - cell "查看详情" [ref=e4066]:
+                        - button "查看详情" [ref=e4069] [cursor=pointer]
+                    - row "43 接口批量执行-20260604112455 部分失败 4/1/5 80.0% manual 查看详情" [ref=e4070]:
+                      - cell "43" [ref=e4071]:
+                        - generic [ref=e4073]: "43"
+                      - cell "接口批量执行-20260604112455" [ref=e4074]:
+                        - generic [ref=e4077]: 接口批量执行-20260604112455
+                      - cell "部分失败" [ref=e4078]:
+                        - generic [ref=e4081]: 部分失败
+                      - cell "4/1/5" [ref=e4082]:
+                        - generic [ref=e4084]: 4/1/5
+                      - cell "80.0%" [ref=e4085]:
+                        - generic [ref=e4088]: 80.0%
+                      - cell "manual" [ref=e4089]:
+                        - generic [ref=e4091]: manual
+                      - cell "查看详情" [ref=e4092]:
+                        - button "查看详情" [ref=e4095] [cursor=pointer]
+                    - row "42 接口批量执行-20260604111108 部分失败 4/1/5 80.0% manual 查看详情" [ref=e4096]:
+                      - cell "42" [ref=e4097]:
+                        - generic [ref=e4099]: "42"
+                      - cell "接口批量执行-20260604111108" [ref=e4100]:
+                        - generic [ref=e4103]: 接口批量执行-20260604111108
+                      - cell "部分失败" [ref=e4104]:
+                        - generic [ref=e4107]: 部分失败
+                      - cell "4/1/5" [ref=e4108]:
+                        - generic [ref=e4110]: 4/1/5
+                      - cell "80.0%" [ref=e4111]:
+                        - generic [ref=e4114]: 80.0%
+                      - cell "manual" [ref=e4115]:
+                        - generic [ref=e4117]: manual
+                      - cell "查看详情" [ref=e4118]:
+                        - button "查看详情" [ref=e4121] [cursor=pointer]
+                    - row "41 AI增强修复复验批次-2 全部成功 5/0/5 100.0% manual 查看详情" [ref=e4122]:
+                      - cell "41" [ref=e4123]:
+                        - generic [ref=e4125]: "41"
+                      - cell "AI增强修复复验批次-2" [ref=e4126]:
+                        - generic [ref=e4129]: AI增强修复复验批次-2
+                      - cell "全部成功" [ref=e4130]:
+                        - generic [ref=e4133]: 全部成功
+                      - cell "5/0/5" [ref=e4134]:
+                        - generic [ref=e4136]: 5/0/5
+                      - cell "100.0%" [ref=e4137]:
+                        - generic [ref=e4140]: 100.0%
+                      - cell "manual" [ref=e4141]:
+                        - generic [ref=e4143]: manual
+                      - cell "查看详情" [ref=e4144]:
+                        - button "查看详情" [ref=e4147] [cursor=pointer]
+              - generic [ref=e4149]:
+                - alert [ref=e4150]:
+                  - img [ref=e4152]
+                  - generic [ref=e4155]: 这里展示的是「任务中心」里归属为“接口自动化”的定时任务，方便你在接口自动化页面直接查看和管理。若要新建任务，请前往「任务中心」。
+                  - button "Close" [ref=e4156] [cursor=pointer]:
+                    - img [ref=e4158]
+                - table [ref=e4166]:
+                  - rowgroup [ref=e4174]:
+                    - row "ID 名称 调度 状态 用例 上次运行 操作" [ref=e4175]:
+                      - columnheader "ID" [ref=e4176]:
+                        - generic [ref=e4178]: ID
+                      - columnheader "名称":
+                        - generic [ref=e4180]: 名称
+                      - columnheader "调度" [ref=e4181]:
+                        - generic [ref=e4183]: 调度
+                      - columnheader "状态" [ref=e4184]:
+                        - generic [ref=e4186]: 状态
+                      - columnheader "用例" [ref=e4187]:
+                        - generic [ref=e4189]: 用例
+                      - columnheader "上次运行" [ref=e4190]:
+                        - generic [ref=e4192]: 上次运行
+                      - columnheader "操作" [ref=e4193]:
+                        - generic [ref=e4195]: 操作
+                  - rowgroup [ref=e4196]:
+                    - row "14 MSS API once task 一次性 2026-06-02 18:50 未启用 1 条用例 2026/6/2 18:42:56 立即执行 启用 删除" [ref=e4197]:
+                      - cell "14" [ref=e4198]:
+                        - generic [ref=e4200]: "14"
+                      - cell "MSS API once task":
+                        - generic [ref=e4202]: MSS API once task
+                      - cell "一次性 2026-06-02 18:50" [ref=e4203]:
+                        - generic [ref=e4205]: 一次性 2026-06-02 18:50
+                      - cell "未启用" [ref=e4206]:
+                        - generic [ref=e4209]: 未启用
+                      - cell "1 条用例" [ref=e4210]:
+                        - generic [ref=e4213]: 1 条用例
+                      - cell "2026/6/2 18:42:56" [ref=e4214]:
+                        - generic [ref=e4216]: 2026/6/2 18:42:56
+                      - cell "立即执行 启用 删除" [ref=e4217]:
+                        - generic [ref=e4220]:
+                          - button "立即执行" [ref=e4222] [cursor=pointer]
+                          - button "启用" [ref=e4224] [cursor=pointer]
+                          - button "删除" [ref=e4226] [cursor=pointer]
+  - generic [ref=e4227]:
+    - alert
+    - alert

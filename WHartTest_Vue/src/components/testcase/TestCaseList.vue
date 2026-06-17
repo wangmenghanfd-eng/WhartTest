@@ -253,6 +253,7 @@ const paginationConfig = reactive({
   showPageSize: true,
   pageSizeOptions: [10, 20, 50, 100],
 });
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 复选框选择相关的计算属性和方法
 // 获取当前页实际显示的数据
@@ -391,8 +392,7 @@ const fetchTestCases = async () => {
   }
 };
 
-const onSearch = (value: string) => {
-  localSearchKeyword.value = value;
+const onSearch = (value?: string) => {
   paginationConfig.current = 1;
   fetchTestCases();
 };
@@ -591,6 +591,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
+  if (searchTimer) clearTimeout(searchTimer);
 });
 
 watch(currentProjectId, () => {
@@ -609,6 +610,14 @@ watch(selectedModuleId, (newVal) => {
     paginationConfig.current = 1;
     fetchTestCases();
   }
+});
+
+watch(localSearchKeyword, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    paginationConfig.current = 1;
+    fetchTestCases();
+  }, 300);
 });
 
 // 暴露给父组件的方法

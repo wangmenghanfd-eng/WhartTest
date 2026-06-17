@@ -49,6 +49,15 @@ Low-code UI automation to reduce barriers:
 - **Visual orchestration**: drag-and-drop steps with conditions, loops, and assertions
 - **Environment management**: multi-browser (Chromium/Firefox/WebKit) and environment switching
 - **Execution records**: screenshots, videos, Trace, and logs
+- **Actuator dispatch**: WebSocket dispatch to a desktop Actuator with online status and OPEN intake toggle
+
+### API Automation Testing
+OpenAPI-driven API testing and regression workflow:
+- **One-click OpenAPI import**: supports v3 spec from file/URL/paste, auto-generates API definitions and candidate cases
+- **Environments & variables**: multiple environments (base_url, headers, variables); default environment auto-created
+- **Variable substitution & assertions**: `${{var}}` placeholders inline-replaced in url/headers/body; status code, response body, header assertions with multiple operators
+- **Execution history**: single-call and batch runs both persisted with success rate and failure analysis
+- **AI enhancements (planned)**: AI-assisted assertion completion, parameterization, and edge cases on top of imported APIs
 
 ### Mobile App Automation Testing
 Integrated mobile-mcp for mobile automation:
@@ -65,6 +74,14 @@ Extensible agent skill management framework:
 - **SKILL.md spec**: standardized skill descriptors
 - **Security isolation**: isolated storage to prevent path traversal
 - **Exclusive resources**: join the tech group to access fine-tuned Skills and MCP toolkits
+
+### Task Center (Scheduled Tasks)
+Unified scheduling powered by Celery Beat across all modules:
+- **Multi-module support**: UI automation, API automation, and test suites all schedulable
+- **Flexible schedules**: daily / weekly on selected days / hourly at minute / one-shot at datetime
+- **Per-task timezone**: each task can override its timezone (decouples server timezone from user timezone)
+- **Execution history**: task runs link to batch/suite results with pass rate and duration
+- **Retry & auto-disable**: configurable retry count; one-shot tasks auto-disable after completion
 
 ### Execution Reports and Analysis
 Comprehensive execution analytics:

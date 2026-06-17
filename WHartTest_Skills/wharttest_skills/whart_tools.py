@@ -10,7 +10,98 @@ import argparse
 import json
 import os
 import time
-import requests
+try:
+    import requests  # type: ignore
+except ImportError:  # pragma: no cover - runtime fallback for skill container
+    import mimetypes
+    import uuid
+    import urllib.error
+    import urllib.request
+
+    class _CompatResponse:
+        def __init__(self, response):
+            self._response = response
+            self.status_code = getattr(response, "status_code", None) or response.getcode()
+            raw = response.read()
+            self.text = raw.decode("utf-8", errors="replace")
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise Exception(f"HTTP {self.status_code}: {self.text}")
+
+        def json(self):
+            return __import__("json").loads(self.text)
+
+    class _CompatRequests:
+        @staticmethod
+        def _encode_multipart(data=None, files=None):
+            boundary = f"----WHartTestSkill{uuid.uuid4().hex}"
+            chunks = []
+            for key, value in (data or {}).items():
+                chunks.extend([
+                    f"--{boundary}\r\n".encode(),
+                    f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode(),
+                    str(value).encode(),
+                    b"\r\n",
+                ])
+            for key, file_info in (files or {}).items():
+                filename = getattr(file_info, "name", f"{key}.bin").split("/")[-1]
+                content = file_info.read()
+                if hasattr(file_info, "seek"):
+                    file_info.seek(0)
+                content_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+                chunks.extend([
+                    f"--{boundary}\r\n".encode(),
+                    (
+                        f'Content-Disposition: form-data; name="{key}"; filename="{filename}"\r\n'
+                        f"Content-Type: {content_type}\r\n\r\n"
+                    ).encode(),
+                    content,
+                    b"\r\n",
+                ])
+            chunks.append(f"--{boundary}--\r\n".encode())
+            return boundary, b"".join(chunks)
+
+        @staticmethod
+        def _request(method, url, headers=None, params=None, json=None, data=None, files=None):
+            req_headers = dict(headers or {})
+            if params:
+                from urllib.parse import urlencode
+                sep = "&" if "?" in url else "?"
+                url = f"{url}{sep}{urlencode(params)}"
+            body = None
+            if files:
+                boundary, body = _CompatRequests._encode_multipart(data=data, files=files)
+                req_headers["Content-Type"] = f"multipart/form-data; boundary={boundary}"
+            elif json is not None:
+                body = __import__("json").dumps(json).encode("utf-8")
+                req_headers["Content-Type"] = "application/json"
+            elif data is not None:
+                from urllib.parse import urlencode
+                body = urlencode(data).encode("utf-8")
+                req_headers["Content-Type"] = "application/x-www-form-urlencoded"
+            req = urllib.request.Request(url, data=body, headers=req_headers, method=method)
+            try:
+                with urllib.request.urlopen(req, timeout=60) as response:
+                    return _CompatResponse(response)
+            except urllib.error.HTTPError as exc:
+                return _CompatResponse(exc)
+
+        @staticmethod
+        def get(url, headers=None, params=None):
+            return _CompatRequests._request("GET", url, headers=headers, params=params)
+
+        @staticmethod
+        def post(url, headers=None, json=None, data=None, files=None):
+            return _CompatRequests._request(
+                "POST", url, headers=headers, json=json, data=data, files=files
+            )
+
+        @staticmethod
+        def patch(url, headers=None, json=None, data=None):
+            return _CompatRequests._request("PATCH", url, headers=headers, json=json, data=data)
+
+    requests = _CompatRequests()
 from pathlib import Path
 
 # 加载环境变量

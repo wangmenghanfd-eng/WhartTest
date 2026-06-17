@@ -1,7 +1,7 @@
 from celery import shared_task
 
 from .models import ApiBatchExecutionRecord, ApiExecutionRecord
-from .services import execute_api_case, update_batch_summary
+from .services import execute_api_case, execute_api_scenario, update_batch_summary
 
 
 @shared_task(name="api_automation.tasks.execute_api_case_task")
@@ -19,3 +19,7 @@ def execute_api_batch_task(batch_id: int):
     update_batch_summary(batch_id)
     return {"status": "done", "batch_id": batch_id}
 
+
+@shared_task(name="api_automation.tasks.execute_api_scenario_task")
+def execute_api_scenario_task(record_id: int):
+    return execute_api_scenario(record_id)

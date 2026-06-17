@@ -301,8 +301,8 @@ const handleReject = async () => {
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 4px;
-  background: #fff1b8;
-  color: #ad6800;
+  background: rgba(255, 184, 0, 0.18);
+  color: var(--theme-warning);
   font-weight: 500;
 }
 
@@ -348,9 +348,9 @@ const handleReject = async () => {
 }
 
 .btn-reject {
-  border-color: #d9d9d9;
-  color: #595959;
-  background: #fff;
+  border-color: var(--theme-border);
+  color: var(--theme-text-secondary);
+  background: var(--theme-surface);
 }
 
 .btn-reject:hover {

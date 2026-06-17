@@ -1,0 +1,155 @@
+- generic [ref=e4]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e8]:
+        - img "UAE emblem" [ref=e9]
+        - generic [ref=e10]:
+          - generic [ref=e11]: UCMDS
+          - generic [ref=e13]:
+            - generic [ref=e14]: Unified Case Management and Documentation System
+            - generic [ref=e15]: Unified Case Management and Documentation System
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - link "dashboard Dashboard" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e19]:
+              - img "dashboard" [ref=e21]:
+                - img [ref=e22]
+              - generic [ref=e25]: Dashboard
+          - link "alert Crises" [ref=e26] [cursor=pointer]:
+            - /url: /crises
+            - generic [ref=e27]:
+              - img "alert" [ref=e29]:
+                - img [ref=e30]
+              - generic [ref=e33]: Crises
+          - link "file-text NCEMA Reports" [ref=e34] [cursor=pointer]:
+            - /url: /ncema/reports
+            - generic [ref=e35]:
+              - img "file-text" [ref=e37]:
+                - img [ref=e38]
+              - generic [ref=e41]: NCEMA Reports
+          - link "safety-certificate File Verification" [ref=e42] [cursor=pointer]:
+            - /url: /file-verification
+            - generic [ref=e43]:
+              - img "safety-certificate" [ref=e45]:
+                - img [ref=e46]
+              - generic [ref=e49]: File Verification
+          - link "appstore Early Feedback" [ref=e50] [cursor=pointer]:
+            - /url: /early-feedback
+            - generic [ref=e51]:
+              - img "appstore" [ref=e53]:
+                - img [ref=e54]
+              - generic [ref=e57]: Early Feedback
+        - generic [ref=e58]:
+          - generic [ref=e59]: Settings
+          - link "user Users" [ref=e60] [cursor=pointer]:
+            - /url: /admin-users
+            - generic [ref=e61]:
+              - img "user" [ref=e63]:
+                - img [ref=e64]
+              - generic [ref=e66]: Users
+          - link "apartment Departments" [ref=e67] [cursor=pointer]:
+            - /url: /departments
+            - generic [ref=e68]:
+              - img "apartment" [ref=e70]:
+                - img [ref=e71]
+              - generic [ref=e73]: Departments
+          - link "block Portals" [ref=e74] [cursor=pointer]:
+            - /url: /admin/portals
+            - generic [ref=e75]:
+              - img "block" [ref=e77]:
+                - img [ref=e78]
+              - generic [ref=e80]: Portals
+          - link "lock Roles" [ref=e81] [cursor=pointer]:
+            - /url: /roles
+            - generic [ref=e82]:
+              - img "lock" [ref=e84]:
+                - img [ref=e85]
+              - generic [ref=e87]: Roles
+          - link "lock Permission Grants" [ref=e88] [cursor=pointer]:
+            - /url: /admin/permission-grants
+            - generic [ref=e89]:
+              - img "lock" [ref=e91]:
+                - img [ref=e92]
+              - generic [ref=e94]: Permission Grants
+          - link "audit Audit Logs" [ref=e95] [cursor=pointer]:
+            - /url: /audit-logs
+            - generic [ref=e96]:
+              - img "audit" [ref=e98]:
+                - img [ref=e99]
+              - generic [ref=e101]: Audit Logs
+          - link "setting Settings" [ref=e102] [cursor=pointer]:
+            - /url: /settings
+            - generic [ref=e103]:
+              - img "setting" [ref=e105]:
+                - img [ref=e106]
+              - generic [ref=e108]: Settings
+          - link "medicine-box Diagnostics" [ref=e109] [cursor=pointer]:
+            - /url: /diagnostics
+            - generic [ref=e110]:
+              - img "medicine-box" [ref=e112]:
+                - img [ref=e113]
+              - generic [ref=e115]: Diagnostics
+        - generic [ref=e116]:
+          - generic [ref=e117]: Demo Tools
+          - link "picture Command Center Showcase" [ref=e118] [cursor=pointer]:
+            - /url: /showcase/command-center
+            - generic [ref=e119]:
+              - img "picture" [ref=e121]:
+                - img [ref=e122]
+              - generic [ref=e124]: Command Center Showcase
+          - link "database Demo JSON Studio" [ref=e125] [cursor=pointer]:
+            - /url: /admin/demo-json
+            - generic [ref=e126]:
+              - img "database" [ref=e128]:
+                - img [ref=e129]
+              - generic [ref=e131]: Demo JSON Studio
+          - link "tool Ops Console" [ref=e132] [cursor=pointer]:
+            - /url: /admin/ops
+            - generic [ref=e133]:
+              - img "tool" [ref=e135]:
+                - img [ref=e136]
+              - generic [ref=e138]: Ops Console
+          - link "cloud-server External Data — MOI" [ref=e139] [cursor=pointer]:
+            - /url: /admin/external-es
+            - generic [ref=e140]:
+              - img "cloud-server" [ref=e142]:
+                - img [ref=e143]
+              - generic [ref=e147]: External Data — MOI
+  - generic [ref=e148]:
+    - banner [ref=e149]:
+      - button "Collapse sidebar" [ref=e150] [cursor=pointer]:
+        - img "menu-fold" [ref=e152]:
+          - img [ref=e153]
+      - generic [ref=e155]:
+        - button "0 tasks in progress" [ref=e157] [cursor=pointer]:
+          - img "cloud-download" [ref=e158]:
+            - img [ref=e159]
+        - button "bell" [ref=e163] [cursor=pointer]:
+          - img "bell" [ref=e165]:
+            - img [ref=e166]
+        - img "message" [ref=e171] [cursor=pointer]:
+          - img [ref=e172]
+        - generic [ref=e174] [cursor=pointer]:
+          - generic "English" [ref=e175]:
+            - text: English
+            - combobox [ref=e176]
+          - img "global" [ref=e178]:
+            - img [ref=e179]
+        - generic "admin" [ref=e181]
+        - button "Open account menu" [ref=e182] [cursor=pointer]:
+          - img "user" [ref=e184]:
+            - img [ref=e185]
+    - main [ref=e187]:
+      - navigation [ref=e189]:
+        - list [ref=e190]:
+          - listitem [ref=e191]:
+            - link "home" [ref=e193] [cursor=pointer]:
+              - /url: /dashboard
+              - img "home" [ref=e194]:
+                - img [ref=e195]
+          - listitem [ref=e197]: /
+          - listitem [ref=e198]:
+            - generic [ref=e199]: Crises
+    - button "AI Assistant" [ref=e203] [cursor=pointer]:
+      - img [ref=e204]

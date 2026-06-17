@@ -112,7 +112,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, watch, onUnmounted } from 'vue';
 import { Message, Modal } from '@arco-design/web-vue';
 import { IconPlus, IconPlayArrow, IconFolder } from '@arco-design/web-vue/es/icon';
 import { useProjectStore } from '@/store/projectStore';
@@ -147,6 +147,7 @@ const paginationConfig = reactive({
   showTotal: true,
   showPageSize: true,
 });
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const columns = [
   { title: 'ID', dataIndex: 'id', width: 60, align: 'center' as const },
@@ -283,10 +284,21 @@ watch(currentProjectId, () => {
   fetchSuites();
 });
 
+watch(searchKeyword, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    handleSearch();
+  }, 300);
+});
+
 onMounted(() => {
   if (currentProjectId.value) {
     fetchSuites();
   }
+});
+
+onUnmounted(() => {
+  if (searchTimer) clearTimeout(searchTimer);
 });
 </script>
 

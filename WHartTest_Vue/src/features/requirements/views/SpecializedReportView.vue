@@ -385,9 +385,10 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 24px;
   padding: 24px;
-  background: white;
+  background: var(--theme-surface);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow);
+  border: 1px solid var(--theme-border);
   gap: 24px;
 }
 
@@ -408,7 +409,7 @@ onMounted(() => {
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #1d2129;
+  color: var(--theme-text);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -528,15 +529,15 @@ onMounted(() => {
 
 .analysis-item {
   padding: 16px;
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  background: white;
+  background: var(--theme-surface);
 }
 
 .analysis-item:hover {
-  background: #f7f8fa;
+  background: var(--theme-page-bg);
   border-color: #00a0e9;
 }
 
@@ -559,7 +560,7 @@ onMounted(() => {
 
 .analysis-title {
   margin: 0;
-  color: #1d2129;
+  color: var(--theme-text);
   font-size: 14px;
   font-weight: 600;
 }
@@ -584,11 +585,11 @@ onMounted(() => {
 
 .score-max {
   font-size: 12px;
-  color: #86909c;
+  color: var(--theme-text-tertiary);
 }
 
 .analysis-issues {
-  color: #86909c;
+  color: var(--theme-text-tertiary);
   font-size: 12px;
 }
 
@@ -612,7 +613,7 @@ onMounted(() => {
 .analysis-summary {
   margin-bottom: 24px;
   padding: 20px;
-  background: #f7f8fa;
+  background: var(--theme-page-bg);
   border-radius: 8px;
 }
 
@@ -726,8 +727,8 @@ onMounted(() => {
 
 .issue-item {
   padding: 16px;
-  background: white;
-  border: 1px solid #e5e6eb;
+  background: var(--theme-surface);
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   transition: all 0.2s;
 }
@@ -745,10 +746,10 @@ onMounted(() => {
 
 .issue-category {
   padding: 2px 8px;
-  background: #f2f3f5;
+  background: var(--theme-page-bg);
   border-radius: 4px;
   font-size: 12px;
-  color: #4e5969;
+  color: var(--theme-text-secondary);
 }
 
 .issue-location {
@@ -772,11 +773,11 @@ onMounted(() => {
 
 .issue-suggestion {
   padding: 12px;
-  background: #e8f4ff;
+  background: color-mix(in srgb, #165dff 10%, var(--theme-surface));
   border-left: 3px solid #00a0e9;
   border-radius: 4px;
   font-size: 13px;
-  color: #4e5969;
+  color: var(--theme-text-secondary);
   line-height: 1.6;
 }
 

@@ -1,0 +1,236 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img "WHartTest Logo" [ref=e7]
+        - generic [ref=e8]: WHartTest
+      - generic "MSS" [ref=e192] [cursor=pointer]:
+        - textbox "请选择项目"
+        - generic [ref=e193]: MSS
+        - img [ref=e194]
+    - generic [ref=e16]:
+      - button "切换到默认主题" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+      - 'link "当前版本: v2.2.0" [ref=e196] [cursor=pointer]':
+        - /url: https://github.com/MGdaasLab/WHartTest/releases/tag/v2.4.0
+        - text: "当前版本: v2.2.0"
+      - generic [ref=e23]: A
+      - generic [ref=e24] [cursor=pointer]:
+        - generic [ref=e25]: admin
+        - img [ref=e26]
+  - generic [ref=e28]:
+    - generic [ref=e30]:
+      - generic [ref=e32]:
+        - generic [ref=e33] [cursor=pointer]:
+          - img [ref=e35]
+          - link "首页" [ref=e39]:
+            - /url: /dashboard
+        - generic [ref=e40] [cursor=pointer]:
+          - img [ref=e42]
+          - link "项目管理" [ref=e48]:
+            - /url: /projects
+        - generic [ref=e49] [cursor=pointer]:
+          - img [ref=e51]
+          - link "需求管理" [ref=e54]:
+            - /url: "#"
+        - generic [ref=e55] [cursor=pointer]:
+          - img [ref=e57]
+          - link "UI自动化" [ref=e61]:
+            - /url: "#"
+        - generic [ref=e62] [cursor=pointer]:
+          - img [ref=e64]
+          - link "接口自动化" [ref=e67]:
+            - /url: "#"
+        - generic [ref=e68] [cursor=pointer]:
+          - img [ref=e70]
+          - link "任务中心" [ref=e74]:
+            - /url: "#"
+        - generic [ref=e76] [cursor=pointer]:
+          - img [ref=e78]
+          - generic [ref=e80]: 测试管理
+          - img [ref=e82]
+        - generic [ref=e84] [cursor=pointer]:
+          - img [ref=e86]
+          - link "LLM对话" [ref=e89]:
+            - /url: "#"
+        - generic [ref=e90] [cursor=pointer]:
+          - img [ref=e92]
+          - link "知识库管理" [ref=e95]:
+            - /url: "#"
+        - generic [ref=e97] [cursor=pointer]:
+          - img [ref=e99]
+          - generic [ref=e102]: 系统管理
+          - img [ref=e104]
+      - button "收起" [ref=e107] [cursor=pointer]:
+        - img [ref=e109]
+        - generic [ref=e111]: 收起
+    - main [ref=e112]:
+      - generic [ref=e462]:
+        - generic [ref=e463]:
+          - generic [ref=e464]:
+            - button "返回列表" [ref=e465] [cursor=pointer]:
+              - img [ref=e467]
+              - text: 返回列表
+            - heading "MSS Crisis 仅上传需求" [level=1] [ref=e469]
+            - generic [ref=e470]: 良好
+          - button "导出报告" [ref=e472] [cursor=pointer]:
+            - img [ref=e474]
+            - text: 导出报告
+        - generic [ref=e476]:
+          - generic [ref=e478]:
+            - generic [ref=e480]: 📊 专项分析维度
+            - generic [ref=e481]:
+              - generic [ref=e483]:
+                - generic [ref=e484]:
+                  - generic [ref=e485]: "80"
+                  - generic [ref=e486]: 总分
+                - generic [ref=e487]:
+                  - heading "总体评价" [level=3] [ref=e488]
+                  - generic [ref=e489]: 良好
+                  - generic [ref=e490]:
+                    - generic [ref=e491]: 🔴 12 高
+                    - generic [ref=e492]: 🟡 11 中
+                    - generic [ref=e493]: 🟢 1 低
+              - generic [ref=e494]:
+                - generic [ref=e495] [cursor=pointer]:
+                  - generic [ref=e496]:
+                    - generic [ref=e497]: 📋
+                    - heading "完整性分析" [level=4] [ref=e498]
+                  - generic [ref=e499]:
+                    - generic [ref=e500]:
+                      - generic [ref=e501]: "70"
+                      - generic [ref=e502]: /100
+                    - generic [ref=e503]: 7 问题
+                - generic [ref=e504] [cursor=pointer]:
+                  - generic [ref=e505]:
+                    - generic [ref=e506]: 🔗
+                    - heading "一致性分析" [level=4] [ref=e507]
+                  - generic [ref=e508]:
+                    - generic [ref=e509]:
+                      - generic [ref=e510]: "95"
+                      - generic [ref=e511]: /100
+                    - generic [ref=e512]: 1 问题
+                - generic [ref=e513] [cursor=pointer]:
+                  - generic [ref=e514]:
+                    - generic [ref=e515]: 🧪
+                    - heading "可测性分析" [level=4] [ref=e516]
+                  - generic [ref=e517]:
+                    - generic [ref=e518]:
+                      - generic [ref=e519]: "70"
+                      - generic [ref=e520]: /100
+                    - generic [ref=e521]: 7 问题
+                - generic [ref=e522] [cursor=pointer]:
+                  - generic [ref=e523]:
+                    - generic [ref=e524]: ⚙️
+                    - heading "可行性分析" [level=4] [ref=e525]
+                  - generic [ref=e526]:
+                    - generic [ref=e527]:
+                      - generic [ref=e528]: "90"
+                      - generic [ref=e529]: /100
+                    - generic [ref=e530]: 2 问题
+                - generic [ref=e531] [cursor=pointer]:
+                  - generic [ref=e532]:
+                    - generic [ref=e533]: 💡
+                    - heading "清晰度分析" [level=4] [ref=e534]
+                  - generic [ref=e535]:
+                    - generic [ref=e536]:
+                      - generic [ref=e537]: "70"
+                      - generic [ref=e538]: /100
+                    - generic [ref=e539]: 4 问题
+                - generic [ref=e540] [cursor=pointer]:
+                  - generic [ref=e541]:
+                    - generic [ref=e542]: 🧠
+                    - heading "逻辑分析" [level=4] [ref=e543]
+                  - generic [ref=e544]:
+                    - generic [ref=e545]:
+                      - generic [ref=e546]: "85"
+                      - generic [ref=e547]: /100
+                    - generic [ref=e548]: 3 问题
+          - generic [ref=e550]:
+            - generic [ref=e552]: 📋 完整性分析
+            - generic [ref=e553]:
+              - generic [ref=e555]:
+                - generic [ref=e557]:
+                  - generic [ref=e558]: "70"
+                  - generic [ref=e559]: 分
+                - generic [ref=e560]:
+                  - heading "分析总结" [level=3] [ref=e561]
+                  - paragraph [ref=e562]: 文档中缺少关键的交互细节、数据格式和权限控制信息，可能导致开发和测试的返工。
+              - generic [ref=e563]:
+                - heading "✅ 优势" [level=4] [ref=e564]
+                - list [ref=e565]:
+                  - listitem [ref=e566]: 目标明确，基础字段清晰
+              - generic [ref=e567]:
+                - heading "💡 改进建议" [level=4] [ref=e568]
+                - list [ref=e569]:
+                  - listitem [ref=e570]: 建立'需求检查清单'模板，确保每个字段都有校验规则和格式定义，每个操作都有明确的反馈和处理方式
+              - generic [ref=e571]:
+                - generic [ref=e572]:
+                  - heading "⚠️ 发现的问题 (7个)" [level=4] [ref=e573]
+                  - generic [ref=e574] [cursor=pointer]:
+                    - textbox "按优先级筛选" [ref=e575]
+                    - img [ref=e578]
+                - generic [ref=e580]:
+                  - generic [ref=e581]:
+                    - generic [ref=e582]:
+                      - generic [ref=e583]: high
+                      - generic [ref=e584]: 交互细节缺失
+                      - generic [ref=e585]: 📍 基础字段-位置描述
+                    - heading "创建Crisis时，'位置描述'字段的输入方式未明确：1) 是文本输入框还是地图选择？2) 输入后是否有验证？3) 输入错误时的提示？" [level=5] [ref=e586]
+                    - generic [ref=e587]:
+                      - strong [ref=e588]: 💡 建议：
+                      - text: 补充：'位置描述'字段为文本输入框，输入后进行地址验证，输入错误提示'请输入有效的地址'
+                  - generic [ref=e589]:
+                    - generic [ref=e590]:
+                      - generic [ref=e591]: high
+                      - generic [ref=e592]: 校验规则缺失
+                      - generic [ref=e593]: 📍 基础字段-严重等级
+                    - heading "严重等级字段未定义具体选项和格式：1) 有哪些等级选项？2) 是否支持自定义等级？3) 等级选项的显示方式？" [level=5] [ref=e594]
+                    - generic [ref=e595]:
+                      - strong [ref=e596]: 💡 建议：
+                      - text: 补充：严重等级选项为'低'、'中'、'高'，不支持自定义等级，显示方式为下拉选择框
+                  - generic [ref=e597]:
+                    - generic [ref=e598]:
+                      - generic [ref=e599]: high
+                      - generic [ref=e600]: 校验规则缺失
+                      - generic [ref=e601]: 📍 基础字段-保密级别
+                    - heading "保密级别字段未定义具体选项和格式：1) 有哪些保密级别选项？2) 是否支持自定义保密级别？3) 保密级别选项的显示方式？" [level=5] [ref=e602]
+                    - generic [ref=e603]:
+                      - strong [ref=e604]: 💡 建议：
+                      - text: 补充：保密级别选项为'公开'、'内部'、'机密'，不支持自定义保密级别，显示方式为下拉选择框
+                  - generic [ref=e605]:
+                    - generic [ref=e606]:
+                      - generic [ref=e607]: medium
+                      - generic [ref=e608]: 数据格式缺失
+                      - generic [ref=e609]: 📍 基础字段-标题
+                    - heading "标题字段未定义最大长度和格式：1) 最大长度是多少？2) 是否支持特殊字符？" [level=5] [ref=e610]
+                    - generic [ref=e611]:
+                      - strong [ref=e612]: 💡 建议：
+                      - text: 补充：标题最大长度为100个字符，支持特殊字符
+                  - generic [ref=e613]:
+                    - generic [ref=e614]:
+                      - generic [ref=e615]: high
+                      - generic [ref=e616]: 权限控制缺失
+                      - generic [ref=e617]: 📍 业务规则
+                    - heading "文档中未明确权限控制：1) 哪些用户角色可以查看Crisis？2) 哪些用户角色可以编辑Crisis？3) 哪些用户角色可以删除Crisis？" [level=5] [ref=e618]
+                    - generic [ref=e619]:
+                      - strong [ref=e620]: 💡 建议：
+                      - text: 补充：管理员可以查看、编辑和删除Crisis，普通用户只能查看
+                  - generic [ref=e621]:
+                    - generic [ref=e622]:
+                      - generic [ref=e623]: medium
+                      - generic [ref=e624]: 用户操作反馈缺失
+                      - generic [ref=e625]: 📍 业务规则-创建成功后生成 crisis_no
+                    - heading "创建Crisis成功后的具体反馈未明确：1) 成功提示文案是什么？2) 是否有跳转页面？" [level=5] [ref=e626]
+                    - generic [ref=e627]:
+                      - strong [ref=e628]: 💡 建议：
+                      - text: 补充：创建成功后提示'危机创建成功，危机编号为：[crisis_no]'，并跳转到Crisis列表页面
+                  - generic [ref=e629]:
+                    - generic [ref=e630]:
+                      - generic [ref=e631]: medium
+                      - generic [ref=e632]: 并发/冲突场景缺失
+                      - generic [ref=e633]: 📍 业务规则
+                    - heading "文档中未明确并发/冲突场景的处理：1) 两人同时编辑Crisis怎么办？2) 两人同时删除Crisis怎么办？" [level=5] [ref=e634]
+                    - generic [ref=e635]:
+                      - strong [ref=e636]: 💡 建议：
+                      - text: 补充：两人同时编辑Crisis时，后编辑者保存时提示'数据已被其他用户修改，请刷新页面后重试'；两人同时删除Crisis时，先删除者成功，后删除者提示'危机已被删除'

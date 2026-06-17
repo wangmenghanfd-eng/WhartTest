@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Count, Q
+from django.core.paginator import Paginator, EmptyPage
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
@@ -65,7 +66,7 @@ class ProjectViewSet(BaseModelViewSet):
             return [HasProjectMemberPermission(), IsProjectMember()]
 
         # 统计接口只读，要求登录且属于项目即可。
-        if self.action == 'statistics':
+        if self.action in ['statistics', 'statistics_detail']:
             return [IsAuthenticated(), IsProjectMember()]
 
         # 其他操作需要基础权限（用户认证 + Django模型权限）
@@ -243,6 +244,12 @@ class ProjectViewSet(BaseModelViewSet):
         from skills.models import Skill
         from mcp_tools.models import RemoteMCPConfig
         from ui_automation.models import UiTestCase, UiExecutionRecord
+        from api_automation.models import (
+            ApiBatchExecutionRecord,
+            ApiExecutionRecord,
+            ApiModule,
+            ApiTestCase,
+        )
 
         # 1. 功能用例统计（按审核状态）
         testcase_stats = TestCase.objects.filter(project=project).aggregate(
@@ -287,30 +294,41 @@ class ProjectViewSet(BaseModelViewSet):
         thirty_days_ago = now - timedelta(days=30)
 
         # 近 7 天按天聚合执行趋势，供前端绘制趋势图。
+        # 聚合三类执行：功能用例 TestExecution、UI 自动化 UiExecutionRecord、接口自动化 ApiExecutionRecord
+        ui_executions_qs = UiExecutionRecord.objects.filter(test_case__project=project)
+        api_executions_qs = ApiExecutionRecord.objects.filter(project=project)
         daily_stats_7d = []
         for i in range(7):
             day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
             day_end = day_start + timedelta(days=1)
-            day_executions = executions.filter(created_at__gte=day_start, created_at__lt=day_end)
-            day_agg = day_executions.aggregate(
+            tc_agg = executions.filter(created_at__gte=day_start, created_at__lt=day_end).aggregate(
                 count=Count('id'),
                 passed=Sum('passed_count'),
                 failed=Sum('failed_count'),
             )
+            ui_day = ui_executions_qs.filter(created_at__gte=day_start, created_at__lt=day_end)
+            api_day = api_executions_qs.filter(created_at__gte=day_start, created_at__lt=day_end)
             daily_stats_7d.append({
                 'date': day_start.strftime('%Y-%m-%d'),
-                'execution_count': day_agg['count'] or 0,
-                'passed': day_agg['passed'] or 0,
-                'failed': day_agg['failed'] or 0,
+                'execution_count': (tc_agg['count'] or 0) + ui_day.count() + api_day.count(),
+                'passed': (tc_agg['passed'] or 0) + ui_day.filter(status=2).count() + api_day.filter(status=2).count(),
+                'failed': (tc_agg['failed'] or 0) + ui_day.filter(status=3).count() + api_day.filter(status=3).count(),
             })
         daily_stats_7d.reverse()
 
-        # 近30天统计汇总
-        stats_30d = executions.filter(created_at__gte=thirty_days_ago).aggregate(
+        # 近30天统计汇总（同样合并三类）
+        tc_30d = executions.filter(created_at__gte=thirty_days_ago).aggregate(
             execution_count=Count('id'),
             passed=Sum('passed_count'),
             failed=Sum('failed_count'),
         )
+        ui_30d = ui_executions_qs.filter(created_at__gte=thirty_days_ago)
+        api_30d = api_executions_qs.filter(created_at__gte=thirty_days_ago)
+        stats_30d = {
+            'execution_count': (tc_30d['execution_count'] or 0) + ui_30d.count() + api_30d.count(),
+            'passed': (tc_30d['passed'] or 0) + ui_30d.filter(status=2).count() + api_30d.filter(status=2).count(),
+            'failed': (tc_30d['failed'] or 0) + ui_30d.filter(status=3).count() + api_30d.filter(status=3).count(),
+        }
 
         # 5. MCP统计（全局共享的MCP配置）
         mcp_stats = {
@@ -334,6 +352,29 @@ class ProjectViewSet(BaseModelViewSet):
                 'success': ui_executions.filter(status=2).count(),
                 'failed': ui_executions.filter(status=3).count(),
                 'cancelled': ui_executions.filter(status=4).count(),
+            },
+        }
+
+        # 8. 接口自动化统计
+        api_modules_qs = ApiModule.objects.filter(project=project)
+        api_cases_qs = ApiTestCase.objects.filter(project=project)
+        api_execs_qs = ApiExecutionRecord.objects.filter(project=project)
+        api_batches_qs = ApiBatchExecutionRecord.objects.filter(project=project)
+        latest_batch = api_batches_qs.order_by('-id').first()
+        api_automation_stats = {
+            'total_modules': api_modules_qs.count(),
+            'total_cases': api_cases_qs.count(),
+            'total_executions': api_execs_qs.count(),
+            'total_batches': api_batches_qs.count(),
+            'by_status': {
+                'success': api_execs_qs.filter(status=2).count(),
+                'failed': api_execs_qs.filter(status=3).count(),
+            },
+            'last_batch': {
+                'id': latest_batch.id if latest_batch else None,
+                'name': latest_batch.name if latest_batch else '',
+                'success_rate': latest_batch.success_rate if latest_batch else 0,
+                'status': latest_batch.status if latest_batch else None,
             },
         }
 
@@ -379,6 +420,124 @@ class ProjectViewSet(BaseModelViewSet):
             'mcp': mcp_stats,
             'skills': skill_stats,
             'ui_automation': ui_automation_stats,
+            'api_automation': api_automation_stats,
         }
 
         return Response(response_data)
+
+    @action(detail=True, methods=['get'], url_path='statistics-detail')
+    def statistics_detail(self, request, pk=None):
+        """首页统计详情列表（分页）"""
+        project = self.get_object()
+        kind = (request.query_params.get('kind') or '').strip()
+        review_status = (request.query_params.get('review_status') or '').strip()
+        page = max(int(request.query_params.get('page', 1) or 1), 1)
+        page_size = max(min(int(request.query_params.get('page_size', 10) or 10), 50), 1)
+
+        from testcases.models import TestCase, TestExecution
+        from skills.models import Skill
+        from mcp_tools.models import RemoteMCPConfig
+        from ui_automation.models import UiTestCase
+        from api_automation.models import ApiTestCase
+
+        rows = []
+        title = ''
+
+        if kind == 'functional_cases':
+            qs = TestCase.objects.filter(project=project).select_related('module').order_by('-updated_at', '-id')
+            if review_status:
+                qs = qs.filter(review_status=review_status)
+            rows = [
+                {
+                    'id': item.id,
+                    'name': item.name,
+                    'module': item.module.name if item.module else '-',
+                    'status': item.get_review_status_display(),
+                    'extra': item.level or '-',
+                    'updated_at': item.updated_at,
+                }
+                for item in qs
+            ]
+            title = '功能用例详情'
+        elif kind == 'ui_cases':
+            qs = UiTestCase.objects.filter(project=project).select_related('module').order_by('-updated_at', '-id')
+            rows = [
+                {
+                    'id': item.id,
+                    'name': item.name,
+                    'module': item.module.name if item.module else '-',
+                    'status': item.get_status_display(),
+                    'extra': item.level or '-',
+                    'updated_at': item.updated_at,
+                }
+                for item in qs
+            ]
+            title = 'UI 自动化用例'
+        elif kind == 'api_cases':
+            qs = ApiTestCase.objects.filter(project=project).select_related('module').order_by('-updated_at', '-id')
+            rows = [
+                {
+                    'id': item.id,
+                    'name': item.name,
+                    'module': item.module.name if item.module else '-',
+                    'status': item.get_status_display(),
+                    'extra': f'{item.method} {item.path}',
+                    'updated_at': item.updated_at,
+                }
+                for item in qs
+            ]
+            title = '接口自动化用例'
+        elif kind == 'functional_executions':
+            qs = TestExecution.objects.filter(suite__project=project).select_related('suite', 'executor').order_by('-created_at', '-id')
+            rows = [
+                {
+                    'id': item.id,
+                    'name': item.suite.name if item.suite else f'执行 {item.id}',
+                    'module': item.executor.username if item.executor else '-',
+                    'status': item.get_status_display(),
+                    'extra': f"通过 {item.passed_count} / 失败 {item.failed_count} / 跳过 {item.skipped_count} / 错误 {item.error_count}",
+                    'updated_at': item.created_at,
+                }
+                for item in qs
+            ]
+            title = '功能执行记录'
+        elif kind == 'mcp_skills':
+            for item in RemoteMCPConfig.objects.order_by('-updated_at', '-id'):
+                rows.append({
+                    'id': f'mcp-{item.id}',
+                    'name': item.name,
+                    'module': 'MCP',
+                    'status': '启用' if item.is_active else '停用',
+                    'extra': item.url,
+                    'updated_at': item.updated_at,
+                })
+            for item in Skill.objects.order_by('-updated_at', '-id'):
+                rows.append({
+                    'id': f'skill-{item.id}',
+                    'name': item.name,
+                    'module': 'Skill',
+                    'status': '启用' if item.is_active else '停用',
+                    'extra': item.skill_path or '-',
+                    'updated_at': item.updated_at,
+                })
+            rows.sort(key=lambda x: (x['updated_at'] or timezone.now()), reverse=True)
+            title = 'MCP / Skills'
+        else:
+            return Response({'error': '不支持的 kind'}, status=status.HTTP_400_BAD_REQUEST)
+
+        paginator = Paginator(rows, page_size)
+        try:
+            page_obj = paginator.page(page)
+        except EmptyPage:
+            page_obj = paginator.page(paginator.num_pages or 1)
+
+        return Response({
+            'title': title,
+            'kind': kind,
+            'review_status': review_status or None,
+            'count': paginator.count,
+            'page': page_obj.number,
+            'page_size': page_size,
+            'num_pages': paginator.num_pages,
+            'results': list(page_obj.object_list),
+        })

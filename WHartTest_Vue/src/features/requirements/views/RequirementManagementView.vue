@@ -34,11 +34,10 @@
         >
           <a-option value="">全部类型</a-option>
           <a-option value="pdf">PDF</a-option>
-          <a-option value="docx">Word</a-option>
-          <a-option value="pptx">PPT</a-option>
+          <a-option value="doc">Word(.doc)</a-option>
+          <a-option value="docx">Word(.docx)</a-option>
           <a-option value="md">Markdown</a-option>
           <a-option value="txt">文本</a-option>
-          <a-option value="html">HTML</a-option>
         </a-select>
         <a-button type="primary" @click="showUploadModal">
           <template #icon><icon-plus /></template>
@@ -262,7 +261,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { Message } from '@arco-design/web-vue';
 import { IconPlus, IconUpload, IconFile, IconDelete } from '@arco-design/web-vue/es/icon';
@@ -324,6 +323,7 @@ const currentDocument = ref<RequirementDocument | null>(null);
 const reviewConfig = ref({
   max_workers: 3
 });
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 表单验证规则
 const uploadRules = {
@@ -744,6 +744,17 @@ onMounted(() => {
   }
 });
 
+onUnmounted(() => {
+  if (searchTimer) clearTimeout(searchTimer);
+});
+
+watch(searchKeyword, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    handleSearch();
+  }, 300);
+});
+
 // 监听项目变化
 projectStore.$subscribe((_mutation, state) => {
   const projectId = state.currentProject?.id;
@@ -763,9 +774,10 @@ projectStore.$subscribe((_mutation, state) => {
 .filter-section {
   margin-bottom: 16px;
   padding: 16px 24px;
-  background: white;
+  background: var(--theme-surface);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow);
+  border: 1px solid var(--theme-border);
 }
 
 .filter-row {
@@ -785,9 +797,10 @@ projectStore.$subscribe((_mutation, state) => {
 }
 
 .content-section {
-  background: white;
+  background: var(--theme-surface);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow);
+  border: 1px solid var(--theme-border);
   overflow: hidden;
 }
 
@@ -800,7 +813,7 @@ projectStore.$subscribe((_mutation, state) => {
 
 .stat-item {
   font-size: 12px;
-  color: #86909c;
+  color: var(--theme-text-tertiary);
   white-space: nowrap; /* 防止单个统计项换行 */
 }
 
@@ -810,22 +823,23 @@ projectStore.$subscribe((_mutation, state) => {
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  border: 2px dashed #d9d9d9;
+  border: 2px dashed var(--theme-border);
   border-radius: 6px;
-  background: #fafafa;
+  background: var(--theme-surface-soft);
   cursor: pointer;
   transition: all 0.3s;
+  color: var(--theme-text);
 }
 
 .upload-area:hover {
-  border-color: #00a0e9;
-  background: #f0f8ff;
+  border-color: var(--theme-accent);
+  background: color-mix(in srgb, var(--theme-surface-soft) 84%, rgba(var(--theme-accent-rgb), 0.14));
 }
 
 .upload-tip {
   margin-top: 8px;
   font-size: 12px;
-  color: #86909c;
+  color: var(--theme-text-tertiary);
 }
 
 .upload-file-item {

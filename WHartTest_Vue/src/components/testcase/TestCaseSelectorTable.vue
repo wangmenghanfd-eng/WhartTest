@@ -100,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, watch, onUnmounted } from 'vue';
 import { Message } from '@arco-design/web-vue';
 import { getTestCaseList, type TestCase } from '@/services/testcaseService';
 import { getTestCaseModules, type TestCaseModule } from '@/services/testcaseModuleService';
@@ -139,6 +139,7 @@ const paginationConfig = reactive({
   showPageSize: true,
   pageSizeOptions: [10, 20, 50],
 });
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const columns = [
   {
@@ -348,6 +349,17 @@ watch(
     fetchTestCases();
   }
 );
+
+watch(searchKeyword, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    handleSearch();
+  }, 300);
+});
+
+onUnmounted(() => {
+  if (searchTimer) clearTimeout(searchTimer);
+});
 </script>
 
 <style scoped>

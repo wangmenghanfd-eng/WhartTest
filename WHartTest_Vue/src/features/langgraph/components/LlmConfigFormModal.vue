@@ -25,7 +25,15 @@
 
         <!-- 第二行：供应商 + 模型名称 -->
         <a-col :span="8">
-          <a-form-item field="provider" label="供应商" required>
+          <a-form-item field="provider" required>
+            <template #label>
+              <span class="label-with-tip">
+                供应商
+                <a-tooltip content="OpenAI 兼容表示按 OpenAI API 协议接入；Qwen/通义千问是为 DashScope 预置的快捷选项。">
+                  <icon-question-circle class="help-icon" />
+                </a-tooltip>
+              </span>
+            </template>
             <a-select
               v-model="formData.provider"
               :options="providerOptions"
@@ -117,7 +125,15 @@
           </a-form-item>
         </a-col>
         <a-col :span="6">
-          <a-form-item field="supports_vision" label="多模态">
+          <a-form-item field="supports_vision">
+            <template #label>
+              <span class="label-with-tip">
+                多模态
+                <a-tooltip content="开启后表示该模型支持图片输入，可用于截图分析、图片问答等场景。">
+                  <icon-question-circle class="help-icon" />
+                </a-tooltip>
+              </span>
+            </template>
             <a-space>
               <a-switch v-model="formData.supports_vision" />
               <span class="switch-desc">Vision</span>
@@ -185,7 +201,7 @@ import {
   type FormInstance,
   type FieldRule,
 } from '@arco-design/web-vue';
-import { IconRefresh, IconThunderbolt } from '@arco-design/web-vue/es/icon';
+import { IconRefresh, IconThunderbolt, IconQuestionCircle } from '@arco-design/web-vue/es/icon';
 import { createLlmConfig, partialUpdateLlmConfig, testLlmConnection, fetchModels, getProviders } from '@/features/langgraph/services/llmConfigService';
 import type { LlmConfig, CreateLlmConfigRequest, PartialUpdateLlmConfigRequest } from '@/features/langgraph/types/llmConfig';
 
@@ -566,5 +582,16 @@ const filterModelOption = (inputValue: string, option: { value: string }) => {
   font-size: 13px;
   color: var(--color-text-3);
   cursor: pointer;
+}
+
+.label-with-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.help-icon {
+  color: rgb(var(--gray-6));
+  cursor: help;
 }
 </style>

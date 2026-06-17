@@ -518,9 +518,10 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 24px;
   padding: 24px;
-  background: white !important;
+  background: var(--theme-surface) !important;
   border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: var(--theme-shadow) !important;
+  border: 1px solid var(--theme-border);
   gap: 24px;
 }
 
@@ -541,7 +542,7 @@ onMounted(() => {
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #1d2129;
+  color: var(--theme-text);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -575,7 +576,7 @@ onMounted(() => {
 .metric-card {
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow);
 }
 
 .metric-content {
@@ -586,19 +587,19 @@ onMounted(() => {
 .metric-value {
   font-size: 32px;
   font-weight: 700;
-  color: #1d2129;
+  color: var(--theme-text);
   line-height: 1;
 }
 
 .metric-label {
   font-size: 14px;
-  color: #86909c;
+  color: var(--theme-text-tertiary);
   margin-top: 4px;
 }
 
 .metric-unit {
   font-size: 14px;
-  color: #86909c;
+  color: var(--theme-text-tertiary);
 }
 
 .metric-icon {
@@ -625,7 +626,7 @@ onMounted(() => {
 .distribution-card,
 .modules-card,
 .issues-card {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow);
 }
 
 .summary-content {
@@ -634,17 +635,17 @@ onMounted(() => {
 
 .summary-text {
   font-size: 16px;
-  color: #4e5969;
+  color: var(--theme-text-secondary);
   margin-bottom: 16px;
 }
 
 .recommendations h4 {
   margin: 0 0 8px 0;
-  color: #1d2129;
+  color: var(--theme-text);
 }
 
 .recommendations-text {
-  color: #4e5969;
+  color: var(--theme-text-secondary);
   white-space: pre-line;
 }
 
@@ -681,7 +682,7 @@ onMounted(() => {
 
 .priority-label {
   font-size: 14px;
-  color: #86909c;
+  color: var(--theme-text-tertiary);
 }
 
 .modules-list {
@@ -691,10 +692,10 @@ onMounted(() => {
 }
 
 .module-result-item {
-  border: 1px solid #f2f3f5;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   padding: 16px;
-  background: #fafafa;
+  background: var(--theme-page-bg);
 }
 
 .module-header {
@@ -714,7 +715,7 @@ onMounted(() => {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #1d2129;
+  color: var(--theme-text);
 }
 
 .issues-count {
@@ -767,10 +768,10 @@ onMounted(() => {
 }
 
 .issue-item {
-  border: 1px solid #f2f3f5;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   padding: 16px;
-  background: white;
+  background: var(--theme-surface);
   transition: all 0.3s;
 }
 
@@ -779,9 +780,13 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 160, 233, 0.1);
 }
 
+:root[data-theme='black'] .review-report :deep(.arco-tag) {
+  border-color: var(--theme-border);
+}
+
 .issue-item.resolved {
   opacity: 0.6;
-  background: #f8f9fa;
+  background: var(--theme-page-bg);
 }
 
 .issue-header {
@@ -821,14 +826,14 @@ onMounted(() => {
 .issue-suggestion {
   margin-bottom: 8px;
   padding: 8px 12px;
-  background: #f0f8ff;
+  background: color-mix(in srgb, #165dff 10%, var(--theme-surface));
   border-radius: 4px;
   font-size: 14px;
 }
 
 .resolution-note {
   padding: 8px 12px;
-  background: #f0f9f0;
+  background: color-mix(in srgb, #00b42a 12%, var(--theme-surface));
   border-radius: 4px;
   font-size: 14px;
   color: #00b42a;
@@ -839,9 +844,9 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   min-height: 300px;
-  background: white;
+  background: var(--theme-surface);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow);
 }
 
 /* 内容切换动画 */

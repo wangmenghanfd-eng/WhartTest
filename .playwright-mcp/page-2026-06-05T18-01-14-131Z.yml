@@ -1,0 +1,16 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - img "Logo" [ref=e7]
+    - heading "WHartTest" [level=1] [ref=e8]
+    - paragraph [ref=e9]: 小麦智测自动化平台
+    - generic [ref=e10]:
+      - generic [ref=e11]: AI 智能生成
+      - generic [ref=e12]: RAG 知识库
+      - generic [ref=e13]: MCP 工具调用
+      - generic [ref=e14]: Skills 技能库
+      - generic [ref=e15]: Playwright 自动化
+      - generic [ref=e16]: LangGraph
+  - button "打开登录弹窗" [ref=e17] [cursor=pointer]:
+    - generic [ref=e20]:
+      - strong [ref=e21]: 账号登录
+      - generic [ref=e22]: 点击展开登录框

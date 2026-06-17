@@ -405,9 +405,10 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 24px;
   padding: 24px;
-  background: white;
+  background: var(--theme-surface);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow);
+  border: 1px solid var(--theme-border);
   gap: 24px;
 }
 
@@ -439,7 +440,7 @@ onMounted(() => {
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #1d2129;
+  color: var(--theme-text);
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -507,13 +508,13 @@ onMounted(() => {
 
 .modules-list {
   margin-bottom: 16px;
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--theme-border);
   border-radius: 6px;
 }
 
 .module-item {
   padding: 12px 16px;
-  border-bottom: 1px solid #e5e6eb;
+  border-bottom: 1px solid var(--theme-border);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -523,11 +524,11 @@ onMounted(() => {
 }
 
 .module-item:hover {
-  background: #f7f8fa;
+  background: var(--theme-page-bg);
 }
 
 .module-item.active {
-  background: #e8f4ff;
+  background: rgba(var(--theme-accent-rgb), 0.12);
   border-color: #165dff;
 }
 
@@ -553,7 +554,7 @@ onMounted(() => {
 .module-title {
   flex: 1;
   margin: 0;
-  color: #1d2129;
+  color: var(--theme-text);
   font-size: 14px;
   font-weight: 500;
 }
@@ -565,16 +566,16 @@ onMounted(() => {
 }
 
 .module-issues {
-  color: #86909c;
+  color: var(--theme-text-tertiary);
   font-size: 12px;
 }
 
 /* 模块详情 */
 .module-detail {
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--theme-border);
   border-radius: 6px;
   padding: 16px;
-  background: #fafbfc;
+  background: var(--theme-page-bg);
 }
 
 .module-detail-header {
@@ -583,12 +584,12 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #e5e6eb;
+  border-bottom: 1px solid var(--theme-border);
 }
 
 .module-detail-header h3 {
   margin: 0;
-  color: #1d2129;
+  color: var(--theme-text);
   font-size: 16px;
   font-weight: 600;
 }
@@ -599,19 +600,19 @@ onMounted(() => {
 
 .module-content h5 {
   margin: 0 0 8px 0;
-  color: #1d2129;
+  color: var(--theme-text);
   font-size: 14px;
   font-weight: 600;
 }
 
 .content-text {
-  color: #4e5969;
+  color: var(--theme-text-secondary);
   line-height: 1.6;
   white-space: pre-wrap;
-  background: white;
+  background: var(--theme-surface);
   padding: 12px;
   border-radius: 4px;
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--theme-border);
 }
 
 /* 右侧面板 */
@@ -693,7 +694,7 @@ onMounted(() => {
 }
 
 .weaknesses {
-  background: #fff2e8;
+  background: color-mix(in srgb, #ff7d00 12%, var(--theme-surface));
   border: 1px solid #ffbb96;
 }
 
@@ -806,22 +807,22 @@ onMounted(() => {
 }
 
 .stat-item.high {
-  background: #ffece8;
+  background: color-mix(in srgb, #f53f3f 12%, var(--theme-surface));
   border: 1px solid #f53f3f;
 }
 
 .stat-item.medium {
-  background: #fff7e8;
+  background: color-mix(in srgb, #ff7d00 12%, var(--theme-surface));
   border: 1px solid #ff7d00;
 }
 
 .stat-item.low {
-  background: #e8f7ff;
+  background: color-mix(in srgb, #165dff 12%, var(--theme-surface));
   border: 1px solid #165dff;
 }
 
 .stat-item.total {
-  background: #f2f3f5;
+  background: var(--theme-page-bg);
   border: 1px solid #86909c;
 }
 
@@ -898,9 +899,9 @@ onMounted(() => {
 .issue-item {
   padding: 12px;
   margin-bottom: 8px;
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--theme-border);
   border-radius: 6px;
-  background: white;
+  background: var(--theme-surface);
 }
 
 .issue-item.resolved {
@@ -928,25 +929,35 @@ onMounted(() => {
 
 .issue-title {
   margin: 0 0 6px 0;
-  color: #1d2129;
+  color: var(--theme-text);
   font-size: 13px;
   font-weight: 600;
 }
 
 .issue-description {
   margin: 0 0 6px 0;
-  color: #4e5969;
+  color: var(--theme-text-secondary);
   font-size: 12px;
   line-height: 1.4;
 }
 
 .issue-suggestion {
-  color: #4e5969;
+  color: var(--theme-text-secondary);
   font-size: 12px;
   line-height: 1.4;
-  background: #f7f8fa;
+  background: color-mix(in srgb, var(--theme-accent, #1677ff) 10%, var(--theme-surface) 90%);
   padding: 6px;
   border-radius: 4px;
+}
+
+:root[data-theme='black'] .report-detail :deep(.arco-tag) {
+  border-color: var(--theme-border);
+}
+
+:root[data-theme='black'] .report-detail .issue-meta :deep(.arco-tag[color='blue']),
+:root[data-theme='black'] .report-detail .issue-meta :deep(.arco-tag-color-blue) {
+  background: rgba(var(--theme-accent-rgb), 0.14);
+  color: rgb(var(--primary-4));
 }
 
 /* 空状态 */

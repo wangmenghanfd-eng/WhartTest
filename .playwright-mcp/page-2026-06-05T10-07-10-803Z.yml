@@ -1,0 +1,127 @@
+- generic [ref=e4]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e8]:
+        - img "UAE emblem" [ref=e9]
+        - generic [ref=e10]:
+          - generic [ref=e11]: UCMDS
+          - generic [ref=e13]:
+            - generic [ref=e14]: Unified Case Management and Documentation System
+            - generic [ref=e15]: Unified Case Management and Documentation System
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - link "dashboard Dashboard" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e19]:
+              - img "dashboard" [ref=e21]:
+                - img [ref=e22]
+              - generic [ref=e25]: Dashboard
+          - link "safety-certificate File Verification" [ref=e26] [cursor=pointer]:
+            - /url: /file-verification
+            - generic [ref=e27]:
+              - img "safety-certificate" [ref=e29]:
+                - img [ref=e30]
+              - generic [ref=e33]: File Verification
+        - generic [ref=e34]:
+          - generic [ref=e35]: Settings
+          - link "user Users" [ref=e36] [cursor=pointer]:
+            - /url: /admin-users
+            - generic [ref=e37]:
+              - img "user" [ref=e39]:
+                - img [ref=e40]
+              - generic [ref=e42]: Users
+          - link "apartment Departments" [ref=e43] [cursor=pointer]:
+            - /url: /departments
+            - generic [ref=e44]:
+              - img "apartment" [ref=e46]:
+                - img [ref=e47]
+              - generic [ref=e49]: Departments
+          - link "block Portals" [ref=e50] [cursor=pointer]:
+            - /url: /admin/portals
+            - generic [ref=e51]:
+              - img "block" [ref=e53]:
+                - img [ref=e54]
+              - generic [ref=e56]: Portals
+          - link "lock Roles" [ref=e57] [cursor=pointer]:
+            - /url: /roles
+            - generic [ref=e58]:
+              - img "lock" [ref=e60]:
+                - img [ref=e61]
+              - generic [ref=e63]: Roles
+          - link "lock Permission Grants" [ref=e64] [cursor=pointer]:
+            - /url: /admin/permission-grants
+            - generic [ref=e65]:
+              - img "lock" [ref=e67]:
+                - img [ref=e68]
+              - generic [ref=e70]: Permission Grants
+          - link "audit Audit Logs" [ref=e71] [cursor=pointer]:
+            - /url: /audit-logs
+            - generic [ref=e72]:
+              - img "audit" [ref=e74]:
+                - img [ref=e75]
+              - generic [ref=e77]: Audit Logs
+          - link "setting Settings" [ref=e78] [cursor=pointer]:
+            - /url: /settings
+            - generic [ref=e79]:
+              - img "setting" [ref=e81]:
+                - img [ref=e82]
+              - generic [ref=e84]: Settings
+          - link "medicine-box Diagnostics" [ref=e85] [cursor=pointer]:
+            - /url: /diagnostics
+            - generic [ref=e86]:
+              - img "medicine-box" [ref=e88]:
+                - img [ref=e89]
+              - generic [ref=e91]: Diagnostics
+        - generic [ref=e92]:
+          - generic [ref=e93]: Demo Tools
+          - link "picture Command Center Showcase" [ref=e94] [cursor=pointer]:
+            - /url: /showcase/command-center
+            - generic [ref=e95]:
+              - img "picture" [ref=e97]:
+                - img [ref=e98]
+              - generic [ref=e100]: Command Center Showcase
+          - link "database Demo JSON Studio" [ref=e101] [cursor=pointer]:
+            - /url: /admin/demo-json
+            - generic [ref=e102]:
+              - img "database" [ref=e104]:
+                - img [ref=e105]
+              - generic [ref=e107]: Demo JSON Studio
+          - link "tool Ops Console" [ref=e108] [cursor=pointer]:
+            - /url: /admin/ops
+            - generic [ref=e109]:
+              - img "tool" [ref=e111]:
+                - img [ref=e112]
+              - generic [ref=e114]: Ops Console
+          - link "cloud-server External Data — MOI" [ref=e115] [cursor=pointer]:
+            - /url: /admin/external-es
+            - generic [ref=e116]:
+              - img "cloud-server" [ref=e118]:
+                - img [ref=e119]
+              - generic [ref=e123]: External Data — MOI
+  - generic [ref=e124]:
+    - banner [ref=e125]:
+      - button "Collapse sidebar" [ref=e126] [cursor=pointer]:
+        - img "menu-fold" [ref=e128]:
+          - img [ref=e129]
+      - generic [ref=e131]:
+        - button "0 tasks in progress" [ref=e133] [cursor=pointer]:
+          - img "cloud-download" [ref=e134]:
+            - img [ref=e135]
+        - button "Notifications" [ref=e139] [cursor=pointer]:
+          - img "bell" [ref=e141]:
+            - img [ref=e142]
+        - img "message" [ref=e147] [cursor=pointer]:
+          - img [ref=e148]
+        - generic [ref=e150] [cursor=pointer]:
+          - generic "English" [ref=e151]:
+            - text: English
+            - combobox [ref=e152]
+          - img "global" [ref=e154]:
+            - img [ref=e155]
+        - generic "admin" [ref=e158]
+        - button "Open account menu" [ref=e159] [cursor=pointer]:
+          - img "user" [ref=e161]:
+            - img [ref=e162]
+    - main [ref=e164]
+    - button "AI Assistant" [ref=e177] [cursor=pointer]:
+      - img [ref=e178]

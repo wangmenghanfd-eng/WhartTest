@@ -132,53 +132,66 @@ class Command(BaseCommand):
                 )
             )
         
-        # 创建演示项目（提供开箱即用的示例）
+        # 创建演示项目（默认关闭，避免污染真实联调环境）
         from projects.models import Project, ProjectMember
-        
+
         demo_project_name = "演示项目 (Demo Project)"
-        demo_project = Project.objects.filter(name=demo_project_name).first()
-        
-        # 条件：演示项目已存在；动作：跳过；结果：保持命令幂等，不重复制造演示数据。
-        if demo_project:
-            self.stdout.write(
-                self.style.WARNING(f'演示项目 "{demo_project_name}" 已存在，跳过创建')
-            )
-        else:
-            # 条件：演示项目不存在；动作：创建项目+Owner 成员；结果：首次部署后可直接体验业务流程。
-            demo_project = Project.objects.create(
-                name=demo_project_name,
-                description=(
-                    "这是系统自动生成的演示项目，帮助您快速了解WHartTest的功能。\n\n"
-                    "此项目包含：\n"
-                    "• 示例测试用例模块和用例\n"
-                    "• MCP工具集成示例\n"
-                    "• 测试执行演示\n\n"
-                    "您可以：\n"
-                    "1. 查看和编辑示例用例\n"
-                    "2. 尝试执行测试用例\n"
-                    "3. 学习如何使用MCP工具\n"
-                    "4. 在此基础上创建自己的项目\n\n"
-                    "提示：您可以随时删除此演示项目。"
-                ),
-                creator=admin_user
-            )
-            
-            # 添加管理员为项目拥有者
-            ProjectMember.objects.create(
-                project=demo_project,
-                user=admin_user,
-                role='owner'
-            )
-            
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f'\n成功创建演示项目:\n'
-                    f'  项目名称: {demo_project_name}\n'
-                    f'  项目ID: {demo_project.id}\n'
-                    f'  创建人: {admin_username}\n'
-                    f'  说明: 包含示例用例和模块的演示项目\n'
-                    f'  ℹ️  登录后可在【项目管理】中查看'
+        demo_project = None
+        init_demo_project = os.environ.get("INIT_DEMO_PROJECT", "").lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+
+        if init_demo_project:
+            demo_project = Project.objects.filter(name=demo_project_name).first()
+
+            # 条件：演示项目已存在；动作：跳过；结果：保持命令幂等，不重复制造演示数据。
+            if demo_project:
+                self.stdout.write(
+                    self.style.WARNING(f'演示项目 "{demo_project_name}" 已存在，跳过创建')
                 )
+            else:
+                # 条件：演示项目不存在；动作：创建项目+Owner 成员；结果：首次部署后可直接体验业务流程。
+                demo_project = Project.objects.create(
+                    name=demo_project_name,
+                    description=(
+                        "这是系统自动生成的演示项目，帮助您快速了解WHartTest的功能。\n\n"
+                        "此项目包含：\n"
+                        "• 示例测试用例模块和用例\n"
+                        "• MCP工具集成示例\n"
+                        "• 测试执行演示\n\n"
+                        "您可以：\n"
+                        "1. 查看和编辑示例用例\n"
+                        "2. 尝试执行测试用例\n"
+                        "3. 学习如何使用MCP工具\n"
+                        "4. 在此基础上创建自己的项目\n\n"
+                        "提示：您可以随时删除此演示项目。"
+                    ),
+                    creator=admin_user
+                )
+
+                # 添加管理员为项目拥有者
+                ProjectMember.objects.create(
+                    project=demo_project,
+                    user=admin_user,
+                    role='owner'
+                )
+
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'\n成功创建演示项目:\n'
+                        f'  项目名称: {demo_project_name}\n'
+                        f'  项目ID: {demo_project.id}\n'
+                        f'  创建人: {admin_username}\n'
+                        f'  说明: 包含示例用例和模块的演示项目\n'
+                        f'  ℹ️  登录后可在【项目管理】中查看'
+                    )
+                )
+        else:
+            self.stdout.write(
+                self.style.WARNING('INIT_DEMO_PROJECT 未启用，跳过创建演示项目')
             )
 
         # 初始化标准用例导入导出模板（用于 Excel 导入/导出开箱即用）。
@@ -195,7 +208,7 @@ class Command(BaseCommand):
                 f'管理员账号: {admin_username}\n'
                 f'初始密码: {admin_password}\n'
                 f'API Key: {default_api_key_value}\n'
-                f'演示项目: {demo_project_name}\n'
+                f'演示项目: {demo_project_name if demo_project else "未创建"}\n'
                 '========================================\n'
                 '⚠️  生产环境请及时修改密码和API Key\n'
                 '========================================\n'

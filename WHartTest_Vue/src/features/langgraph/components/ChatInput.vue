@@ -47,7 +47,7 @@
       <div class="textarea-wrapper">
         <a-textarea
           v-model="inputMessage"
-          :placeholder="supportsVision ? '输入消息、拖拽、粘贴或选择图片... (Shift+Enter换行，Enter发送)' : '请输入你的消息... (Shift+Enter换行，Enter发送)'"
+          :placeholder="supportsVision ? '输入消息、拖拽、粘贴或选择图片... (Enter换行，Ctrl/Cmd+Enter发送)' : '请输入你的消息... (Enter换行，Ctrl/Cmd+Enter发送)'"
           :disabled="isLoading"
           class="chat-input"
           :auto-size="{ minRows: 1, maxRows: 6 }"
@@ -271,7 +271,7 @@ const isDuplicateImageFile = (file: File) => {
 };
 
 const handleKeyDown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter' && !event.shiftKey) {
+  if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
     event.preventDefault();
     void handleSendMessage();
   }
@@ -406,8 +406,8 @@ const handlePaste = (e: ClipboardEvent) => {
 
 .chat-input-container {
   padding: 16px 20px;
-  background-color: white;
-  border-top: 1px solid #e5e6eb;
+  background-color: var(--theme-surface);
+  border-top: 1px solid var(--theme-border);
 }
 
 .token-usage-wrapper {
@@ -419,7 +419,7 @@ const handlePaste = (e: ClipboardEvent) => {
 
 .token-usage-label {
   font-size: 12px;
-  color: #4e5969;
+  color: var(--theme-text-secondary);
   white-space: nowrap;
 }
 
@@ -432,13 +432,13 @@ const handlePaste = (e: ClipboardEvent) => {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: linear-gradient(135deg, #f0f5ff 0%, #e8f3ff 100%);
-  border-left: 3px solid #165dff;
+  background: color-mix(in srgb, var(--theme-surface-soft) 76%, rgba(var(--theme-accent-rgb), 0.16));
+  border-left: 3px solid var(--theme-accent);
   border-radius: 0 8px 8px 0;
 }
 
 .quote-icon {
-  color: #165dff;
+  color: var(--theme-accent);
   font-size: 14px;
   flex-shrink: 0;
 }
@@ -446,7 +446,7 @@ const handlePaste = (e: ClipboardEvent) => {
 .quote-text {
   flex: 1;
   font-size: 13px;
-  color: #4e5969;
+  color: var(--theme-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -561,15 +561,15 @@ const handlePaste = (e: ClipboardEvent) => {
 .chat-input {
   width: 100%;
   border-radius: 12px;
-  background-color: #f2f3f5;
+  background-color: var(--theme-page-bg);
   transition: all 0.2s;
   resize: none;
   min-height: 36px;
 }
 
 .chat-input:hover, .chat-input:focus {
-  background-color: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--theme-surface);
+  box-shadow: var(--theme-shadow);
 }
 
 .chat-input :deep(.arco-textarea) {

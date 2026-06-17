@@ -1,0 +1,174 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img "WHartTest Logo" [ref=e7]
+        - generic [ref=e8]: WHartTest
+      - generic "MSS" [ref=e192] [cursor=pointer]:
+        - textbox "请选择项目"
+        - generic [ref=e193]: MSS
+        - img [ref=e194]
+    - generic [ref=e16]:
+      - button "切换到默认主题" [ref=e17] [cursor=pointer]:
+        - img [ref=e18]
+      - 'link "当前版本: v2.2.0" [ref=e196] [cursor=pointer]':
+        - /url: https://github.com/MGdaasLab/WHartTest/releases/tag/v2.4.0
+        - text: "当前版本: v2.2.0"
+      - generic [ref=e23]: A
+      - generic [ref=e24] [cursor=pointer]:
+        - generic [ref=e25]: admin
+        - img [ref=e26]
+  - generic [ref=e28]:
+    - generic [ref=e30]:
+      - generic [ref=e32]:
+        - generic [ref=e33] [cursor=pointer]:
+          - img [ref=e35]
+          - link "首页" [ref=e39]:
+            - /url: /dashboard
+        - generic [ref=e40] [cursor=pointer]:
+          - img [ref=e42]
+          - link "项目管理" [ref=e48]:
+            - /url: /projects
+        - generic [ref=e49] [cursor=pointer]:
+          - img [ref=e51]
+          - link "需求管理" [ref=e54]:
+            - /url: "#"
+        - generic [ref=e55] [cursor=pointer]:
+          - img [ref=e57]
+          - link "UI自动化" [ref=e61]:
+            - /url: "#"
+        - generic [ref=e62] [cursor=pointer]:
+          - img [ref=e64]
+          - link "接口自动化" [ref=e67]:
+            - /url: "#"
+        - generic [ref=e68] [cursor=pointer]:
+          - img [ref=e70]
+          - link "任务中心" [ref=e74]:
+            - /url: "#"
+        - generic [ref=e76] [cursor=pointer]:
+          - img [ref=e78]
+          - generic [ref=e80]: 测试管理
+          - img [ref=e82]
+        - generic [ref=e84] [cursor=pointer]:
+          - img [ref=e86]
+          - link "LLM对话" [ref=e89]:
+            - /url: "#"
+        - generic [ref=e90] [cursor=pointer]:
+          - img [ref=e92]
+          - link "知识库管理" [ref=e95]:
+            - /url: "#"
+        - generic [ref=e97] [cursor=pointer]:
+          - img [ref=e99]
+          - generic [ref=e102]: 系统管理
+          - img [ref=e104]
+      - button "收起" [ref=e107] [cursor=pointer]:
+        - img [ref=e109]
+        - generic [ref=e111]: 收起
+    - main [ref=e112]:
+      - generic [ref=e318]:
+        - generic [ref=e319]:
+          - generic [ref=e320]:
+            - button "返回列表" [ref=e321] [cursor=pointer]:
+              - img [ref=e323]
+              - text: 返回列表
+            - heading "MSS Crisis 仅上传需求" [level=1] [ref=e325]
+            - generic [ref=e326]: 评审完成
+          - generic [ref=e328]:
+            - button "查看报告" [ref=e330] [cursor=pointer]:
+              - img [ref=e332]
+              - text: 查看报告
+            - button "重新评审" [ref=e335] [cursor=pointer]:
+              - img [ref=e337]
+              - text: 重新评审
+        - generic [ref=e340]:
+          - generic [ref=e342]: 文档信息
+          - generic [ref=e343]:
+            - generic [ref=e344]:
+              - generic [ref=e345]:
+                - generic [ref=e346]: 文档类型：
+                - generic [ref=e347]: Markdown
+              - generic [ref=e348]:
+                - generic [ref=e349]: 字数：
+                - generic [ref=e350]: 127 字
+              - generic [ref=e351]:
+                - generic [ref=e352]: 页数：
+                - generic [ref=e353]: 1 页
+              - generic [ref=e354]:
+                - generic [ref=e355]: 模块数：
+                - generic [ref=e356]: 4 个
+              - generic [ref=e357]:
+                - generic [ref=e358]: 上传者：
+                - generic [ref=e359]: admin
+              - generic [ref=e360]:
+                - generic [ref=e361]: 上传时间：
+                - generic [ref=e362]: 2026/6/2 23:01:20
+              - generic [ref=e363]:
+                - generic [ref=e364]: 更新时间：
+                - generic [ref=e365]: 2026/6/2 23:33:54
+            - generic [ref=e366]:
+              - generic [ref=e367]: 描述：
+              - paragraph [ref=e368] [cursor=pointer]: 仅上传文档基线，用于测试模块拆分、用户调整与后续评审流程
+        - generic [ref=e370]:
+          - generic [ref=e372]: 📋 评审工作流程
+          - generic [ref=e374]:
+            - generic [ref=e375]:
+              - img [ref=e378]
+              - generic [ref=e380]:
+                - generic [ref=e381]: 文档上传
+                - generic [ref=e382]: 上传需求文档
+            - generic [ref=e383]:
+              - img [ref=e386]
+              - generic [ref=e388]:
+                - generic [ref=e389]: 模块拆分
+                - generic [ref=e390]: 拆分文档生成模块
+            - generic [ref=e391]:
+              - img [ref=e394]
+              - generic [ref=e396]:
+                - generic [ref=e397]: 用户调整
+                - generic [ref=e398]: 确认模块拆分结果（如需要）
+            - generic [ref=e399]:
+              - img [ref=e402]
+              - generic [ref=e404]:
+                - generic [ref=e405]: 需求评审
+                - generic [ref=e406]: AI分析需求质量
+            - generic [ref=e407]:
+              - img [ref=e410]
+              - generic [ref=e412]:
+                - generic [ref=e413]: 评审完成
+                - generic [ref=e414]: 查看评审报告
+        - generic [ref=e416]:
+          - generic [ref=e420]: 模块详情 (4个)
+          - generic [ref=e423]:
+            - generic [ref=e424] [cursor=pointer]:
+              - generic [ref=e426]:
+                - generic [ref=e427]: "1"
+                - generic [ref=e428]: MSS Crisis 仅上传需求
+              - heading "MSS Crisis 仅上传需求" [level=1] [ref=e430]
+            - generic [ref=e431] [cursor=pointer]:
+              - generic [ref=e433]:
+                - generic [ref=e434]: "2"
+                - generic [ref=e435]: 目标
+              - generic [ref=e436]:
+                - heading "目标" [level=2] [ref=e437]
+                - paragraph [ref=e438]: 支持管理员在MSS后台创建Crisis。
+            - generic [ref=e439] [cursor=pointer]:
+              - generic [ref=e441]:
+                - generic [ref=e442]: "3"
+                - generic [ref=e443]: 基础字段
+              - generic [ref=e444]:
+                - heading "基础字段" [level=2] [ref=e445]
+                - list [ref=e446]:
+                  - listitem [ref=e447]: 标题
+                  - listitem [ref=e448]: 严重等级
+                  - listitem [ref=e449]: 保密级别
+                  - listitem [ref=e450]: 位置描述
+            - generic [ref=e451] [cursor=pointer]:
+              - generic [ref=e453]:
+                - generic [ref=e454]: "4"
+                - generic [ref=e455]: 业务规则
+              - generic [ref=e456]:
+                - heading "业务规则" [level=2] [ref=e457]
+                - list [ref=e458]:
+                  - listitem [ref=e459]: 标题必填
+                  - listitem [ref=e460]: 严重等级必填
+                  - listitem [ref=e461]: 创建成功后生成 crisis_no。

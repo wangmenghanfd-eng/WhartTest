@@ -185,6 +185,7 @@ const executionData = ref<TestExecution[]>([]);
 const showReport = ref(false);
 const selectedExecutionId = ref<number | null>(null);
 let refreshInterval: number | undefined;
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 分页配置
 const paginationConfig = reactive({
@@ -420,6 +421,13 @@ watch(currentProjectId, () => {
   }
 });
 
+watch(searchKeyword, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    handleSearch();
+  }, 300);
+});
+
 onMounted(() => {
   if (currentProjectId.value) {
     fetchExecutions().then(() => {
@@ -430,6 +438,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopRefresh();
+  if (searchTimer) clearTimeout(searchTimer);
 });
 </script>
 

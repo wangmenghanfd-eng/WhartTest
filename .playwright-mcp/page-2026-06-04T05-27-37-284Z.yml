@@ -1,0 +1,1072 @@
+- generic [ref=e4]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e8]:
+        - img "UAE emblem" [ref=e9]
+        - generic [ref=e10]:
+          - generic [ref=e11]: UCMDS
+          - generic [ref=e13]:
+            - generic [ref=e14]: Unified Case Management and Documentation System
+            - generic [ref=e15]: Unified Case Management and Documentation System
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - link "dashboard Dashboard" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e19]:
+              - img "dashboard" [ref=e21]:
+                - img [ref=e22]
+              - generic [ref=e25]: Dashboard
+          - link "safety-certificate File Verification" [ref=e26] [cursor=pointer]:
+            - /url: /file-verification
+            - generic [ref=e27]:
+              - img "safety-certificate" [ref=e29]:
+                - img [ref=e30]
+              - generic [ref=e33]: File Verification
+        - generic [ref=e34]:
+          - generic [ref=e35]: Settings
+          - link "user Users" [ref=e36] [cursor=pointer]:
+            - /url: /admin-users
+            - generic [ref=e37]:
+              - img "user" [ref=e39]:
+                - img [ref=e40]
+              - generic [ref=e42]: Users
+          - link "apartment Departments" [ref=e43] [cursor=pointer]:
+            - /url: /departments
+            - generic [ref=e44]:
+              - img "apartment" [ref=e46]:
+                - img [ref=e47]
+              - generic [ref=e49]: Departments
+          - link "block Portals" [ref=e50] [cursor=pointer]:
+            - /url: /admin/portals
+            - generic [ref=e51]:
+              - img "block" [ref=e53]:
+                - img [ref=e54]
+              - generic [ref=e56]: Portals
+          - link "lock Roles" [ref=e57] [cursor=pointer]:
+            - /url: /roles
+            - generic [ref=e58]:
+              - img "lock" [ref=e60]:
+                - img [ref=e61]
+              - generic [ref=e63]: Roles
+          - link "lock Permission Grants" [ref=e64] [cursor=pointer]:
+            - /url: /admin/permission-grants
+            - generic [ref=e65]:
+              - img "lock" [ref=e67]:
+                - img [ref=e68]
+              - generic [ref=e70]: Permission Grants
+          - link "audit Audit Logs" [ref=e71] [cursor=pointer]:
+            - /url: /audit-logs
+            - generic [ref=e72]:
+              - img "audit" [ref=e74]:
+                - img [ref=e75]
+              - generic [ref=e77]: Audit Logs
+          - link "setting Settings" [ref=e78] [cursor=pointer]:
+            - /url: /settings
+            - generic [ref=e79]:
+              - img "setting" [ref=e81]:
+                - img [ref=e82]
+              - generic [ref=e84]: Settings
+          - link "medicine-box Diagnostics" [ref=e85] [cursor=pointer]:
+            - /url: /diagnostics
+            - generic [ref=e86]:
+              - img "medicine-box" [ref=e88]:
+                - img [ref=e89]
+              - generic [ref=e91]: Diagnostics
+        - generic [ref=e92]:
+          - generic [ref=e93]: Demo Tools
+          - link "picture Command Center Showcase" [ref=e94] [cursor=pointer]:
+            - /url: /showcase/command-center
+            - generic [ref=e95]:
+              - img "picture" [ref=e97]:
+                - img [ref=e98]
+              - generic [ref=e100]: Command Center Showcase
+          - link "database Demo JSON Studio" [ref=e101] [cursor=pointer]:
+            - /url: /admin/demo-json
+            - generic [ref=e102]:
+              - img "database" [ref=e104]:
+                - img [ref=e105]
+              - generic [ref=e107]: Demo JSON Studio
+          - link "tool Ops Console" [ref=e108] [cursor=pointer]:
+            - /url: /admin/ops
+            - generic [ref=e109]:
+              - img "tool" [ref=e111]:
+                - img [ref=e112]
+              - generic [ref=e114]: Ops Console
+          - link "cloud-server External Data — MOI" [ref=e115] [cursor=pointer]:
+            - /url: /admin/external-es
+            - generic [ref=e116]:
+              - img "cloud-server" [ref=e118]:
+                - img [ref=e119]
+              - generic [ref=e123]: External Data — MOI
+  - generic [ref=e124]:
+    - banner [ref=e125]:
+      - button "Collapse sidebar" [ref=e126] [cursor=pointer]:
+        - img "menu-fold" [ref=e128]:
+          - img [ref=e129]
+      - generic [ref=e132]: Platform Admin
+      - generic [ref=e133]:
+        - generic [ref=e134] [cursor=pointer]:
+          - generic "Platform Admin" [ref=e135]:
+            - text: Platform Admin
+            - combobox [ref=e136]
+          - img "down" [ref=e138]:
+            - img [ref=e139]
+        - button "0 tasks in progress" [ref=e142] [cursor=pointer]:
+          - img "cloud-download" [ref=e143]:
+            - img [ref=e144]
+        - generic [ref=e147]:
+          - button "bell" [ref=e148] [cursor=pointer]:
+            - img "bell" [ref=e150]:
+              - img [ref=e151]
+          - superscript [ref=e153]:
+            - generic [ref=e154]:
+              - generic [ref=e155]: "6"
+              - generic [ref=e156]: "0"
+        - img "message" [ref=e160] [cursor=pointer]:
+          - img [ref=e161]
+        - generic [ref=e163] [cursor=pointer]:
+          - generic "English" [ref=e164]:
+            - text: English
+            - combobox [ref=e165]
+          - img "global" [ref=e167]:
+            - img [ref=e168]
+        - generic "admin" [ref=e170]
+        - button "Open account menu" [ref=e171] [cursor=pointer]:
+          - img "user" [ref=e173]:
+            - img [ref=e174]
+    - main [ref=e176]:
+      - generic [ref=e179]:
+        - generic [ref=e182]:
+          - generic:
+            - region "Map" [ref=e183]
+            - button "Map marker" [ref=e185] [cursor=pointer]
+            - button "Map marker" [ref=e187] [cursor=pointer]
+            - button "Map marker" [ref=e189] [cursor=pointer]
+            - button "Map marker" [ref=e191] [cursor=pointer]
+            - button "Map marker" [ref=e193] [cursor=pointer]
+            - button "Map marker" [ref=e195] [cursor=pointer]
+            - button "Map marker" [ref=e197] [cursor=pointer]:
+              - img [ref=e198]
+            - button "Map marker" [ref=e199] [cursor=pointer]
+            - button "Map marker" [ref=e201] [cursor=pointer]:
+              - img [ref=e202]
+            - button "Map marker" [ref=e203] [cursor=pointer]
+            - button "Map marker" [ref=e205] [cursor=pointer]
+            - button "Map marker" [ref=e207] [cursor=pointer]
+            - button "Map marker" [ref=e209] [cursor=pointer]
+            - button "Map marker" [ref=e211] [cursor=pointer]
+            - button "Map marker" [ref=e213] [cursor=pointer]
+            - button "Map marker" [ref=e215] [cursor=pointer]
+            - button "Map marker" [ref=e217] [cursor=pointer]
+            - button "Map marker" [ref=e219] [cursor=pointer]
+            - button "Map marker" [ref=e221] [cursor=pointer]
+            - button "Map marker" [ref=e223] [cursor=pointer]
+            - button "Map marker" [ref=e225] [cursor=pointer]
+            - button "Map marker" [ref=e227] [cursor=pointer]
+            - button "Map marker" [ref=e229] [cursor=pointer]
+            - button "Map marker" [ref=e231] [cursor=pointer]
+            - button "Map marker" [ref=e233] [cursor=pointer]
+            - button "Map marker" [ref=e235] [cursor=pointer]
+            - button "Map marker" [ref=e237] [cursor=pointer]
+            - button "Map marker" [ref=e239] [cursor=pointer]
+            - button "Map marker" [ref=e241] [cursor=pointer]
+            - button "Map marker" [ref=e243] [cursor=pointer]
+            - button "Map marker" [ref=e245] [cursor=pointer]
+            - button "Map marker" [ref=e247] [cursor=pointer]
+            - button "Map marker" [ref=e249] [cursor=pointer]
+            - button "Map marker" [ref=e251] [cursor=pointer]
+            - button "Map marker" [ref=e253] [cursor=pointer]
+            - button "Map marker" [ref=e255] [cursor=pointer]
+            - button "Map marker" [ref=e257] [cursor=pointer]
+            - button "Map marker" [ref=e259] [cursor=pointer]
+            - button "Map marker" [ref=e261] [cursor=pointer]
+            - button "Map marker" [ref=e263] [cursor=pointer]
+            - button "Map marker" [ref=e265] [cursor=pointer]
+            - button "Map marker" [ref=e267] [cursor=pointer]
+            - button "Map marker" [ref=e269] [cursor=pointer]
+            - button "Map marker" [ref=e271] [cursor=pointer]
+            - button "Map marker" [ref=e273] [cursor=pointer]
+            - button "Map marker" [ref=e275] [cursor=pointer]
+            - button "Map marker" [ref=e277] [cursor=pointer]
+            - button "Map marker" [ref=e279] [cursor=pointer]
+            - button "Map marker" [ref=e281] [cursor=pointer]
+            - button "Map marker" [ref=e283] [cursor=pointer]
+            - button "Map marker" [ref=e285] [cursor=pointer]
+            - button "Map marker" [ref=e287] [cursor=pointer]
+            - button "Map marker" [ref=e289] [cursor=pointer]
+            - button "Map marker" [ref=e291] [cursor=pointer]
+            - button "Map marker" [ref=e293] [cursor=pointer]
+            - button "Map marker" [ref=e295] [cursor=pointer]
+            - button "Map marker" [ref=e297] [cursor=pointer]
+            - button "Map marker" [ref=e299] [cursor=pointer]
+            - button "Map marker" [ref=e301] [cursor=pointer]
+            - button "Map marker" [ref=e303] [cursor=pointer]:
+              - img [ref=e304]
+            - button "Map marker" [ref=e305] [cursor=pointer]
+            - button "Map marker" [ref=e307] [cursor=pointer]
+            - button "Map marker" [ref=e309] [cursor=pointer]
+            - button "Map marker" [ref=e311] [cursor=pointer]:
+              - img [ref=e312]
+            - button "Map marker" [ref=e313] [cursor=pointer]
+            - button "Map marker" [ref=e315] [cursor=pointer]
+            - button "Map marker" [ref=e317] [cursor=pointer]
+            - button "Map marker" [ref=e319] [cursor=pointer]
+            - button "Map marker" [ref=e321] [cursor=pointer]
+            - button "Map marker" [ref=e323] [cursor=pointer]:
+              - img [ref=e324]
+            - button "Map marker" [ref=e325] [cursor=pointer]:
+              - img [ref=e326]
+            - button "Map marker" [ref=e327] [cursor=pointer]:
+              - img [ref=e328]
+            - button "Map marker" [ref=e329] [cursor=pointer]:
+              - img [ref=e330]
+            - button "Map marker" [ref=e331] [cursor=pointer]
+            - button "Map marker" [ref=e333] [cursor=pointer]:
+              - img [ref=e334]
+            - button "Map marker" [ref=e335] [cursor=pointer]:
+              - img [ref=e336]
+            - button "Map marker" [ref=e337] [cursor=pointer]:
+              - img [ref=e338]
+            - button "Map marker" [ref=e339] [cursor=pointer]
+            - button "Map marker" [ref=e341] [cursor=pointer]:
+              - img [ref=e342]
+            - button "Map marker" [ref=e343] [cursor=pointer]:
+              - img [ref=e344]
+            - button "Map marker" [ref=e345] [cursor=pointer]:
+              - img [ref=e346]
+            - button "Map marker" [ref=e347] [cursor=pointer]
+            - button "Map marker" [ref=e349] [cursor=pointer]:
+              - img [ref=e350]
+            - button "Map marker" [ref=e351] [cursor=pointer]:
+              - img [ref=e352]
+            - button "Map marker" [ref=e353] [cursor=pointer]:
+              - img [ref=e354]
+            - button "Map marker" [ref=e355] [cursor=pointer]
+            - button "Map marker" [ref=e357] [cursor=pointer]:
+              - img [ref=e358]
+            - button "Map marker" [ref=e359] [cursor=pointer]:
+              - img [ref=e360]
+            - button "Map marker" [ref=e361] [cursor=pointer]:
+              - img [ref=e362]
+            - button "Map marker" [ref=e363] [cursor=pointer]
+            - button "Map marker" [ref=e365] [cursor=pointer]:
+              - img [ref=e366]
+            - button "Map marker" [ref=e367] [cursor=pointer]:
+              - img [ref=e368]
+            - button "Map marker" [ref=e369] [cursor=pointer]:
+              - img [ref=e370]
+            - button "Map marker" [ref=e371] [cursor=pointer]
+            - button "Map marker" [ref=e373] [cursor=pointer]:
+              - img [ref=e374]
+            - button "Map marker" [ref=e375] [cursor=pointer]:
+              - img [ref=e376]
+            - button "Map marker" [ref=e377] [cursor=pointer]:
+              - img [ref=e378]
+            - button "Map marker" [ref=e379] [cursor=pointer]
+            - button "Map marker" [ref=e381] [cursor=pointer]:
+              - img [ref=e382]
+            - button "Map marker" [ref=e383] [cursor=pointer]:
+              - img [ref=e384]
+            - button "Map marker" [ref=e385] [cursor=pointer]:
+              - img [ref=e386]
+            - button "Map marker" [ref=e387] [cursor=pointer]
+            - button "Map marker" [ref=e389] [cursor=pointer]:
+              - img [ref=e390]
+            - button "Map marker" [ref=e391] [cursor=pointer]:
+              - img [ref=e392]
+            - button "Map marker" [ref=e393] [cursor=pointer]:
+              - img [ref=e394]
+            - button "Map marker" [ref=e395] [cursor=pointer]
+            - button "Map marker" [ref=e397] [cursor=pointer]:
+              - img [ref=e398]
+            - button "Map marker" [ref=e399] [cursor=pointer]:
+              - img [ref=e400]
+            - button "Map marker" [ref=e401] [cursor=pointer]:
+              - img [ref=e402]
+            - button "Map marker" [ref=e403] [cursor=pointer]
+            - button "Map marker" [ref=e405] [cursor=pointer]:
+              - img [ref=e406]
+            - button "Map marker" [ref=e407] [cursor=pointer]:
+              - img [ref=e408]
+            - button "Map marker" [ref=e409] [cursor=pointer]:
+              - img [ref=e410]
+            - button "Map marker" [ref=e411] [cursor=pointer]
+            - button "Map marker" [ref=e413] [cursor=pointer]:
+              - img [ref=e414]
+            - button "Map marker" [ref=e415] [cursor=pointer]:
+              - img [ref=e416]
+            - button "Map marker" [ref=e417] [cursor=pointer]:
+              - img [ref=e418]
+            - button "Map marker" [ref=e419] [cursor=pointer]
+            - button "Map marker" [ref=e421] [cursor=pointer]:
+              - img [ref=e422]
+            - button "Map marker" [ref=e423] [cursor=pointer]:
+              - img [ref=e424]
+            - button "Map marker" [ref=e425] [cursor=pointer]:
+              - img [ref=e426]
+            - button "Map marker" [ref=e427] [cursor=pointer]
+            - button "Map marker" [ref=e429] [cursor=pointer]:
+              - img [ref=e430]
+            - button "Map marker" [ref=e431] [cursor=pointer]:
+              - img [ref=e432]
+            - button "Map marker" [ref=e433] [cursor=pointer]:
+              - img [ref=e434]
+            - button "Map marker" [ref=e435] [cursor=pointer]
+            - button "Map marker" [ref=e437] [cursor=pointer]:
+              - img [ref=e438]
+            - button "Map marker" [ref=e439] [cursor=pointer]:
+              - img [ref=e440]
+            - button "Map marker" [ref=e441] [cursor=pointer]:
+              - img [ref=e442]
+            - button "Map marker" [ref=e443] [cursor=pointer]
+            - button "Map marker" [ref=e445] [cursor=pointer]:
+              - img [ref=e446]
+            - button "Map marker" [ref=e447] [cursor=pointer]:
+              - img [ref=e448]
+            - button "Map marker" [ref=e449] [cursor=pointer]:
+              - img [ref=e450]
+            - button "Map marker" [ref=e451] [cursor=pointer]
+            - button "Map marker" [ref=e453] [cursor=pointer]:
+              - img [ref=e454]
+            - button "Map marker" [ref=e455] [cursor=pointer]:
+              - img [ref=e456]
+            - button "Map marker" [ref=e457] [cursor=pointer]:
+              - img [ref=e458]
+            - button "Map marker" [ref=e459] [cursor=pointer]
+            - button "Map marker" [ref=e461] [cursor=pointer]:
+              - img [ref=e462]
+            - button "Map marker" [ref=e463] [cursor=pointer]:
+              - img [ref=e464]
+            - button "Map marker" [ref=e465] [cursor=pointer]:
+              - img [ref=e466]
+            - button "Map marker" [ref=e467] [cursor=pointer]
+            - button "Map marker" [ref=e469] [cursor=pointer]:
+              - img [ref=e470]
+            - button "Map marker" [ref=e471] [cursor=pointer]:
+              - img [ref=e472]
+            - button "Map marker" [ref=e473] [cursor=pointer]:
+              - img [ref=e474]
+            - button "Map marker" [ref=e475] [cursor=pointer]
+            - button "Map marker" [ref=e477] [cursor=pointer]:
+              - img [ref=e478]
+            - button "Map marker" [ref=e479] [cursor=pointer]:
+              - img [ref=e480]
+            - button "Map marker" [ref=e481] [cursor=pointer]:
+              - img [ref=e482]
+            - button "Map marker" [ref=e483] [cursor=pointer]
+            - button "Map marker" [ref=e485] [cursor=pointer]:
+              - img [ref=e486]
+            - button "Map marker" [ref=e487] [cursor=pointer]:
+              - img [ref=e488]
+            - button "Map marker" [ref=e489] [cursor=pointer]:
+              - img [ref=e490]
+            - button "Map marker" [ref=e491] [cursor=pointer]
+            - button "Map marker" [ref=e493] [cursor=pointer]:
+              - img [ref=e494]
+            - button "Map marker" [ref=e495] [cursor=pointer]:
+              - img [ref=e496]
+            - button "Map marker" [ref=e497] [cursor=pointer]:
+              - img [ref=e498]
+            - button "Map marker" [ref=e499] [cursor=pointer]
+            - button "Map marker" [ref=e501] [cursor=pointer]:
+              - img [ref=e502]
+            - button "Map marker" [ref=e503] [cursor=pointer]:
+              - img [ref=e504]
+            - button "Map marker" [ref=e505] [cursor=pointer]:
+              - img [ref=e506]
+            - button "Map marker" [ref=e507] [cursor=pointer]
+            - button "Map marker" [ref=e509] [cursor=pointer]:
+              - img [ref=e510]
+            - button "Map marker" [ref=e511] [cursor=pointer]:
+              - img [ref=e512]
+            - button "Map marker" [ref=e513] [cursor=pointer]:
+              - img [ref=e514]
+            - button "Map marker" [ref=e515] [cursor=pointer]
+            - button "Map marker" [ref=e517] [cursor=pointer]:
+              - img [ref=e518]
+            - button "Map marker" [ref=e519] [cursor=pointer]:
+              - img [ref=e520]
+            - button "Map marker" [ref=e521] [cursor=pointer]:
+              - img [ref=e522]
+            - button "Map marker" [ref=e523] [cursor=pointer]
+            - button "Map marker" [ref=e525] [cursor=pointer]:
+              - img [ref=e526]
+            - button "Map marker" [ref=e527] [cursor=pointer]:
+              - img [ref=e528]
+            - button "Map marker" [ref=e529] [cursor=pointer]:
+              - img [ref=e530]
+            - button "Map marker" [ref=e531] [cursor=pointer]
+            - button "Map marker" [ref=e533] [cursor=pointer]:
+              - img [ref=e534]
+            - button "Map marker" [ref=e535] [cursor=pointer]:
+              - img [ref=e536]
+            - button "Map marker" [ref=e537] [cursor=pointer]:
+              - img [ref=e538]
+            - button "Map marker" [ref=e539] [cursor=pointer]
+            - button "Map marker" [ref=e541] [cursor=pointer]:
+              - img [ref=e542]
+            - button "Map marker" [ref=e543] [cursor=pointer]:
+              - img [ref=e544]
+            - button "Map marker" [ref=e545] [cursor=pointer]:
+              - img [ref=e546]
+            - button "Map marker" [ref=e547] [cursor=pointer]
+            - button "Map marker" [ref=e549] [cursor=pointer]:
+              - img [ref=e550]
+            - button "Map marker" [ref=e551] [cursor=pointer]:
+              - img [ref=e552]
+            - button "Map marker" [ref=e553] [cursor=pointer]:
+              - img [ref=e554]
+            - button "Map marker" [ref=e555] [cursor=pointer]
+            - button "Map marker" [ref=e557] [cursor=pointer]:
+              - img [ref=e558]
+            - button "Map marker" [ref=e559] [cursor=pointer]:
+              - img [ref=e560]
+            - button "Map marker" [ref=e561] [cursor=pointer]:
+              - img [ref=e562]
+            - button "Map marker" [ref=e563] [cursor=pointer]
+            - button "Map marker" [ref=e565] [cursor=pointer]:
+              - img [ref=e566]
+            - button "Map marker" [ref=e567] [cursor=pointer]:
+              - img [ref=e568]
+            - button "Map marker" [ref=e569] [cursor=pointer]:
+              - img [ref=e570]
+            - button "Map marker" [ref=e571] [cursor=pointer]
+            - button "Map marker" [ref=e573] [cursor=pointer]:
+              - img [ref=e574]
+            - button "Map marker" [ref=e575] [cursor=pointer]:
+              - img [ref=e576]
+            - button "Map marker" [ref=e577] [cursor=pointer]:
+              - img [ref=e578]
+            - button "Map marker" [ref=e579] [cursor=pointer]
+            - button "Map marker" [ref=e581] [cursor=pointer]:
+              - img [ref=e582]
+            - button "Map marker" [ref=e583] [cursor=pointer]:
+              - img [ref=e584]
+            - button "Map marker" [ref=e585] [cursor=pointer]:
+              - img [ref=e586]
+            - button "Map marker" [ref=e587] [cursor=pointer]
+            - button "Map marker" [ref=e589] [cursor=pointer]:
+              - img [ref=e590]
+            - button "Map marker" [ref=e591] [cursor=pointer]:
+              - img [ref=e592]
+            - button "Map marker" [ref=e593] [cursor=pointer]:
+              - img [ref=e594]
+            - button "Map marker" [ref=e595] [cursor=pointer]
+            - button "Map marker" [ref=e597] [cursor=pointer]:
+              - img [ref=e598]
+            - button "Map marker" [ref=e599] [cursor=pointer]:
+              - img [ref=e600]
+            - button "Map marker" [ref=e601] [cursor=pointer]:
+              - img [ref=e602]
+            - button "Map marker" [ref=e603] [cursor=pointer]
+            - button "Map marker" [ref=e605] [cursor=pointer]:
+              - img [ref=e606]
+            - button "Map marker" [ref=e607] [cursor=pointer]:
+              - img [ref=e608]
+            - button "Map marker" [ref=e609] [cursor=pointer]:
+              - img [ref=e610]
+            - button "Map marker" [ref=e611] [cursor=pointer]
+            - button "Map marker" [ref=e613] [cursor=pointer]:
+              - img [ref=e614]
+            - button "Map marker" [ref=e615] [cursor=pointer]:
+              - img [ref=e616]
+            - button "Map marker" [ref=e617] [cursor=pointer]:
+              - img [ref=e618]
+            - button "Map marker" [ref=e619] [cursor=pointer]
+            - button "Map marker" [ref=e621] [cursor=pointer]:
+              - img [ref=e622]
+            - button "Map marker" [ref=e623] [cursor=pointer]:
+              - img [ref=e624]
+            - button "Map marker" [ref=e625] [cursor=pointer]:
+              - img [ref=e626]
+            - button "Map marker" [ref=e627] [cursor=pointer]
+            - button "Map marker" [ref=e629] [cursor=pointer]:
+              - img [ref=e630]
+            - button "Map marker" [ref=e631] [cursor=pointer]:
+              - img [ref=e632]
+            - button "Map marker" [ref=e633] [cursor=pointer]:
+              - img [ref=e634]
+            - button "Map marker" [ref=e635] [cursor=pointer]
+            - button "Map marker" [ref=e637] [cursor=pointer]:
+              - img [ref=e638]
+            - button "Map marker" [ref=e639] [cursor=pointer]:
+              - img [ref=e640]
+            - button "Map marker" [ref=e641] [cursor=pointer]:
+              - img [ref=e642]
+            - button "Map marker" [ref=e643] [cursor=pointer]
+            - button "Map marker" [ref=e645] [cursor=pointer]:
+              - img [ref=e646]
+            - button "Map marker" [ref=e647] [cursor=pointer]:
+              - img [ref=e648]
+            - button "Map marker" [ref=e649] [cursor=pointer]:
+              - img [ref=e650]
+            - button "Map marker" [ref=e651] [cursor=pointer]
+            - button "Map marker" [ref=e653] [cursor=pointer]:
+              - img [ref=e654]
+            - button "Map marker" [ref=e655] [cursor=pointer]:
+              - img [ref=e656]
+            - button "Map marker" [ref=e657] [cursor=pointer]:
+              - img [ref=e658]
+            - button "Map marker" [ref=e659] [cursor=pointer]
+            - button "Map marker" [ref=e661] [cursor=pointer]:
+              - img [ref=e662]
+            - button "Map marker" [ref=e663] [cursor=pointer]:
+              - img [ref=e664]
+            - button "Map marker" [ref=e665] [cursor=pointer]:
+              - img [ref=e666]
+            - button "Map marker" [ref=e667] [cursor=pointer]
+            - button "Map marker" [ref=e669] [cursor=pointer]:
+              - img [ref=e670]
+            - button "Map marker" [ref=e671] [cursor=pointer]:
+              - img [ref=e672]
+            - button "Map marker" [ref=e673] [cursor=pointer]:
+              - img [ref=e674]
+            - button "Map marker" [ref=e675] [cursor=pointer]
+            - button "Map marker" [ref=e677] [cursor=pointer]:
+              - img [ref=e678]
+            - button "Map marker" [ref=e679] [cursor=pointer]:
+              - img [ref=e680]
+            - button "Map marker" [ref=e681] [cursor=pointer]:
+              - img [ref=e682]
+            - button "Map marker" [ref=e683] [cursor=pointer]
+            - button "Map marker" [ref=e685] [cursor=pointer]:
+              - img [ref=e686]
+            - button "Map marker" [ref=e687] [cursor=pointer]:
+              - img [ref=e688]
+            - button "Map marker" [ref=e689] [cursor=pointer]:
+              - img [ref=e690]
+            - button "Map marker" [ref=e691] [cursor=pointer]
+            - button "Map marker" [ref=e693] [cursor=pointer]:
+              - img [ref=e694]
+            - button "Map marker" [ref=e695] [cursor=pointer]:
+              - img [ref=e696]
+            - button "Map marker" [ref=e697] [cursor=pointer]:
+              - img [ref=e698]
+            - button "Map marker" [ref=e699] [cursor=pointer]
+            - button "Map marker" [ref=e701] [cursor=pointer]:
+              - img [ref=e702]
+            - button "Map marker" [ref=e703] [cursor=pointer]:
+              - img [ref=e704]
+            - button "Map marker" [ref=e705] [cursor=pointer]:
+              - img [ref=e706]
+            - button "Map marker" [ref=e707] [cursor=pointer]
+            - button "Map marker" [ref=e709] [cursor=pointer]:
+              - img [ref=e710]
+            - button "Map marker" [ref=e711] [cursor=pointer]:
+              - img [ref=e712]
+            - button "Map marker" [ref=e713] [cursor=pointer]:
+              - img [ref=e714]
+            - button "Map marker" [ref=e715] [cursor=pointer]
+            - button "Map marker" [ref=e717] [cursor=pointer]:
+              - img [ref=e718]
+            - button "Map marker" [ref=e719] [cursor=pointer]:
+              - img [ref=e720]
+            - button "Map marker" [ref=e721] [cursor=pointer]:
+              - img [ref=e722]
+            - button "Map marker" [ref=e723] [cursor=pointer]
+            - button "Map marker" [ref=e725] [cursor=pointer]:
+              - img [ref=e726]
+            - button "Map marker" [ref=e727] [cursor=pointer]:
+              - img [ref=e728]
+            - button "Map marker" [ref=e729] [cursor=pointer]:
+              - img [ref=e730]
+            - button "Map marker" [ref=e731] [cursor=pointer]
+            - button "Map marker" [ref=e733] [cursor=pointer]:
+              - img [ref=e734]
+            - button "Map marker" [ref=e735] [cursor=pointer]:
+              - img [ref=e736]
+            - button "Map marker" [ref=e737] [cursor=pointer]:
+              - img [ref=e738]
+            - button "Map marker" [ref=e739] [cursor=pointer]
+            - button "Map marker" [ref=e741] [cursor=pointer]:
+              - img [ref=e742]
+            - button "Map marker" [ref=e743] [cursor=pointer]:
+              - img [ref=e744]
+            - button "Map marker" [ref=e745] [cursor=pointer]:
+              - img [ref=e746]
+            - button "Map marker" [ref=e747] [cursor=pointer]
+            - button "Map marker" [ref=e749] [cursor=pointer]:
+              - img [ref=e750]
+            - button "Map marker" [ref=e751] [cursor=pointer]:
+              - img [ref=e752]
+            - button "Map marker" [ref=e753] [cursor=pointer]:
+              - img [ref=e754]
+            - button "Map marker" [ref=e755] [cursor=pointer]
+            - button "Map marker" [ref=e757] [cursor=pointer]:
+              - img [ref=e758]
+            - button "Map marker" [ref=e759] [cursor=pointer]:
+              - img [ref=e760]
+            - button "Map marker" [ref=e761] [cursor=pointer]:
+              - img [ref=e762]
+            - button "Map marker" [ref=e763] [cursor=pointer]
+            - button "Map marker" [ref=e765] [cursor=pointer]:
+              - img [ref=e766]
+            - button "Map marker" [ref=e767] [cursor=pointer]:
+              - img [ref=e768]
+            - button "Map marker" [ref=e769] [cursor=pointer]:
+              - img [ref=e770]
+            - button "Map marker" [ref=e771] [cursor=pointer]
+            - button "Map marker" [ref=e773] [cursor=pointer]:
+              - img [ref=e774]
+            - button "Map marker" [ref=e775] [cursor=pointer]:
+              - img [ref=e776]
+            - button "Map marker" [ref=e777] [cursor=pointer]:
+              - img [ref=e778]
+            - button "Map marker" [ref=e779] [cursor=pointer]
+            - button "Map marker" [ref=e781] [cursor=pointer]:
+              - img [ref=e782]
+            - button "Map marker" [ref=e783] [cursor=pointer]:
+              - img [ref=e784]
+            - button "Map marker" [ref=e785] [cursor=pointer]:
+              - img [ref=e786]
+            - button "Map marker" [ref=e787] [cursor=pointer]
+            - button "Map marker" [ref=e789] [cursor=pointer]:
+              - img [ref=e790]
+            - button "Map marker" [ref=e791] [cursor=pointer]:
+              - img [ref=e792]
+            - button "Map marker" [ref=e793] [cursor=pointer]:
+              - img [ref=e794]
+            - button "Map marker" [ref=e795] [cursor=pointer]
+            - button "Map marker" [ref=e797] [cursor=pointer]:
+              - img [ref=e798]
+            - button "Map marker" [ref=e799] [cursor=pointer]:
+              - img [ref=e800]
+            - button "Map marker" [ref=e801] [cursor=pointer]:
+              - img [ref=e802]
+            - button "Map marker" [ref=e803] [cursor=pointer]
+            - button "Map marker" [ref=e805] [cursor=pointer]:
+              - img [ref=e806]
+            - button "Map marker" [ref=e807] [cursor=pointer]:
+              - img [ref=e808]
+            - button "Map marker" [ref=e809] [cursor=pointer]:
+              - img [ref=e810]
+            - button "Map marker" [ref=e811] [cursor=pointer]
+            - button "Map marker" [ref=e813] [cursor=pointer]:
+              - img [ref=e814]
+            - button "Map marker" [ref=e815] [cursor=pointer]:
+              - img [ref=e816]
+            - button "Map marker" [ref=e817] [cursor=pointer]:
+              - img [ref=e818]
+            - button "Map marker" [ref=e819] [cursor=pointer]
+            - button "Map marker" [ref=e821] [cursor=pointer]:
+              - img [ref=e822]
+            - button "Map marker" [ref=e823] [cursor=pointer]:
+              - img [ref=e824]
+            - button "Map marker" [ref=e825] [cursor=pointer]:
+              - img [ref=e826]
+            - button "Map marker" [ref=e827] [cursor=pointer]
+            - button "Map marker" [ref=e829] [cursor=pointer]:
+              - img [ref=e830]
+            - button "Map marker" [ref=e831] [cursor=pointer]:
+              - img [ref=e832]
+            - button "Map marker" [ref=e833] [cursor=pointer]:
+              - img [ref=e834]
+            - button "Map marker" [ref=e835] [cursor=pointer]
+            - button "Map marker" [ref=e837] [cursor=pointer]:
+              - img [ref=e838]
+            - button "Map marker" [ref=e839] [cursor=pointer]:
+              - img [ref=e840]
+            - button "Map marker" [ref=e841] [cursor=pointer]:
+              - img [ref=e842]
+            - button "Map marker" [ref=e843] [cursor=pointer]
+            - button "Map marker" [ref=e845] [cursor=pointer]:
+              - img [ref=e846]
+            - button "Map marker" [ref=e847] [cursor=pointer]:
+              - img [ref=e848]
+            - button "Map marker" [ref=e849] [cursor=pointer]:
+              - img [ref=e850]
+            - button "Map marker" [ref=e851] [cursor=pointer]
+            - button "Map marker" [ref=e853] [cursor=pointer]:
+              - img [ref=e854]
+            - button "Map marker" [ref=e855] [cursor=pointer]:
+              - img [ref=e856]
+            - button "Map marker" [ref=e857] [cursor=pointer]:
+              - img [ref=e858]
+            - button "Map marker" [ref=e859] [cursor=pointer]
+            - button "Map marker" [ref=e861] [cursor=pointer]:
+              - img [ref=e862]
+            - button "Map marker" [ref=e863] [cursor=pointer]:
+              - img [ref=e864]
+            - button "Map marker" [ref=e865] [cursor=pointer]:
+              - img [ref=e866]
+            - button "Map marker" [ref=e867] [cursor=pointer]
+            - button "Map marker" [ref=e869] [cursor=pointer]:
+              - img [ref=e870]
+            - button "Map marker" [ref=e871] [cursor=pointer]:
+              - img [ref=e872]
+            - button "Map marker" [ref=e873] [cursor=pointer]:
+              - img [ref=e874]
+            - button "Map marker" [ref=e875] [cursor=pointer]
+            - button "Map marker" [ref=e877] [cursor=pointer]:
+              - img [ref=e878]
+            - button "Map marker" [ref=e879] [cursor=pointer]:
+              - img [ref=e880]
+            - button "Map marker" [ref=e881] [cursor=pointer]:
+              - img [ref=e882]
+            - button "Map marker" [ref=e883] [cursor=pointer]
+            - button "Map marker" [ref=e885] [cursor=pointer]:
+              - img [ref=e886]
+            - button "Map marker" [ref=e887] [cursor=pointer]:
+              - img [ref=e888]
+            - button "Map marker" [ref=e889] [cursor=pointer]:
+              - img [ref=e890]
+            - button "Map marker" [ref=e891] [cursor=pointer]
+            - button "Map marker" [ref=e893] [cursor=pointer]:
+              - img [ref=e894]
+            - button "Map marker" [ref=e895] [cursor=pointer]:
+              - img [ref=e896]
+            - button "Map marker" [ref=e897] [cursor=pointer]:
+              - img [ref=e898]
+            - button "Map marker" [ref=e899] [cursor=pointer]
+            - button "Map marker" [ref=e901] [cursor=pointer]:
+              - img [ref=e902]
+            - button "Map marker" [ref=e903] [cursor=pointer]:
+              - img [ref=e904]
+            - button "Map marker" [ref=e905] [cursor=pointer]:
+              - img [ref=e906]
+            - button "Map marker" [ref=e907] [cursor=pointer]
+            - button "Map marker" [ref=e909] [cursor=pointer]:
+              - img [ref=e910]
+            - button "Map marker" [ref=e911] [cursor=pointer]:
+              - img [ref=e912]
+            - button "Map marker" [ref=e913] [cursor=pointer]:
+              - img [ref=e914]
+            - button "Map marker" [ref=e915] [cursor=pointer]
+            - button "Map marker" [ref=e917] [cursor=pointer]:
+              - img [ref=e918]
+            - button "Map marker" [ref=e919] [cursor=pointer]:
+              - img [ref=e920]
+            - button "Map marker" [ref=e921] [cursor=pointer]:
+              - img [ref=e922]
+            - button "Map marker" [ref=e923] [cursor=pointer]
+            - button "Map marker" [ref=e925] [cursor=pointer]:
+              - img [ref=e926]
+            - button "Map marker" [ref=e927] [cursor=pointer]:
+              - img [ref=e928]
+            - button "Map marker" [ref=e929] [cursor=pointer]:
+              - img [ref=e930]
+            - button "Map marker" [ref=e931] [cursor=pointer]
+            - button "Map marker" [ref=e933] [cursor=pointer]:
+              - img [ref=e934]
+            - button "Map marker" [ref=e935] [cursor=pointer]:
+              - img [ref=e936]
+            - button "Map marker" [ref=e937] [cursor=pointer]:
+              - img [ref=e938]
+            - button "Map marker" [ref=e939] [cursor=pointer]
+            - button "Map marker" [ref=e941] [cursor=pointer]:
+              - img [ref=e942]
+            - button "Map marker" [ref=e943] [cursor=pointer]:
+              - img [ref=e944]
+            - button "Map marker" [ref=e945] [cursor=pointer]:
+              - img [ref=e946]
+            - button "Map marker" [ref=e947] [cursor=pointer]
+            - button "Map marker" [ref=e949] [cursor=pointer]:
+              - img [ref=e950]
+            - button "Map marker" [ref=e951] [cursor=pointer]:
+              - img [ref=e952]
+            - button "Map marker" [ref=e953] [cursor=pointer]:
+              - img [ref=e954]
+            - button "Map marker" [ref=e955] [cursor=pointer]
+            - button "Map marker" [ref=e957] [cursor=pointer]:
+              - img [ref=e958]
+            - button "Map marker" [ref=e959] [cursor=pointer]:
+              - img [ref=e960]
+            - button "Map marker" [ref=e961] [cursor=pointer]:
+              - img [ref=e962]
+            - button "Map marker" [ref=e963] [cursor=pointer]
+            - button "Map marker" [ref=e965] [cursor=pointer]:
+              - img [ref=e966]
+            - button "Map marker" [ref=e967] [cursor=pointer]:
+              - img [ref=e968]
+            - button "Map marker" [ref=e969] [cursor=pointer]:
+              - img [ref=e970]
+            - button "Map marker" [ref=e971] [cursor=pointer]
+            - button "Map marker" [ref=e973] [cursor=pointer]:
+              - img [ref=e974]
+            - button "Map marker" [ref=e975] [cursor=pointer]:
+              - img [ref=e976]
+            - button "Map marker" [ref=e977] [cursor=pointer]:
+              - img [ref=e978]
+            - button "Map marker" [ref=e979] [cursor=pointer]
+            - button "Map marker" [ref=e981] [cursor=pointer]:
+              - img [ref=e982]
+            - button "Map marker" [ref=e983] [cursor=pointer]:
+              - img [ref=e984]
+            - button "Map marker" [ref=e985] [cursor=pointer]:
+              - img [ref=e986]
+            - button "Map marker" [ref=e987] [cursor=pointer]
+            - button "Map marker" [ref=e989] [cursor=pointer]:
+              - img [ref=e990]
+            - button "Map marker" [ref=e991] [cursor=pointer]:
+              - img [ref=e992]
+            - button "Map marker" [ref=e993] [cursor=pointer]:
+              - img [ref=e994]
+            - button "Map marker" [ref=e995] [cursor=pointer]
+            - button "Map marker" [ref=e997] [cursor=pointer]:
+              - img [ref=e998]
+            - button "Map marker" [ref=e999] [cursor=pointer]:
+              - img [ref=e1000]
+            - button "Map marker" [ref=e1001] [cursor=pointer]:
+              - img [ref=e1002]
+            - button "Map marker" [ref=e1003] [cursor=pointer]
+            - button "Map marker" [ref=e1005] [cursor=pointer]:
+              - img [ref=e1006]
+            - button "Map marker" [ref=e1007] [cursor=pointer]:
+              - img [ref=e1008]
+            - button "Map marker" [ref=e1009] [cursor=pointer]:
+              - img [ref=e1010]
+            - button "Map marker" [ref=e1011] [cursor=pointer]
+            - button "Map marker" [ref=e1013] [cursor=pointer]:
+              - img [ref=e1014]
+            - button "Map marker" [ref=e1015] [cursor=pointer]:
+              - img [ref=e1016]
+            - button "Map marker" [ref=e1017] [cursor=pointer]:
+              - img [ref=e1018]
+            - button "Map marker" [ref=e1019] [cursor=pointer]
+            - button "Map marker" [ref=e1021] [cursor=pointer]:
+              - img [ref=e1022]
+            - button "Map marker" [ref=e1023] [cursor=pointer]:
+              - img [ref=e1024]
+            - button "Map marker" [ref=e1025] [cursor=pointer]:
+              - img [ref=e1026]
+            - button "Map marker" [ref=e1027] [cursor=pointer]
+            - button "Map marker" [ref=e1029] [cursor=pointer]:
+              - img [ref=e1030]
+            - button "Map marker" [ref=e1031] [cursor=pointer]:
+              - img [ref=e1032]
+            - button "Map marker" [ref=e1033] [cursor=pointer]:
+              - img [ref=e1034]
+            - button "Map marker" [ref=e1035] [cursor=pointer]
+            - button "Map marker" [ref=e1037] [cursor=pointer]:
+              - img [ref=e1038]
+            - button "Map marker" [ref=e1039] [cursor=pointer]:
+              - img [ref=e1040]
+            - button "Map marker" [ref=e1041] [cursor=pointer]:
+              - img [ref=e1042]
+            - button "Map marker" [ref=e1043] [cursor=pointer]
+            - button "Map marker" [ref=e1045] [cursor=pointer]:
+              - img [ref=e1046]
+            - button "Map marker" [ref=e1047] [cursor=pointer]:
+              - img [ref=e1048]
+            - button "Map marker" [ref=e1049] [cursor=pointer]:
+              - img [ref=e1050]
+            - button "Map marker" [ref=e1051] [cursor=pointer]
+            - button "Map marker" [ref=e1053] [cursor=pointer]:
+              - img [ref=e1054]
+            - button "Map marker" [ref=e1055] [cursor=pointer]:
+              - img [ref=e1056]
+            - button "Map marker" [ref=e1057] [cursor=pointer]:
+              - img [ref=e1058]
+            - button "Map marker" [ref=e1059] [cursor=pointer]
+            - button "Map marker" [ref=e1061] [cursor=pointer]:
+              - img [ref=e1062]
+            - button "Map marker" [ref=e1063] [cursor=pointer]:
+              - img [ref=e1064]
+            - button "Map marker" [ref=e1065] [cursor=pointer]:
+              - img [ref=e1066]
+            - button "Map marker" [ref=e1067] [cursor=pointer]
+            - button "Map marker" [ref=e1069] [cursor=pointer]:
+              - img [ref=e1070]
+            - button "Map marker" [ref=e1071] [cursor=pointer]:
+              - img [ref=e1072]
+            - button "Map marker" [ref=e1073] [cursor=pointer]:
+              - img [ref=e1074]
+            - button "Map marker" [ref=e1075] [cursor=pointer]
+            - button "Map marker" [ref=e1077] [cursor=pointer]:
+              - img [ref=e1078]
+            - button "Map marker" [ref=e1079] [cursor=pointer]:
+              - img [ref=e1080]
+            - button "Map marker" [ref=e1081] [cursor=pointer]:
+              - img [ref=e1082]
+            - button "Map marker" [ref=e1083] [cursor=pointer]
+            - button "Map marker" [ref=e1085] [cursor=pointer]:
+              - img [ref=e1086]
+            - button "Map marker" [ref=e1087] [cursor=pointer]:
+              - img [ref=e1088]
+            - button "Map marker" [ref=e1089] [cursor=pointer]:
+              - img [ref=e1090]
+            - button "Map marker" [ref=e1091] [cursor=pointer]
+            - button "Map marker" [ref=e1093] [cursor=pointer]:
+              - img [ref=e1094]
+            - button "Map marker" [ref=e1095] [cursor=pointer]:
+              - img [ref=e1096]
+            - button "Map marker" [ref=e1097] [cursor=pointer]:
+              - img [ref=e1098]
+            - button "Map marker" [ref=e1099] [cursor=pointer]
+            - button "Map marker" [ref=e1101] [cursor=pointer]:
+              - img [ref=e1102]
+            - button "Map marker" [ref=e1103] [cursor=pointer]:
+              - img [ref=e1104]
+            - button "Map marker" [ref=e1105] [cursor=pointer]:
+              - img [ref=e1106]
+            - button "Map marker" [ref=e1107] [cursor=pointer]
+            - button "Map marker" [ref=e1109] [cursor=pointer]:
+              - img [ref=e1110]
+            - button "Map marker" [ref=e1111] [cursor=pointer]:
+              - img [ref=e1112]
+            - button "Map marker" [ref=e1113] [cursor=pointer]:
+              - img [ref=e1114]
+            - button "Map marker" [ref=e1115] [cursor=pointer]
+            - button "Map marker" [ref=e1117] [cursor=pointer]:
+              - img [ref=e1118]
+            - button "Map marker" [ref=e1119] [cursor=pointer]:
+              - img [ref=e1120]
+            - button "Map marker" [ref=e1121] [cursor=pointer]:
+              - img [ref=e1122]
+            - button "Map marker" [ref=e1123] [cursor=pointer]
+            - button "Map marker" [ref=e1125] [cursor=pointer]:
+              - img [ref=e1126]
+            - button "Map marker" [ref=e1127] [cursor=pointer]:
+              - img [ref=e1128]
+            - button "Map marker" [ref=e1129] [cursor=pointer]:
+              - img [ref=e1130]
+            - button "Map marker" [ref=e1131] [cursor=pointer]
+            - button "Map marker" [ref=e1133] [cursor=pointer]:
+              - img [ref=e1134]
+            - button "Map marker" [ref=e1135] [cursor=pointer]:
+              - img [ref=e1136]
+            - button "Map marker" [ref=e1137] [cursor=pointer]:
+              - img [ref=e1138]
+            - button "Map marker" [ref=e1139] [cursor=pointer]
+            - button "Map marker" [ref=e1141] [cursor=pointer]:
+              - img [ref=e1142]
+            - button "Map marker" [ref=e1143] [cursor=pointer]:
+              - img [ref=e1144]
+            - button "Map marker" [ref=e1145] [cursor=pointer]:
+              - img [ref=e1146]
+            - button "Map marker" [ref=e1147] [cursor=pointer]
+            - button "Map marker" [ref=e1149] [cursor=pointer]:
+              - img [ref=e1150]
+            - button "Map marker" [ref=e1151] [cursor=pointer]:
+              - img [ref=e1152]
+            - button "Map marker" [ref=e1153] [cursor=pointer]:
+              - img [ref=e1154]
+            - button "Map marker" [ref=e1155] [cursor=pointer]
+            - button "Map marker" [ref=e1157] [cursor=pointer]:
+              - img [ref=e1158]
+            - button "Map marker" [ref=e1159] [cursor=pointer]:
+              - img [ref=e1160]
+            - button "Map marker" [ref=e1161] [cursor=pointer]:
+              - img [ref=e1162]
+            - button "Map marker" [ref=e1163] [cursor=pointer]
+            - button "Map marker" [ref=e1165] [cursor=pointer]:
+              - img [ref=e1166]
+        - generic:
+          - generic [ref=e1168]:
+            - generic [ref=e1170]: KEY INDICATORS
+            - generic [ref=e1171]:
+              - button "alert 31 ACTIVE CRISES" [ref=e1172] [cursor=pointer]:
+                - img "alert" [ref=e1174]:
+                  - img [ref=e1175]
+                - generic [ref=e1177]: "31"
+                - generic [ref=e1178]: ACTIVE CRISES
+              - button "thunderbolt 1,614 TOTAL INCIDENTS" [ref=e1179] [cursor=pointer]:
+                - img "thunderbolt" [ref=e1181]:
+                  - img [ref=e1182]
+                - generic [ref=e1184]: 1,614
+                - generic [ref=e1185]: TOTAL INCIDENTS
+              - button "team 6 REPORTED CASUALTIES" [ref=e1186] [cursor=pointer]:
+                - img "team" [ref=e1188]:
+                  - img [ref=e1189]
+                - generic [ref=e1191]: "6"
+                - generic [ref=e1192]: REPORTED CASUALTIES
+              - button "dollar 19.60M ASSESSED DAMAGE (AED)" [ref=e1193] [cursor=pointer]:
+                - img "dollar" [ref=e1195]:
+                  - img [ref=e1196]
+                - generic [ref=e1198]: 19.60M
+                - generic [ref=e1199]: ASSESSED DAMAGE (AED)
+              - button "fund-projection-screen 0 ESTIMATED DAMAGE (AED)" [ref=e1200] [cursor=pointer]:
+                - img "fund-projection-screen" [ref=e1202]:
+                  - img [ref=e1203]
+                - generic [ref=e1206]: "0"
+                - generic [ref=e1207]: ESTIMATED DAMAGE (AED)
+            - link "31 New crises to review right" [ref=e1209] [cursor=pointer]:
+              - /url: /crises?status=active
+              - generic [ref=e1211]: "31"
+              - generic [ref=e1212]: New crises to review
+              - img "right" [ref=e1213]:
+                - img [ref=e1214]
+          - generic:
+            - generic [ref=e1217]:
+              - generic [ref=e1218] [cursor=pointer]:
+                - generic [ref=e1219]: INCIDENTS BY AGENCY
+                - generic [ref=e1220]: ▾
+              - generic [ref=e1221]:
+                - generic [ref=e1222] [cursor=pointer]:
+                  - generic [ref=e1223]: Ministry of Defence
+                  - generic [ref=e1226]: "1530"
+                - generic [ref=e1227] [cursor=pointer]:
+                  - generic [ref=e1228]: Ministry of Interior
+                  - generic [ref=e1231]: "55"
+                - generic [ref=e1232] [cursor=pointer]:
+                  - generic [ref=e1233]: Economy & Tourism
+                  - generic [ref=e1235]: "0"
+            - generic [ref=e1236]:
+              - button "+" [ref=e1237] [cursor=pointer]
+              - button "−" [ref=e1238] [cursor=pointer]
+              - button "Drag to rotate / Click to reset north" [ref=e1239]:
+                - img [ref=e1240]
+              - button "⛶" [ref=e1244] [cursor=pointer]
+            - generic:
+              - generic [ref=e1246]:
+                - generic [ref=e1247] [cursor=pointer]:
+                  - generic [ref=e1248]: CASE STATUS
+                  - generic [ref=e1249]: ▾
+                - generic [ref=e1250]:
+                  - generic [ref=e1251] [cursor=pointer]:
+                    - generic [ref=e1252]: New
+                    - generic [ref=e1254]: "0"
+                  - generic [ref=e1255] [cursor=pointer]:
+                    - generic [ref=e1256]: In Progress
+                    - generic [ref=e1258]: "0"
+                  - generic [ref=e1259] [cursor=pointer]:
+                    - generic [ref=e1260]: Under Review
+                    - generic [ref=e1262]: "0"
+                  - generic [ref=e1263] [cursor=pointer]:
+                    - generic [ref=e1264]: Approved
+                    - generic [ref=e1266]: "0"
+                  - generic [ref=e1267] [cursor=pointer]:
+                    - generic [ref=e1268]: Referred
+                    - generic [ref=e1270]: "0"
+              - generic [ref=e1272]:
+                - generic [ref=e1273] [cursor=pointer]:
+                  - generic [ref=e1274]: REPORTS BY AGENCY
+                  - generic [ref=e1275]: ▾
+                - generic [ref=e1276]:
+                  - generic [ref=e1277] [cursor=pointer]:
+                    - generic [ref=e1278]: Cybersecurity Council
+                    - generic [ref=e1281]: "6"
+                  - generic [ref=e1282] [cursor=pointer]:
+                    - generic [ref=e1283]: State Security Department
+                    - generic [ref=e1286]: "4"
+                  - generic [ref=e1287] [cursor=pointer]:
+                    - generic [ref=e1288]: Ministry of Justice
+                    - generic [ref=e1291]: "10"
+                  - generic [ref=e1292] [cursor=pointer]:
+                    - generic [ref=e1293]: Energy & Infrastructure
+                    - generic [ref=e1296]: "4"
+              - generic [ref=e1298]:
+                - generic [ref=e1299] [cursor=pointer]:
+                  - generic [ref=e1300]: PROSECUTION CASES
+                  - generic [ref=e1301]: ▾
+                - generic [ref=e1303] [cursor=pointer]:
+                  - generic [ref=e1304]: Federal Prosecution
+                  - generic [ref=e1307]: "3"
+          - generic [ref=e1309]:
+            - generic [ref=e1310] [cursor=pointer]:
+              - generic [ref=e1311]: LEGEND
+              - generic [ref=e1312]: ▾
+            - generic [ref=e1313]:
+              - generic [ref=e1316] [cursor=pointer]: HEATMAP
+              - generic [ref=e1319] [cursor=pointer]: MOD
+              - generic [ref=e1322] [cursor=pointer]: MOI
+              - generic [ref=e1325] [cursor=pointer]: SSD
+              - generic [ref=e1327] [cursor=pointer]: Cruise Missile
+              - generic [ref=e1329] [cursor=pointer]: Drone
+              - generic [ref=e1331] [cursor=pointer]: B136
+              - generic [ref=e1333] [cursor=pointer]: Cyber Attack
+              - generic [ref=e1335] [cursor=pointer]: Other Drone
+              - generic [ref=e1337] [cursor=pointer]: Default
+              - generic [ref=e1340] [cursor=pointer]: Unclassified
+    - button "AI Assistant" [ref=e1343] [cursor=pointer]:
+      - img [ref=e1344]

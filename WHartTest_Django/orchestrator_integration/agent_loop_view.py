@@ -19,6 +19,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import uuid
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
@@ -74,6 +75,119 @@ from requirements.context_limits import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _message_prefers_external_skill_docs(user_message: str) -> bool:
+    """
+    当用户明确点名外部文档/网页技能时，避免知识库把问题带偏。
+    """
+    text = (user_message or "").lower()
+    explicit_markers = (
+        "context7",
+        "context7-mcp",
+        "firecrawl",
+        "请使用context7",
+        "请使用firecrawl",
+    )
+    return any(marker in text for marker in explicit_markers)
+
+
+def _build_explicit_skill_shortcut(user_message: str) -> Optional[Dict[str, str]]:
+    """
+    当用户明确点名 context7-mcp / firecrawl 时，直接构造一次可执行命令，
+    避免模型只读取 Skill 说明而不真正执行。
+    """
+    text = (user_message or "").strip()
+    lowered = text.lower()
+
+    if "context7-mcp" in lowered or "context7" in lowered:
+        cleaned_query = re.sub(
+            r"请?帮?我?(使用|用)?\s*context7(?:-mcp)?\s*(来|看下|查看|查询|检索|搜索)?",
+            "",
+            text,
+            flags=re.IGNORECASE,
+        ).strip(" ：:，,。.？?！!;；")
+        cleaned_query = re.sub(r"^(看下|看看|查看|查询|检索|搜索)\s*[，,：:]?\s*", "", cleaned_query)
+        library_match = re.search(r"[a-zA-Z][a-zA-Z0-9_.-]{2,}", cleaned_query)
+        library_name = library_match.group(0) if library_match else ""
+        if library_name:
+            command = (
+                f"python run.py ask --library {shlex.quote(library_name)} "
+                f"--query {shlex.quote(cleaned_query or text)}"
+            )
+        else:
+            command = f"python run.py search --query {shlex.quote(cleaned_query or text)}"
+        return {
+            "skill_name": "context7-mcp",
+            "command": command,
+            "label": "context7-mcp",
+            "fallback_skill_name": "firecrawl",
+            "fallback_command": f"python run.py search --query {shlex.quote(cleaned_query or text)}",
+        }
+
+    if "firecrawl" in lowered:
+        cleaned_query = re.sub(
+            r"请?帮?我?(使用|用)?\s*firecrawl\s*(来|看下|查看|查询|检索|搜索)?",
+            "",
+            text,
+            flags=re.IGNORECASE,
+        ).strip(" ：:，,。.？?！!;；")
+        command = f"python run.py search --query {shlex.quote(cleaned_query or text)}"
+        return {
+            "skill_name": "firecrawl",
+            "command": command,
+            "label": "firecrawl",
+        }
+
+    return None
+
+
+def _extract_message_text(message: Any) -> str:
+    content = getattr(message, "content", message)
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: List[str] = []
+        for item in content:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                text = item.get("text")
+                if isinstance(text, str):
+                    parts.append(text)
+        return "\n".join(part for part in parts if part).strip()
+    return str(content or "").strip()
+
+
+async def _summarize_explicit_skill_result(
+    llm: Any, user_message: str, skill_label: str, tool_content: str
+) -> str:
+    """
+    把显式 Skill 查询结果整理成自然语言回答，避免直接把 Skill 原始说明/片段整段暴露给用户。
+    """
+    if not tool_content.strip():
+        return f"已使用 {skill_label} 查询，但没有返回可展示内容。"
+
+    prompt = (
+        "你是一个技术助理。用户明确要求使用某个外部文档/网页技能查询。\n"
+        "请基于下面的技能查询结果，直接回答用户问题，不要解释技能，不要输出 tool_call，不要重复原始文档。\n"
+        "要求：\n"
+        "1. 用简体中文。\n"
+        "2. 先给结论，再给 2-5 条可执行排查步骤。\n"
+        "3. 如果结果里有命中的库名或最佳匹配，顺手提一下。\n"
+        "4. 若证据不足，明确指出还缺什么信息。\n"
+        "5. 不要输出 Markdown 标题。\n\n"
+        f"用户问题：{user_message}\n\n"
+        f"技能：{skill_label}\n\n"
+        f"技能查询结果：\n{tool_content}"
+    )
+    try:
+        summary = await llm.ainvoke([HumanMessage(content=prompt)])
+        summarized_text = _extract_message_text(summary)
+        return summarized_text or f"已使用 {skill_label} 查询，但未生成可读总结。"
+    except Exception:
+        logger.warning("AgentLoopStreamAPI: summarize explicit skill result failed", exc_info=True)
+        return f"已使用 {skill_label} 查询，结果如下：\n\n{tool_content}"
 
 
 def _build_sse_error_event(exc: Exception) -> Dict[str, Any]:
@@ -838,6 +952,134 @@ def _infer_target_url_hint_from_test_case_detail(raw_output: Any) -> Optional[st
     return None
 
 
+def _extract_inline_execute_skill_call(content: str) -> Optional[Dict[str, Any]]:
+    """
+    当模型没有产出标准 tool_calls，而是把工具参数写进 Markdown JSON 代码块时，
+    尝试提取 execute_skill_script 的调用参数，作为测试执行模式兜底。
+    """
+    text = (content or "").strip()
+    if not text:
+        return None
+
+    candidates: List[str] = []
+    fenced_matches = re.findall(r"```json\s*(\{.*?\})\s*```", text, flags=re.DOTALL)
+    candidates.extend(fenced_matches)
+    if text.startswith("{") and text.endswith("}"):
+        candidates.append(text)
+
+    for candidate in candidates:
+        try:
+            payload = json.loads(candidate)
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        skill_name = str(payload.get("skill_name") or "").strip()
+        command = str(payload.get("command") or "").strip()
+        if not skill_name or not command:
+            continue
+        parsed: Dict[str, Any] = {
+            "skill_name": skill_name,
+            "command": command,
+        }
+        session_id = payload.get("session_id")
+        if session_id not in (None, ""):
+            parsed["session_id"] = session_id
+        return parsed
+
+    return None
+
+
+def _extract_inline_upload_screenshot_call(
+    content: str,
+    *,
+    project_id: int,
+    test_case_id: int,
+) -> Optional[Dict[str, Any]]:
+    """
+    当模型只用自然语言表达“上传步骤截图”时，自动补成 whart-test 调用。
+    """
+    text = (content or "").strip()
+    if not text:
+        return None
+
+    filename_match = re.search(r"([A-Za-z0-9._-]+\.(?:png|jpg|jpeg|webp))", text, re.IGNORECASE)
+    if not filename_match:
+        return None
+
+    step_match = re.search(r"步骤\s*(\d+)\s*截图", text)
+    filename = filename_match.group(1)
+    command = (
+        "python whart_tools.py --action upload_screenshot "
+        f"--project_id {project_id} --case_id {test_case_id} "
+        f"--file_path {filename}"
+    )
+    if step_match:
+        command += f" --step_number {step_match.group(1)}"
+
+    return {
+        "skill_name": "whart-test",
+        "command": command,
+    }
+
+
+def _extract_inline_login_playwright_call(
+    content: str,
+    case_detail_summary: str,
+    *,
+    session_id: str,
+) -> Optional[Dict[str, Any]]:
+    """
+    当模型只说“输入用户名密码并提交”却没有真的调工具时，为常见登录流生成稳健的 playwright 命令。
+    """
+    text = (content or "").strip()
+    lowered = text.lower()
+    if not text or ("用户名" not in text and "password" not in lowered and "登录" not in text):
+        return None
+    if "playwright-skill" not in text and "输入正确用户名和密码并提交" not in text:
+        return None
+
+    summary = case_detail_summary or ""
+    username_match = re.search(r"(?:账号|用户名)[:：]\s*([^\s,，]+)", summary)
+    password_match = re.search(r"密码[:：]\s*([^\s,，]+)", summary)
+    if not username_match or not password_match:
+        return None
+
+    username = username_match.group(1).strip()
+    password = password_match.group(1).strip()
+    success_text_match = re.search(r"([A-Z][A-Z ]{2,}[A-Z])", summary)
+    success_text = success_text_match.group(1).strip() if success_text_match else ""
+
+    command_parts = [
+        "const usernameField = page.locator('#username, input[name=\"username\"], input[type=\"text\"]').first();",
+        "await usernameField.waitFor({ state: 'visible', timeout: 30000 });",
+        f"await usernameField.fill({json.dumps(username, ensure_ascii=False)});",
+        "const passwordField = page.locator('#password, input[name=\"password\"], input[type=\"password\"]').first();",
+        "await passwordField.waitFor({ state: 'visible', timeout: 30000 });",
+        f"await passwordField.fill({json.dumps(password, ensure_ascii=False)});",
+        "const submitButton = page.locator('button[type=\"submit\"], button:has-text(\"Login\")').first();",
+        "await submitButton.click();",
+        "await page.waitForLoadState('domcontentloaded');",
+    ]
+    if success_text:
+        command_parts.append(
+            f"await page.waitForSelector('text=/{re.escape(success_text)}/i', {{ timeout: 30000 }});"
+        )
+    command_parts.extend(
+        [
+            "console.log(page.url());",
+            "const desc = await helpers.describePageForAI(page);",
+            "console.log(desc);",
+        ]
+    )
+
+    return {
+        "skill_name": "playwright-skill",
+        "command": 'node run.js "' + " ".join(command_parts).replace('"', '\\"') + '"',
+        "session_id": session_id,
+    }
+
+
 def _extract_test_case_execution_signals(text: Any) -> set[str]:
     normalized = _normalize_mcp_content_to_text(text)
     content = normalized if isinstance(normalized, str) else str(normalized)
@@ -1126,6 +1368,7 @@ class AgentLoopStreamAPIView(View):
         final_success = True
         observed_signals: set[str] = set()
         executed_playwright_records: List[Dict[str, Any]] = []
+        no_tool_call_retries = 0
 
         @langchain_tool
         def finish_test_case_execution(
@@ -1380,17 +1623,93 @@ class AgentLoopStreamAPIView(View):
                     content,
                     sorted(observed_signals),
                 )
-                yield create_sse_data(
-                    {
-                        "type": "error",
-                        "message": "测试执行代理没有产出工具调用，已中止本轮执行。请优先换用更强的支持工具调用模型，或稍后重试。",
-                    }
-                )
-                yield create_sse_data(
-                    {"type": "complete", "status": "error", "steps": step_count}
-                )
-                yield "data: [DONE]\n\n"
-                return
+                inline_execute_call = _extract_inline_execute_skill_call(content)
+                if inline_execute_call:
+                    logger.info(
+                        "AgentLoopStreamAPI: Dedicated testcase executor recovered inline tool payload. "
+                        "session_id=%s, test_case_id=%s, payload=%s",
+                        session_id,
+                        test_case_id,
+                        inline_execute_call,
+                    )
+                    tool_calls = [
+                        {
+                            "name": execute_skill_tool.name,
+                            "args": inline_execute_call,
+                            "id": f"inline-execute-{step_count}",
+                        }
+                    ]
+                else:
+                    inline_login_call = _extract_inline_login_playwright_call(
+                        content,
+                        compact_case_detail,
+                        session_id=session_key,
+                    )
+                    if inline_login_call:
+                        logger.info(
+                            "AgentLoopStreamAPI: Dedicated testcase executor recovered inline login action. "
+                            "session_id=%s, test_case_id=%s, payload=%s",
+                            session_id,
+                            test_case_id,
+                            inline_login_call,
+                        )
+                        tool_calls = [
+                            {
+                                "name": execute_skill_tool.name,
+                                "args": inline_login_call,
+                                "id": f"inline-login-{step_count}",
+                            }
+                        ]
+                        no_tool_call_retries = 0
+                    else:
+                        inline_upload_call = _extract_inline_upload_screenshot_call(
+                            content,
+                            project_id=project_id,
+                            test_case_id=test_case_id,
+                        )
+                        if inline_upload_call:
+                            logger.info(
+                                "AgentLoopStreamAPI: Dedicated testcase executor recovered inline screenshot upload. "
+                                "session_id=%s, test_case_id=%s, payload=%s",
+                                session_id,
+                                test_case_id,
+                                inline_upload_call,
+                            )
+                            tool_calls = [
+                                {
+                                    "name": execute_skill_tool.name,
+                                    "args": inline_upload_call,
+                                    "id": f"inline-upload-{step_count}",
+                                }
+                            ]
+                            no_tool_call_retries = 0
+                        else:
+                            if no_tool_call_retries < 2:
+                                no_tool_call_retries += 1
+                                messages.append(ai_msg)
+                                messages.append(
+                                    HumanMessage(
+                                        content=(
+                                            "不要继续解释。请直接调用工具完成下一步。"
+                                            "如果需要上传截图，也必须使用 execute_skill_script 调用 whart-test；"
+                                            "如果需要浏览器操作，使用 execute_skill_script 调用 playwright-skill。"
+                                            "只返回工具调用，不要返回 JSON 示例。"
+                                        )
+                                    )
+                                )
+                                continue
+                            yield create_sse_data(
+                                {
+                                    "type": "error",
+                                    "message": "测试执行代理没有产出工具调用，已中止本轮执行。请优先换用更强的支持工具调用模型，或稍后重试。",
+                                }
+                            )
+                            yield create_sse_data(
+                                {"type": "complete", "status": "error", "steps": step_count}
+                            )
+                            yield "data: [DONE]\n\n"
+                            return
+                no_tool_call_retries = 0
 
             messages.append(ai_msg)
 
@@ -1739,7 +2058,10 @@ class AgentLoopStreamAPIView(View):
             logger.info(
                 f"AgentLoopStreamAPI: 检查知识库工具 - knowledge_base_id={knowledge_base_id}, use_knowledge_base={use_knowledge_base}"
             )
-            if knowledge_base_id and use_knowledge_base:
+            explicit_external_skill_request = _message_prefers_external_skill_docs(
+                user_message
+            )
+            if knowledge_base_id and use_knowledge_base and not explicit_external_skill_request:
                 try:
                     from knowledge.langgraph_integration import create_knowledge_tool
 
@@ -1758,7 +2080,7 @@ class AgentLoopStreamAPIView(View):
                     )
             else:
                 logger.info(
-                    f"AgentLoopStreamAPI: ⚠️ 跳过知识库工具 (knowledge_base_id={knowledge_base_id}, use_knowledge_base={use_knowledge_base})"
+                    f"AgentLoopStreamAPI: ⚠️ 跳过知识库工具 (knowledge_base_id={knowledge_base_id}, use_knowledge_base={use_knowledge_base}, explicit_external_skill_request={explicit_external_skill_request})"
                 )
 
             # 6. 添加内置工具（Playwright 脚本管理等）
@@ -1817,6 +2139,35 @@ class AgentLoopStreamAPIView(View):
                     effective_prompt or ""
                 ) + PLAYWRIGHT_SCRIPT_INSTRUCTION
                 logger.info(f"AgentLoopStreamAPI: 已追加脚本生成指令")
+
+            # 8.3 启用知识库时，明确要求优先检索后再回答
+            if (
+                knowledge_base_id
+                and use_knowledge_base
+                and not test_case_id
+                and not explicit_external_skill_request
+            ):
+                effective_prompt = (
+                    effective_prompt or ""
+                ) + (
+                    "\n\n【知识库使用要求】\n"
+                    "本轮已启用知识库。如果用户问题与当前项目、平台文档、基线、流程、配置相关，"
+                    "请优先调用 `knowledge_search` 检索后再回答；回答应尽量基于检索结果，"
+                    "如果没有检索到有效结果，再明确说明。"
+                )
+                logger.info("AgentLoopStreamAPI: 已追加知识库优先检索指令")
+            elif knowledge_base_id and use_knowledge_base and explicit_external_skill_request:
+                effective_prompt = (
+                    effective_prompt or ""
+                ) + (
+                    "\n\n【技能优先要求】\n"
+                    "用户已明确指定使用外部技能（如 context7-mcp / firecrawl）。"
+                    "本轮请优先调用用户点名的 Skill 获取外部文档或网页信息，"
+                    "不要先调用知识库；只有当用户明确追问当前项目/平台资料时，才再考虑知识库。"
+                    "注意：不能只调用 `read_skill_content` 后就结束，必须至少继续调用一次 `execute_skill_script`，"
+                    "并基于脚本输出结果回答。"
+                )
+                logger.info("AgentLoopStreamAPI: 已追加技能优先指令并跳过知识库优先检索")
 
             # 9. 构建用户消息（支持多模态：上传图片 + 链接图片）
             linked_image_data_urls: List[str] = []
@@ -1887,6 +2238,74 @@ class AgentLoopStreamAPIView(View):
                     else None,
                 }
             )
+
+            explicit_skill_shortcut = (
+                _build_explicit_skill_shortcut(user_message)
+                if not test_case_id
+                else None
+            )
+            if explicit_skill_shortcut:
+                execute_skill_tool = next(
+                    (t for t in builtin_tools if getattr(t, "name", "") == "execute_skill_script"),
+                    None,
+                )
+                if execute_skill_tool is not None:
+                    step_count = 1
+                    yield create_sse_data(
+                        {
+                            "type": "step_start",
+                            "step": step_count,
+                            "max_steps": 1,
+                            "tools": ["execute_skill_script"],
+                        }
+                    )
+                    tool_result = await sync_to_async(execute_skill_tool.invoke)(
+                        {
+                            "skill_name": explicit_skill_shortcut["skill_name"],
+                            "command": explicit_skill_shortcut["command"],
+                        }
+                    )
+                    tool_result_text = str(tool_result)
+                    if (
+                        explicit_skill_shortcut["skill_name"] == "context7-mcp"
+                        and "no_libraries_found" in tool_result_text
+                        and explicit_skill_shortcut.get("fallback_skill_name")
+                        and explicit_skill_shortcut.get("fallback_command")
+                    ):
+                        tool_result = await sync_to_async(execute_skill_tool.invoke)(
+                            {
+                                "skill_name": explicit_skill_shortcut["fallback_skill_name"],
+                                "command": explicit_skill_shortcut["fallback_command"],
+                            }
+                        )
+                        explicit_skill_shortcut["label"] = (
+                            f"{explicit_skill_shortcut['label']}（未命中文档库，已回退 firecrawl）"
+                        )
+                    tool_content, tool_summary = process_mcp_tool_output(tool_result)
+                    yield create_sse_data(
+                        {
+                            "type": "tool_result",
+                            "tool_name": "execute_skill_script",
+                            "tool_output": tool_content,
+                            "summary": tool_summary,
+                            "step": step_count,
+                        }
+                    )
+                    yield create_sse_data({"type": "step_complete", "step": step_count})
+                    response_text = await _summarize_explicit_skill_result(
+                        llm=llm,
+                        user_message=user_message,
+                        skill_label=explicit_skill_shortcut["label"],
+                        tool_content=tool_content or tool_summary or "",
+                    )
+                    yield create_sse_data(
+                        {
+                            "type": "stream",
+                            "data": response_text,
+                        }
+                    )
+                    yield create_sse_data({"type": "complete", "total_steps": step_count})
+                    return
 
             if test_case_id:
                 async for chunk in self._run_dedicated_test_case_execution(
@@ -2544,6 +2963,10 @@ class AgentLoopStreamAPIView(View):
                 "tool_results": tool_results,
                 "context_token_count": context_token_count,
                 "context_limit": context_limit,
+                "knowledge_base_used": any(
+                    (tool_result.get("tool_name") == "knowledge_search")
+                    for tool_result in tool_results
+                ),
             }
 
             if interrupt_info:

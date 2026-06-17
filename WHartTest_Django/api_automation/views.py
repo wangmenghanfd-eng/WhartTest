@@ -1,9 +1,11 @@
 import httpx
+from collections import defaultdict, deque
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from projects.models import Project
@@ -15,6 +17,9 @@ from .models import (
     ApiExecutionRecord,
     ApiModule,
     ApiPublicData,
+    ApiScenario,
+    ApiScenarioExecutionRecord,
+    ApiScenarioStep,
     ApiScript,
     ApiTestCase,
 )
@@ -25,16 +30,75 @@ from .serializers import (
     ApiExecutionRecordSerializer,
     ApiModuleSerializer,
     ApiPublicDataSerializer,
+    ApiScenarioExecutionRecordSerializer,
+    ApiScenarioSerializer,
+    ApiScenarioStepSerializer,
     ApiScriptSerializer,
     ApiTestCaseSerializer,
 )
 from .services import import_openapi_spec, load_openapi_spec
-from .tasks import execute_api_batch_task, execute_api_case_task
+from .tasks import execute_api_batch_task, execute_api_case_task, execute_api_scenario_task
+from .trace_to_api_cases import (
+    materialize_from_execution,
+    preview_from_execution,
+)
+
+from ui_automation.models import UiExecutionRecord
 
 
 class CreatorMixin:
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
+
+
+def _expand_module_ids(module_id, project_id=None):
+    try:
+        root_id = int(module_id)
+    except (TypeError, ValueError):
+        return []
+    modules = ApiModule.objects.all()
+    if project_id:
+        modules = modules.filter(project_id=project_id)
+    children_map = defaultdict(list)
+    for item in modules.values("id", "parent_id"):
+        children_map[item["parent_id"]].append(item["id"])
+    collected = []
+    queue = deque([root_id])
+    seen = set()
+    while queue:
+        current = queue.popleft()
+        if current in seen:
+            continue
+        seen.add(current)
+        collected.append(current)
+        queue.extend(children_map.get(current, []))
+    return collected
+
+
+def _visible_module_ids(project_id: int) -> set[int]:
+    modules = list(ApiModule.objects.filter(project_id=project_id).values("id", "parent_id"))
+    children_map = defaultdict(list)
+    for item in modules:
+        children_map[item["parent_id"]].append(item["id"])
+
+    content_ids = set(ApiDefinition.objects.filter(project_id=project_id).values_list("module_id", flat=True))
+    content_ids.update(ApiTestCase.objects.filter(project_id=project_id).values_list("module_id", flat=True))
+    content_ids.update(ApiScenario.objects.filter(project_id=project_id).values_list("module_id", flat=True))
+    content_ids.update(ApiScript.objects.filter(project_id=project_id).values_list("module_id", flat=True))
+
+    visible = set(content_ids)
+    if not visible:
+        return visible
+
+    parent_map = {item["id"]: item["parent_id"] for item in modules}
+    queue = deque(visible)
+    while queue:
+        current = queue.popleft()
+        parent_id = parent_map.get(current)
+        if parent_id and parent_id not in visible:
+            visible.add(parent_id)
+            queue.append(parent_id)
+    return visible
 
 
 class ApiModuleViewSet(CreatorMixin, viewsets.ModelViewSet):
@@ -56,8 +120,13 @@ class ApiModuleViewSet(CreatorMixin, viewsets.ModelViewSet):
         project_id = request.query_params.get("project")
         if not project_id:
             return Response({"error": "project 参数必填"}, status=status.HTTP_400_BAD_REQUEST)
+        visible_ids = _visible_module_ids(int(project_id))
         modules = self.get_queryset().filter(project_id=project_id, parent__isnull=True)
-        return Response(self.get_serializer(modules, many=True).data)
+        if visible_ids:
+            modules = modules.filter(id__in=visible_ids)
+        else:
+            modules = modules.none()
+        return Response(self.get_serializer(modules, many=True, context={"visible_ids": visible_ids}).data)
 
 
 class ApiEnvironmentConfigViewSet(CreatorMixin, viewsets.ModelViewSet):
@@ -76,10 +145,15 @@ class ApiEnvironmentConfigViewSet(CreatorMixin, viewsets.ModelViewSet):
 class ApiDefinitionViewSet(CreatorMixin, viewsets.ModelViewSet):
     queryset = ApiDefinition.objects.select_related("project", "module", "creator")
     serializer_class = ApiDefinitionSerializer
-    filterset_fields = ["project", "module", "method", "source"]
+    filterset_fields = ["project", "method", "source"]
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(module_id__in=module_ids or [-1])
         keyword = (self.request.query_params.get("search") or "").strip()
         if keyword:
             queryset = queryset.filter(
@@ -88,6 +162,65 @@ class ApiDefinitionViewSet(CreatorMixin, viewsets.ModelViewSet):
                 Q(operation_id__icontains=keyword)
             )
         return queryset
+
+    @action(detail=True, methods=["post"], url_path="generate-case", permission_classes=[IsAuthenticated])
+    def generate_case(self, request, pk=None):
+        """根据接口定义一键生成一条基础用例。
+
+        Body 可选：- module: 不传则使用 definition.module
+          - environment: 不传则取项目默认环境
+        """
+        from .services import _default_assertions  # type: ignore
+
+        definition: ApiDefinition = self.get_object()
+        module_id = request.data.get("module") or definition.module_id
+        if not module_id:
+            return Response(
+                {"error": "该接口定义未绑定模块，请传 module"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            module = ApiModule.objects.get(id=module_id, project=definition.project)
+        except ApiModule.DoesNotExist:
+            return Response(
+                {"error": f"接口模块 {module_id} 不存在或不属于该项目"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        env_id = request.data.get("environment")
+        env = None
+        if env_id:
+            env = ApiEnvironmentConfig.objects.filter(id=env_id, project=definition.project).first()
+        if env is None:
+            env = ApiEnvironmentConfig.objects.filter(project=definition.project, is_default=True).first()
+
+        defaults = {
+            "project": definition.project,
+            "module": module,
+            "definition": definition,
+            "environment": env,
+            "name": f"{definition.method}-{definition.name or definition.path}"[:255],
+            "method": definition.method,
+            "path": definition.path,
+            "assertions": _default_assertions(definition.responses or {}),
+            "source": "definition",
+        }
+        existing_cases = ApiTestCase.objects.filter(
+            project=definition.project,
+            module=module,
+            definition=definition,
+            source="definition",
+        )
+        replaced = existing_cases.exists()
+        if replaced:
+            existing_cases.delete()
+        case = ApiTestCase.objects.create(creator=request.user, **defaults)
+        return Response({
+            "case_id": case.id,
+            "name": case.name,
+            "method": case.method,
+            "path": case.path,
+            "replaced": replaced,
+        })
 
     @action(detail=False, methods=["post"], url_path="import-openapi")
     def import_openapi(self, request):
@@ -119,10 +252,15 @@ class ApiDefinitionViewSet(CreatorMixin, viewsets.ModelViewSet):
 class ApiTestCaseViewSet(CreatorMixin, viewsets.ModelViewSet):
     queryset = ApiTestCase.objects.select_related("project", "module", "definition", "environment", "creator")
     serializer_class = ApiTestCaseSerializer
-    filterset_fields = ["project", "module", "definition", "environment", "status", "source"]
+    filterset_fields = ["project", "definition", "environment", "status", "source"]
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(module_id__in=module_ids or [-1])
         keyword = (self.request.query_params.get("search") or "").strip()
         if keyword:
             queryset = queryset.filter(Q(name__icontains=keyword) | Q(path__icontains=keyword))
@@ -177,32 +315,280 @@ class ApiTestCaseViewSet(CreatorMixin, viewsets.ModelViewSet):
         execute_api_batch_task.delay(batch.id)
         return Response({"batch_id": batch.id, "message": "接口批量执行已提交"})
 
-    @action(detail=False, methods=["post"], url_path="generate-from-functional-case")
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="generate-from-functional-case",
+        permission_classes=[IsAuthenticated],
+    )
     def generate_from_functional_case(self, request):
-        return Response(
-            {
-                "message": "已预留功能用例转接口用例入口。建议先通过 OpenAPI 或 UI Trace 导入真实接口，再由 AI 补全断言与参数化。",
-                "status": "planned",
-            }
-        )
+        """
+        把功能用例（testcases.TestCase）通过 LLM 翻译为接口用例草稿。
 
-    @action(detail=False, methods=["post"], url_path="generate-from-ui-trace")
+        Body:
+          - testcase_id (int, required)
+          - dry_run (bool, default true)
+          - module (int, required when dry_run=false): 接收新建用例的接口模块
+          - environment (int, optional)
+          - selected_indexes (list[int], optional)
+        """
+        from .ai_from_functional import (
+            materialize_from_functional_case,
+            preview_from_functional_case,
+        )
+        from testcases.models import TestCase
+
+        testcase_id = request.data.get("testcase_id")
+        if not testcase_id:
+            return Response({"error": "testcase_id 必填"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            TestCase.objects.get(id=testcase_id)
+        except TestCase.DoesNotExist:
+            return Response(
+                {"error": f"功能用例 {testcase_id} 不存在"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        dry_run = request.data.get("dry_run", True)
+        if dry_run:
+            return Response(preview_from_functional_case(int(testcase_id)))
+
+        module_id = request.data.get("module")
+        if not module_id:
+            return Response(
+                {"error": "创建用例时 module 必填"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        environment_id = request.data.get("environment")
+        selected_indexes = request.data.get("selected_indexes")
+        try:
+            payload = materialize_from_functional_case(
+                testcase_id=int(testcase_id),
+                module_id=int(module_id),
+                selected_indexes=selected_indexes,
+                environment_id=int(environment_id) if environment_id else None,
+                creator=request.user,
+            )
+        except ApiModule.DoesNotExist:
+            return Response(
+                {"error": f"接口模块 {module_id} 不存在或不属于该用例的项目"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(payload)
+
+    @action(detail=False, methods=["post"], url_path="generate-from-ui-trace", permission_classes=[IsAuthenticated])
     def generate_from_ui_trace(self, request):
-        return Response(
-            {
-                "message": "已预留 UI Trace 网络请求转接口用例入口。下一步会从 UI 执行 trace/network 产物提取请求并生成候选接口用例。",
-                "status": "planned",
-            }
-        )
+        """
+        从 UI 执行记录的 Playwright trace 中提取网络请求，转为接口用例。
 
-    @action(detail=True, methods=["post"], url_path="ai-enhance")
-    def ai_enhance(self, request, pk=None):
-        return Response(
-            {
-                "message": "已预留 AI 增强入口。V1 优先保持 OpenAPI 事实来源，AI 后续用于补全断言、提取器与参数化。",
-                "status": "planned",
-            }
+        Body:
+          - execution_record_id (required, int): UI 执行记录 ID
+          - dry_run (bool, default true): 只预览不入库
+          - project (int, required when dry_run=false): 目标项目
+          - module (int, required when dry_run=false): 目标接口模块
+          - environment (int, optional): 指定环境；不传则按 base_url 自动查找/创建
+          - selected_indexes (list[int], optional): 选中的候选下标；不传全部创建
+          - skip_static (bool, default true): 过滤静态资源
+        """
+        execution_record_id = request.data.get("execution_record_id")
+        if not execution_record_id:
+            return Response(
+                {"error": "execution_record_id 必填"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            record = UiExecutionRecord.objects.get(id=execution_record_id)
+        except UiExecutionRecord.DoesNotExist:
+            return Response(
+                {"error": f"UI 执行记录 {execution_record_id} 不存在"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        skip_static = request.data.get("skip_static", True)
+        dry_run = request.data.get("dry_run", True)
+
+        if dry_run:
+            payload = preview_from_execution(record, skip_static=bool(skip_static))
+            return Response(payload)
+
+        project_id = request.data.get("project")
+        module_id = request.data.get("module")
+        if not project_id or not module_id:
+            return Response(
+                {"error": "创建用例时 project 与 module 必填"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response(
+                {"error": f"项目 {project_id} 不存在"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        try:
+            module = ApiModule.objects.get(id=module_id, project_id=project.id)
+        except ApiModule.DoesNotExist:
+            return Response(
+                {"error": f"接口模块 {module_id} 不存在或不属于该项目"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        environment = None
+        env_id = request.data.get("environment")
+        if env_id:
+            environment = ApiEnvironmentConfig.objects.filter(
+                id=env_id, project=project,
+            ).first()
+        result = materialize_from_execution(
+            record,
+            project=project,
+            module=module,
+            creator=request.user if request.user.is_authenticated else None,
+            selected_indexes=request.data.get("selected_indexes"),
+            environment=environment,
+            skip_static=bool(skip_static),
         )
+        return Response(result)
+
+    @action(detail=True, methods=["post"], url_path="ai-enhance", permission_classes=[IsAuthenticated])
+    def ai_enhance(self, request, pk=None):
+        """调用 LLM 为当前用例补全 assertions / extractors。
+
+        Body:
+          - apply (bool, default false): 为 true 时将建议合并到用例
+        """
+        from .ai_enhance import enhance_api_case
+
+        case = self.get_object()
+        apply = bool(request.data.get("apply", False))
+        suggested_override = request.data.get("suggested")
+        try:
+            payload = enhance_api_case(case.id, apply=apply, suggested_override=suggested_override)
+        except Exception as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(payload)
+
+    @action(detail=False, methods=["post"], url_path="batch-ai-enhance", permission_classes=[IsAuthenticated])
+    def batch_ai_enhance(self, request):
+        from .ai_enhance import enhance_api_case
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        from django.db import close_old_connections
+
+        case_ids = request.data.get("case_ids") or []
+        apply = bool(request.data.get("apply", False))
+        mode = str(request.data.get("mode") or "accurate").strip().lower()
+        preview_items = request.data.get("items") or []
+        if not case_ids:
+            return Response({"error": "请选择接口用例"}, status=status.HTTP_400_BAD_REQUEST)
+
+        cases = {
+            case.id: case
+            for case in ApiTestCase.objects.filter(id__in=case_ids)
+        }
+        override_map = {}
+        if isinstance(preview_items, list):
+            for item in preview_items:
+                if not isinstance(item, dict):
+                    continue
+                case_id = item.get("case_id")
+                suggested = item.get("suggested")
+                if case_id in cases and isinstance(suggested, dict):
+                    override_map[int(case_id)] = suggested
+
+        def _build_missing_item(raw_case_id):
+            return {
+                "case_id": raw_case_id,
+                "case_name": f"#{raw_case_id}",
+                "error": "用例不存在",
+            }
+
+        def _run_case_enhance(case):
+            close_old_connections()
+            try:
+                payload = enhance_api_case(
+                    case.id,
+                    apply=apply,
+                    suggested_override=override_map.get(case.id) if apply else None,
+                    fast_mode=(not apply and mode == "fast"),
+                )
+                suggested = payload.get("suggested") or {}
+                added_assertions = len(suggested.get("assertions") or [])
+                added_extractors = len(suggested.get("extractors") or [])
+                return {
+                    "case_id": case.id,
+                    "case_name": case.name,
+                    "method": case.method,
+                    "path": case.path,
+                    "current": payload.get("current") or {"assertions": [], "extractors": []},
+                    "merged": payload.get("merged") or {"assertions": [], "extractors": []},
+                    "rationale": payload.get("rationale") or "",
+                    "suggested": suggested,
+                    "added_assertions": added_assertions,
+                    "added_extractors": added_extractors,
+                    "applied": bool(payload.get("applied")),
+                }
+            finally:
+                close_old_connections()
+
+        items_map = {}
+        error_count = 0
+
+        missing_case_ids = []
+        valid_cases = []
+        for raw_case_id in case_ids:
+            case = cases.get(int(raw_case_id))
+            if not case:
+                missing_case_ids.append(raw_case_id)
+                error_count += 1
+                continue
+            valid_cases.append(case)
+
+        if apply:
+            for case in valid_cases:
+                try:
+                    items_map[case.id] = _run_case_enhance(case)
+                except Exception as exc:
+                    error_count += 1
+                    items_map[case.id] = {
+                        "case_id": case.id,
+                        "case_name": case.name,
+                        "error": str(exc),
+                    }
+        else:
+            max_workers = min(max(len(valid_cases), 1), 4)
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_map = {executor.submit(_run_case_enhance, case): case for case in valid_cases}
+                for future in as_completed(future_map):
+                    case = future_map[future]
+                    try:
+                        items_map[case.id] = future.result()
+                    except Exception as exc:
+                        error_count += 1
+                        items_map[case.id] = {
+                            "case_id": case.id,
+                            "case_name": case.name,
+                            "error": str(exc),
+                        }
+
+        for missing_case_id in missing_case_ids:
+            items_map[int(missing_case_id)] = _build_missing_item(missing_case_id)
+
+        items = []
+        enhanced_count = 0
+        for raw_case_id in case_ids:
+            item = items_map.get(int(raw_case_id)) or _build_missing_item(raw_case_id)
+            if (item.get("added_assertions") or 0) + (item.get("added_extractors") or 0) > 0 and not item.get("error"):
+                enhanced_count += 1
+            items.append(item)
+
+        return Response({
+            "items": items,
+            "total": len(case_ids),
+            "enhanced_count": enhanced_count,
+            "error_count": error_count,
+            "applied": apply,
+        })
 
 
 class ApiPublicDataViewSet(CreatorMixin, viewsets.ModelViewSet):
@@ -218,10 +604,105 @@ class ApiPublicDataViewSet(CreatorMixin, viewsets.ModelViewSet):
         return queryset
 
 
+class ApiScenarioViewSet(CreatorMixin, viewsets.ModelViewSet):
+    queryset = ApiScenario.objects.select_related("project", "module", "creator").prefetch_related("steps__test_case")
+    serializer_class = ApiScenarioSerializer
+    filterset_fields = ["project", "status"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(module_id__in=module_ids or [-1])
+        keyword = (self.request.query_params.get("search") or "").strip()
+        if keyword:
+            queryset = queryset.filter(Q(name__icontains=keyword) | Q(description__icontains=keyword))
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        payload = dict(request.data)
+        steps = payload.pop("steps", [])
+        serializer = self.get_serializer(data=payload)
+        serializer.is_valid(raise_exception=True)
+        scenario = serializer.save(creator=request.user)
+        self._sync_steps(scenario, steps)
+        return Response(self.get_serializer(scenario).data, status=status.HTTP_201_CREATED)
+
+    def partial_update(self, request, *args, **kwargs):
+        scenario = self.get_object()
+        payload = dict(request.data)
+        steps = payload.pop("steps", None)
+        serializer = self.get_serializer(scenario, data=payload, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        if steps is not None:
+            self._sync_steps(scenario, steps)
+        return Response(self.get_serializer(scenario).data)
+
+    def _sync_steps(self, scenario: ApiScenario, steps):
+        scenario.steps.all().delete()
+        normalized = []
+        for index, step in enumerate(steps or [], start=1):
+            test_case_id = step.get("test_case") or step.get("test_case_id")
+            if not test_case_id:
+                continue
+            normalized.append(ApiScenarioStep(
+                scenario=scenario,
+                order=int(step.get("order") or index),
+                test_case_id=int(test_case_id),
+                name=(step.get("name") or "").strip(),
+                is_enabled=bool(step.get("is_enabled", True)),
+                stop_on_failure=bool(step.get("stop_on_failure", True)),
+            ))
+        if normalized:
+            ApiScenarioStep.objects.bulk_create(normalized)
+
+    @action(detail=True, methods=["post"])
+    def execute(self, request, pk=None):
+        scenario = self.get_object()
+        env_id = request.data.get("environment")
+        record = ApiScenarioExecutionRecord.objects.create(
+            project=scenario.project,
+            scenario=scenario,
+            environment_id=env_id,
+            status=0,
+            trigger_type=request.data.get("trigger_type") or "manual",
+            executor=request.user if request.user.is_authenticated else None,
+        )
+        execute_api_scenario_task.delay(record.id)
+        return Response({"record_id": record.id, "message": "接口场景已提交执行"})
+
+
+class ApiScenarioExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ApiScenarioExecutionRecord.objects.select_related("project", "scenario", "environment", "executor").prefetch_related("step_records__test_case", "step_records__step")
+    serializer_class = ApiScenarioExecutionRecordSerializer
+    filterset_fields = ["project", "scenario", "status", "trigger_type"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(scenario__module_id__in=module_ids or [-1])
+        return queryset
+
+
 class ApiScriptViewSet(CreatorMixin, viewsets.ModelViewSet):
     queryset = ApiScript.objects.select_related("project", "module", "creator")
     serializer_class = ApiScriptSerializer
-    filterset_fields = ["project", "module", "script_type"]
+    filterset_fields = ["project", "script_type"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(Q(module__isnull=True) | Q(module_id__in=module_ids or [-1]))
+        return queryset
 
 
 class ApiExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
@@ -229,9 +710,17 @@ class ApiExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ApiExecutionRecordSerializer
     filterset_fields = ["project", "test_case", "batch", "status", "trigger_type"]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(test_case__module_id__in=module_ids or [-1])
+        return queryset
+
 
 class ApiBatchExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ApiBatchExecutionRecord.objects.select_related("project", "executor").prefetch_related("execution_records")
     serializer_class = ApiBatchExecutionRecordSerializer
     filterset_fields = ["project", "status", "trigger_type"]
-

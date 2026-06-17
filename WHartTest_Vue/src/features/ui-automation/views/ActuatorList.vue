@@ -53,7 +53,7 @@
               v-model="record.is_open"
               size="small"
               :loading="togglingId === record.id"
-              @change="(val) => handleToggleOpen(record, val)"
+              @change="(val) => handleToggleOpen(record, Boolean(val))"
             />
           </template>
         </a-table-column>
@@ -85,10 +85,7 @@ const loadActuators = async () => {
   loading.value = true
   try {
     const res = await actuatorApi.list()
-    // 拦截器处理: res.data = { success, data: 原始response.data }
-    // 原始 response.data = { status, data: { count, items } }
-    const innerData = res.data?.data?.data
-    actuators.value = innerData?.items || []
+    actuators.value = Array.isArray((res as any)?.data?.items) ? (res as any).data.items : []
   } catch (e) {
     console.error('Load actuators error:', e)
     actuators.value = []

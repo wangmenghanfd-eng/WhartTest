@@ -1,0 +1,485 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img "WHartTest Logo" [ref=e7]
+          - generic [ref=e8]: WHartTest
+        - generic "MSS" [ref=e10] [cursor=pointer]:
+          - textbox "请选择项目"
+          - generic [ref=e11]: MSS
+          - img [ref=e14]
+      - generic [ref=e16]:
+        - button "切换到默认主题" [ref=e17] [cursor=pointer]:
+          - img [ref=e18]
+        - 'link "当前版本: v2.2.0" [ref=e783] [cursor=pointer]':
+          - /url: https://github.com/MGdaasLab/WHartTest/releases/tag/v2.4.0
+          - text: "当前版本: v2.2.0"
+        - generic [ref=e23]: A
+        - generic [ref=e24] [cursor=pointer]:
+          - generic [ref=e25]: admin
+          - img [ref=e26]
+    - generic [ref=e28]:
+      - generic [ref=e30]:
+        - generic [ref=e32]:
+          - generic [ref=e33] [cursor=pointer]:
+            - img [ref=e35]
+            - link "首页" [ref=e39]:
+              - /url: /dashboard
+          - generic [ref=e40] [cursor=pointer]:
+            - img [ref=e42]
+            - link "项目管理" [ref=e48]:
+              - /url: /projects
+          - generic [ref=e49] [cursor=pointer]:
+            - img [ref=e51]
+            - link "需求管理" [ref=e54]:
+              - /url: "#"
+          - generic [ref=e55] [cursor=pointer]:
+            - img [ref=e57]
+            - link "UI自动化" [ref=e61]:
+              - /url: "#"
+          - generic [ref=e62] [cursor=pointer]:
+            - img [ref=e64]
+            - link "接口自动化" [ref=e67]:
+              - /url: "#"
+          - generic [ref=e68] [cursor=pointer]:
+            - img [ref=e70]
+            - link "任务中心" [ref=e74]:
+              - /url: "#"
+          - generic [ref=e76] [cursor=pointer]:
+            - img [ref=e78]
+            - generic [ref=e80]: 测试管理
+            - img [ref=e82]
+          - generic [ref=e84] [cursor=pointer]:
+            - img [ref=e86]
+            - link "LLM对话" [ref=e89]:
+              - /url: "#"
+          - generic [ref=e90] [cursor=pointer]:
+            - img [ref=e92]
+            - link "知识库管理" [ref=e95]:
+              - /url: "#"
+          - generic [ref=e97] [cursor=pointer]:
+            - img [ref=e99]
+            - generic [ref=e102]: 系统管理
+            - img [ref=e104]
+        - button "收起" [ref=e107] [cursor=pointer]:
+          - img [ref=e109]
+          - generic [ref=e111]: 收起
+      - main [ref=e112]:
+        - generic [ref=e113]:
+          - complementary [ref=e114]:
+            - generic [ref=e115]: 接口项目/模块
+            - button "新增模块" [ref=e116] [cursor=pointer]
+            - generic [ref=e789] [cursor=pointer]: Crisis Management
+          - generic [ref=e118]:
+            - generic [ref=e121]:
+              - generic [ref=e123] [cursor=pointer]: 接口定义
+              - generic [ref=e125] [cursor=pointer]: 接口用例
+              - generic [ref=e127] [cursor=pointer]: 前置/后置脚本
+              - generic [ref=e129] [cursor=pointer]: 公共数据
+              - generic [ref=e131] [cursor=pointer]: 环境配置
+              - generic [ref=e133] [cursor=pointer]: 批量执行
+              - generic [ref=e135] [cursor=pointer]: 执行记录
+              - generic [ref=e137] [cursor=pointer]: 报告
+              - generic [ref=e139] [cursor=pointer]: 定时任务
+            - generic [ref=e141]:
+              - generic [ref=e143]:
+                - generic [ref=e144]:
+                  - generic [ref=e145]:
+                    - textbox "搜索接口名称/路径" [ref=e146]
+                    - img [ref=e149] [cursor=pointer]
+                  - button "OpenAPI/Swagger 导入" [ref=e151] [cursor=pointer]
+                  - button "手动新增接口" [ref=e152] [cursor=pointer]
+                - table [ref=e790]:
+                  - rowgroup [ref=e799]:
+                    - row "ID 方法 接口名称 路径 模块 来源 操作" [ref=e800]:
+                      - columnheader "ID" [ref=e801]:
+                        - generic [ref=e803]: ID
+                      - columnheader "方法" [ref=e804]:
+                        - generic [ref=e806]: 方法
+                      - columnheader "接口名称" [ref=e807]:
+                        - generic [ref=e810]: 接口名称
+                      - columnheader "路径" [ref=e811]:
+                        - generic [ref=e814]: 路径
+                      - columnheader "模块" [ref=e815]:
+                        - generic [ref=e817]: 模块
+                      - columnheader "来源" [ref=e818]:
+                        - generic [ref=e820]: 来源
+                      - columnheader "操作" [ref=e821]:
+                        - generic [ref=e823]: 操作
+                  - rowgroup [ref=e824]:
+                    - row "38 POST Create Crisis /api/v1/admin/crises Crisis Management manual 生成用例 编辑 删除" [ref=e825]:
+                      - cell "38" [ref=e826]:
+                        - generic [ref=e828]: "38"
+                      - cell "POST" [ref=e829]:
+                        - generic [ref=e832]: POST
+                      - cell "Create Crisis" [ref=e833]:
+                        - generic [ref=e836]: Create Crisis
+                      - cell "/api/v1/admin/crises" [ref=e837]:
+                        - generic [ref=e840]: /api/v1/admin/crises
+                      - cell "Crisis Management" [ref=e841]:
+                        - generic [ref=e843]: Crisis Management
+                      - cell "manual" [ref=e844]:
+                        - generic [ref=e846]: manual
+                      - cell "生成用例 编辑 删除" [ref=e847]:
+                        - generic [ref=e850]:
+                          - button "生成用例" [ref=e852] [cursor=pointer]
+                          - button "编辑" [ref=e854] [cursor=pointer]
+                          - button "删除" [ref=e856] [cursor=pointer]
+              - generic [ref=e212]:
+                - generic [ref=e213]:
+                  - generic [ref=e214]:
+                    - textbox "搜索用例名称/路径" [ref=e215]
+                    - img [ref=e218] [cursor=pointer]
+                  - generic [ref=e220] [cursor=pointer]:
+                    - textbox "环境筛选" [ref=e221]
+                    - img [ref=e224]
+                  - generic [ref=e226] [cursor=pointer]:
+                    - textbox "执行环境（覆盖）" [ref=e227]
+                    - img [ref=e230]
+                  - button "UI Trace 转接口用例" [ref=e232] [cursor=pointer]
+                  - button "功能用例转接口用例" [ref=e233] [cursor=pointer]
+                  - button "新增用例" [ref=e234] [cursor=pointer]
+                  - button "批量执行" [disabled] [ref=e235]
+                - table [ref=e857]:
+                  - rowgroup [ref=e867]:
+                    - row "ID 方法 用例名称 路径 默认环境 状态 操作" [ref=e868]:
+                      - columnheader [ref=e869]:
+                        - generic [ref=e871] [cursor=pointer]:
+                          - checkbox
+                      - columnheader "ID" [ref=e874]:
+                        - generic [ref=e876]: ID
+                      - columnheader "方法" [ref=e877]:
+                        - generic [ref=e879]: 方法
+                      - columnheader "用例名称" [ref=e880]:
+                        - generic [ref=e883]: 用例名称
+                      - columnheader "路径" [ref=e884]:
+                        - generic [ref=e887]: 路径
+                      - columnheader "默认环境" [ref=e888]:
+                        - generic [ref=e891]: 默认环境
+                      - columnheader "状态" [ref=e892]:
+                        - generic [ref=e894]: 状态
+                      - columnheader "操作" [ref=e895]:
+                        - generic [ref=e897]: 操作
+                  - rowgroup [ref=e898]:
+                    - row "60 POST Create Crisis - real MSS /api/v1/admin/crises MSS Admin Dev 成功 执行 编辑 AI增强 删除" [ref=e899]:
+                      - cell [ref=e900]:
+                        - generic [ref=e902] [cursor=pointer]:
+                          - checkbox
+                      - cell "60" [ref=e905]:
+                        - generic [ref=e907]: "60"
+                      - cell "POST" [ref=e908]:
+                        - generic [ref=e911]: POST
+                      - cell "Create Crisis - real MSS" [ref=e912]:
+                        - generic [ref=e915]: Create Crisis - real MSS
+                      - cell "/api/v1/admin/crises" [ref=e916]:
+                        - generic [ref=e919]: /api/v1/admin/crises
+                      - cell "MSS Admin Dev" [ref=e920]:
+                        - generic [ref=e923]: MSS Admin Dev
+                      - cell "成功" [ref=e924]:
+                        - generic [ref=e927]: 成功
+                      - cell "执行 编辑 AI增强 删除" [ref=e928]:
+                        - generic [ref=e931]:
+                          - button "执行" [ref=e933] [cursor=pointer]
+                          - button "编辑" [ref=e935] [cursor=pointer]
+                          - button "AI增强" [ref=e937] [cursor=pointer]
+                          - button "删除" [ref=e939] [cursor=pointer]
+              - generic [ref=e302]:
+                - button "新增脚本" [ref=e304] [cursor=pointer]
+                - generic [ref=e309]:
+                  - table [ref=e312]:
+                    - rowgroup [ref=e319]:
+                      - row "脚本名称 类型 模块 内容 操作" [ref=e320]:
+                        - columnheader "脚本名称" [ref=e321]:
+                          - generic [ref=e323]: 脚本名称
+                        - columnheader "类型" [ref=e324]:
+                          - generic [ref=e326]: 类型
+                        - columnheader "模块" [ref=e327]:
+                          - generic [ref=e329]: 模块
+                        - columnheader "内容" [ref=e330]:
+                          - generic [ref=e333]: 内容
+                        - columnheader "操作" [ref=e334]:
+                          - generic [ref=e336]: 操作
+                  - table [ref=e339]:
+                    - rowgroup [ref=e340]:
+                      - row "暂无数据" [ref=e341]:
+                        - cell "暂无数据" [ref=e342]:
+                          - generic [ref=e345]:
+                            - img [ref=e347]
+                            - generic [ref=e349]: 暂无数据
+              - generic [ref=e355]:
+                - generic [ref=e356]:
+                  - generic [ref=e357]:
+                    - textbox "搜索变量名/变量值" [ref=e358]
+                    - img [ref=e361] [cursor=pointer]
+                  - button "新增公共数据" [ref=e363] [cursor=pointer]
+                - generic [ref=e368]:
+                  - table [ref=e371]:
+                    - rowgroup [ref=e377]:
+                      - row "变量名 变量值 状态 操作" [ref=e378]:
+                        - columnheader "变量名" [ref=e379]:
+                          - generic [ref=e381]: 变量名
+                        - columnheader "变量值" [ref=e382]:
+                          - generic [ref=e385]: 变量值
+                        - columnheader "状态" [ref=e386]:
+                          - generic [ref=e388]: 状态
+                        - columnheader "操作" [ref=e389]:
+                          - generic [ref=e391]: 操作
+                  - table [ref=e394]:
+                    - rowgroup [ref=e395]:
+                      - row "暂无数据" [ref=e396]:
+                        - cell "暂无数据" [ref=e397]:
+                          - generic [ref=e400]:
+                            - img [ref=e402]
+                            - generic [ref=e404]: 暂无数据
+              - generic [ref=e410]:
+                - generic [ref=e411]:
+                  - generic [ref=e412]:
+                    - textbox "搜索环境名称/URL" [ref=e413]
+                    - img [ref=e416] [cursor=pointer]
+                  - button "新增环境" [ref=e418] [cursor=pointer]
+                - table [ref=e940]:
+                  - rowgroup [ref=e946]:
+                    - row "环境名称 基础 URL 默认 操作" [ref=e947]:
+                      - columnheader "环境名称" [ref=e948]:
+                        - generic [ref=e950]: 环境名称
+                      - columnheader "基础 URL" [ref=e951]:
+                        - generic [ref=e954]: 基础 URL
+                      - columnheader "默认" [ref=e955]:
+                        - generic [ref=e957]: 默认
+                      - columnheader "操作" [ref=e958]:
+                        - generic [ref=e960]: 操作
+                  - rowgroup [ref=e961]:
+                    - row "MSS Admin Dev https://mss-admin-dev.marchbu.com 默认 编辑 删除" [ref=e962]:
+                      - cell "MSS Admin Dev" [ref=e963]:
+                        - generic [ref=e965]: MSS Admin Dev
+                      - cell "https://mss-admin-dev.marchbu.com" [ref=e966]:
+                        - generic [ref=e969]: https://mss-admin-dev.marchbu.com
+                      - cell "默认" [ref=e970]:
+                        - generic [ref=e973]: 默认
+                      - cell "编辑 删除" [ref=e974]:
+                        - generic [ref=e977]:
+                          - button "编辑" [ref=e979] [cursor=pointer]
+                          - button "删除" [ref=e981] [cursor=pointer]
+              - table [ref=e982]:
+                - rowgroup [ref=e989]:
+                  - row "ID 批次名称 状态 成功/失败/总计 成功率" [ref=e990]:
+                    - columnheader "ID" [ref=e991]:
+                      - generic [ref=e993]: ID
+                    - columnheader "批次名称" [ref=e994]:
+                      - generic [ref=e997]: 批次名称
+                    - columnheader "状态" [ref=e998]:
+                      - generic [ref=e1000]: 状态
+                    - columnheader "成功/失败/总计" [ref=e1001]:
+                      - generic [ref=e1003]: 成功/失败/总计
+                    - columnheader "成功率" [ref=e1004]:
+                      - generic [ref=e1006]: 成功率
+                - rowgroup [ref=e1007]:
+                  - row "25 定时任务-MSS API once task 全部成功 1/0/1 100.0%" [ref=e1008]:
+                    - cell "25" [ref=e1009]:
+                      - generic [ref=e1011]: "25"
+                    - cell "定时任务-MSS API once task" [ref=e1012]:
+                      - generic [ref=e1015]: 定时任务-MSS API once task
+                    - cell "全部成功" [ref=e1016]:
+                      - generic [ref=e1019]: 全部成功
+                    - cell "1/0/1" [ref=e1020]:
+                      - generic [ref=e1022]: 1/0/1
+                    - cell "100.0%" [ref=e1023]:
+                      - generic [ref=e1025]: 100.0%
+              - table [ref=e1026]:
+                - rowgroup [ref=e1033]:
+                  - row "ID 用例名称 状态 耗时 错误" [ref=e1034]:
+                    - columnheader "ID" [ref=e1035]:
+                      - generic [ref=e1037]: ID
+                    - columnheader "用例名称" [ref=e1038]:
+                      - generic [ref=e1041]: 用例名称
+                    - columnheader "状态" [ref=e1042]:
+                      - generic [ref=e1044]: 状态
+                    - columnheader "耗时" [ref=e1045]:
+                      - generic [ref=e1047]: 耗时
+                    - columnheader "错误" [ref=e1048]:
+                      - generic [ref=e1050]: 错误
+                - rowgroup [ref=e1051]:
+                  - row "211 Create Crisis - real MSS 成功 0.209 s -" [ref=e1052]:
+                    - cell "211" [ref=e1053]:
+                      - generic [ref=e1055]: "211"
+                    - cell "Create Crisis - real MSS" [ref=e1056]:
+                      - generic [ref=e1059]: Create Crisis - real MSS
+                    - cell "成功" [ref=e1060]:
+                      - generic [ref=e1063]: 成功
+                    - cell "0.209 s" [ref=e1064]:
+                      - generic [ref=e1066]: 0.209 s
+                    - cell "-" [ref=e1067]:
+                      - generic [ref=e1069]: "-"
+                  - row "210 Create Crisis - real MSS 成功 1.088 s -" [ref=e1070]:
+                    - cell "210" [ref=e1071]:
+                      - generic [ref=e1073]: "210"
+                    - cell "Create Crisis - real MSS" [ref=e1074]:
+                      - generic [ref=e1077]: Create Crisis - real MSS
+                    - cell "成功" [ref=e1078]:
+                      - generic [ref=e1081]: 成功
+                    - cell "1.088 s" [ref=e1082]:
+                      - generic [ref=e1084]: 1.088 s
+                    - cell "-" [ref=e1085]:
+                      - generic [ref=e1087]: "-"
+              - generic [ref=e569]:
+                - generic [ref=e570]:
+                  - generic [ref=e574] [cursor=pointer]:
+                    - generic [ref=e575]: 累计执行
+                    - generic [ref=e577]: "2"
+                  - generic [ref=e581] [cursor=pointer]:
+                    - generic [ref=e582]: 通过
+                    - generic [ref=e584]: "2"
+                  - generic [ref=e588] [cursor=pointer]:
+                    - generic [ref=e589]: 失败
+                    - generic [ref=e591]: "0"
+                  - generic [ref=e594]:
+                    - generic [ref=e595]:
+                      - generic [ref=e596]: 成功率
+                      - generic [ref=e597]: 100.0%
+                    - generic [ref=e599]: 100.0%
+                    - generic [ref=e600]:
+                      - generic [ref=e603]: 通过 2
+                      - generic [ref=e606]: 失败 0
+                - separator [ref=e607]:
+                  - generic [ref=e608]: 近 7 天趋势
+                - generic [ref=e609]:
+                  - generic [ref=e614]: 05-28
+                  - generic [ref=e619]: 05-29
+                  - generic [ref=e624]: 05-30
+                  - generic [ref=e629]: 05-31
+                  - generic [ref=e634]: 06-01
+                  - generic [ref=e639]: 06-02
+                  - generic [ref=e644]: 06-03
+                - separator [ref=e645]:
+                  - generic [ref=e646]: 按接口聚合（最近执行优先）
+                - generic [ref=e648]:
+                  - table [ref=e652]:
+                    - rowgroup [ref=e663]:
+                      - row "用例 方法 路径 最近执行 总数 通过 失败 成功率 详情" [ref=e664]:
+                        - columnheader "用例" [ref=e665]:
+                          - generic [ref=e668]: 用例
+                        - columnheader "方法" [ref=e669]:
+                          - generic [ref=e671]: 方法
+                        - columnheader "路径" [ref=e672]:
+                          - generic [ref=e675]: 路径
+                        - columnheader "最近执行" [ref=e676]:
+                          - generic [ref=e678]: 最近执行
+                        - columnheader "总数" [ref=e679]:
+                          - generic [ref=e681]: 总数
+                        - columnheader "通过" [ref=e682]:
+                          - generic [ref=e684]: 通过
+                        - columnheader "失败" [ref=e685]:
+                          - generic [ref=e687]: 失败
+                        - columnheader "成功率" [ref=e688]:
+                          - generic [ref=e690]: 成功率
+                        - columnheader "详情" [ref=e691]:
+                          - generic [ref=e693]: 详情
+                    - rowgroup [ref=e694]:
+                      - row "Create Crisis - real MSS POST https://mss-admin-dev.marchbu.com/api/v1/admin/crises 2026/06/02 18:42:58 2 2 0 100.0% 查看详情" [ref=e1088]:
+                        - cell "Create Crisis - real MSS" [ref=e1089]:
+                          - generic [ref=e1092]: Create Crisis - real MSS
+                        - cell "POST" [ref=e1093]:
+                          - generic [ref=e1095]: POST
+                        - cell "https://mss-admin-dev.marchbu.com/api/v1/admin/crises" [ref=e1096]:
+                          - generic [ref=e1099]: https://mss-admin-dev.marchbu.com/api/v1/admin/crises
+                        - cell "2026/06/02 18:42:58" [ref=e1100]:
+                          - generic [ref=e1102]: 2026/06/02 18:42:58
+                        - cell "2" [ref=e1103]:
+                          - generic [ref=e1105]: "2"
+                        - cell "2" [ref=e1106]:
+                          - generic [ref=e1108]: "2"
+                        - cell "0" [ref=e1109]:
+                          - generic [ref=e1111]: "0"
+                        - cell "100.0%" [ref=e1112]:
+                          - generic [ref=e1115]: 100.0%
+                        - cell "查看详情" [ref=e1116]:
+                          - button "查看详情" [ref=e1119] [cursor=pointer]
+                  - list [ref=e1122]:
+                    - generic [ref=e1123]:
+                      - img [ref=e1124]
+                      - text: .
+                    - listitem [ref=e1126] [cursor=pointer]: "1"
+                    - generic [ref=e1127]:
+                      - img [ref=e1128]
+                      - text: .
+                - separator [ref=e704]:
+                  - generic [ref=e705]: 最近 10 个批次
+                - table [ref=e711]:
+                  - rowgroup [ref=e720]:
+                    - row "ID 名称 状态 通过/失败/总计 成功率 触发 详情" [ref=e721]:
+                      - columnheader "ID" [ref=e722]:
+                        - generic [ref=e724]: ID
+                      - columnheader "名称" [ref=e725]:
+                        - generic [ref=e728]: 名称
+                      - columnheader "状态" [ref=e729]:
+                        - generic [ref=e731]: 状态
+                      - columnheader "通过/失败/总计" [ref=e732]:
+                        - generic [ref=e734]: 通过/失败/总计
+                      - columnheader "成功率" [ref=e735]:
+                        - generic [ref=e737]: 成功率
+                      - columnheader "触发" [ref=e738]:
+                        - generic [ref=e740]: 触发
+                      - columnheader "详情" [ref=e741]:
+                        - generic [ref=e743]: 详情
+                  - rowgroup [ref=e744]:
+                    - row "25 定时任务-MSS API once task 全部成功 1/0/1 100.0% scheduled 查看详情" [ref=e1130]:
+                      - cell "25" [ref=e1131]:
+                        - generic [ref=e1133]: "25"
+                      - cell "定时任务-MSS API once task" [ref=e1134]:
+                        - generic [ref=e1137]: 定时任务-MSS API once task
+                      - cell "全部成功" [ref=e1138]:
+                        - generic [ref=e1141]: 全部成功
+                      - cell "1/0/1" [ref=e1142]:
+                        - generic [ref=e1144]: 1/0/1
+                      - cell "100.0%" [ref=e1145]:
+                        - generic [ref=e1148]: 100.0%
+                      - cell "scheduled" [ref=e1149]:
+                        - generic [ref=e1151]: scheduled
+                      - cell "查看详情" [ref=e1152]:
+                        - button "查看详情" [ref=e1155] [cursor=pointer]
+              - generic [ref=e760]:
+                - alert [ref=e761]:
+                  - img [ref=e763]
+                  - generic [ref=e766]: 接口自动化的定时任务来自任务中心。这里只筛选出 module=api_automation 的任务，便于在接口自动化页面直接管理。如需新增请到「任务中心」。
+                  - button "Close" [ref=e767] [cursor=pointer]:
+                    - img [ref=e769]
+                - table [ref=e1161]:
+                  - rowgroup [ref=e1170]:
+                    - row "ID 名称 调度 状态 用例 上次运行 操作" [ref=e1171]:
+                      - columnheader "ID" [ref=e1172]:
+                        - generic [ref=e1174]: ID
+                      - columnheader "名称" [ref=e1175]:
+                        - generic [ref=e1178]: 名称
+                      - columnheader "调度" [ref=e1179]:
+                        - generic [ref=e1181]: 调度
+                      - columnheader "状态" [ref=e1182]:
+                        - generic [ref=e1184]: 状态
+                      - columnheader "用例" [ref=e1185]:
+                        - generic [ref=e1187]: 用例
+                      - columnheader "上次运行" [ref=e1188]:
+                        - generic [ref=e1190]: 上次运行
+                      - columnheader "操作" [ref=e1191]:
+                        - generic [ref=e1193]: 操作
+                  - rowgroup [ref=e1194]:
+                    - row "14 MSS API once task 一次性 2026-06-02 18:50 未启用 1 条用例 2026/6/2 18:42:56 立即执行 启用 删除" [ref=e1195]:
+                      - cell "14" [ref=e1196]:
+                        - generic [ref=e1198]: "14"
+                      - cell "MSS API once task" [ref=e1199]:
+                        - generic [ref=e1202]: MSS API once task
+                      - cell "一次性 2026-06-02 18:50" [ref=e1203]:
+                        - generic [ref=e1205]: 一次性 2026-06-02 18:50
+                      - cell "未启用" [ref=e1206]:
+                        - generic [ref=e1209]: 未启用
+                      - cell "1 条用例" [ref=e1210]:
+                        - generic [ref=e1213]: 1 条用例
+                      - cell "2026/6/2 18:42:56" [ref=e1214]:
+                        - generic [ref=e1216]: 2026/6/2 18:42:56
+                      - cell "立即执行 启用 删除" [ref=e1217]:
+                        - generic [ref=e1220]:
+                          - button "立即执行" [ref=e1222] [cursor=pointer]
+                          - button "启用" [ref=e1224] [cursor=pointer]
+                          - button "删除" [ref=e1226] [cursor=pointer]
+  - generic [ref=e782]:
+    - alert
+    - alert

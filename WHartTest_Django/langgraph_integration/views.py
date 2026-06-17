@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from django.db.models import Q
+from django.db.models import Q, F
 from django.utils import timezone
 from django.views import View
 from django.utils.decorators import method_decorator
@@ -39,6 +39,72 @@ from orchestrator_integration.middleware_config import (
 # ============== 公共工具函数 ==============
 
 
+def _sanitize_user_visible_ai_text(text: str) -> str:
+    """清理误混入最终回复的历史摘要/中间标记。"""
+    if not isinstance(text, str):
+        return text
+
+    cleaned = text.replace("\r\n", "\n").strip()
+    if not cleaned:
+        return cleaned
+
+    leading_noise = {
+        "}",
+        "</tool_call>",
+        "Initial greeting from user.",
+        "Previous conversation was too long to summarize.",
+    }
+
+    lines = cleaned.splitlines()
+    while lines:
+        current = lines[0].strip()
+        if not current:
+            lines.pop(0)
+            continue
+        if current in leading_noise:
+            lines.pop(0)
+            continue
+        if re.fullmatch(r"Here is a summary of the conversation to date:?", current, re.IGNORECASE):
+            lines.pop(0)
+            continue
+        break
+
+    cleaned = "\n".join(lines).lstrip()
+    summary_marker = "Here is a summary of the conversation to date:"
+    if summary_marker.lower() in cleaned.lower():
+        cleaned = re.sub(
+            r"^.*?Here is a summary of the conversation to date:\s*",
+            "",
+            cleaned,
+            flags=re.IGNORECASE | re.DOTALL,
+        ).lstrip()
+        cleaned = re.sub(r"^(?:用户请求[^。！？\n]{1,120}[。！？]\s*)+", "", cleaned).lstrip()
+        answer_markers = ["好的", "首先", "以下", "为了", "根据", "关于", "可以", "通常", "如果", "在"]
+        marker_indexes = [cleaned.find(marker) for marker in answer_markers if cleaned.find(marker) != -1]
+        if marker_indexes:
+            cleaned = cleaned[min(marker_indexes):].lstrip()
+    cleaned = re.sub(
+        r"^.*?Here is a summary of the conversation to date:\s*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE | re.DOTALL,
+    ).lstrip()
+    cleaned = re.sub(r"^(?:Initial greeting from user\.?\s*)+", "", cleaned, flags=re.IGNORECASE).lstrip()
+    cleaned = re.sub(r"^(?:Here is a summary of the conversation to date:\s*)+", "", cleaned, flags=re.IGNORECASE).lstrip()
+    cleaned = re.sub(r"^(?:Previous conversation was too long to summarize\.?\s*)+", "", cleaned, flags=re.IGNORECASE).lstrip()
+    cleaned = re.sub(r"^(?:用户请求[^。！？\n]{1,120}[。！？]\s*)+", "", cleaned).lstrip()
+    cleaned = re.sub(r"^(?:[^。！？\n]{1,120}(?:开始|讨论开始)[。！？]\s*)+", "", cleaned).lstrip()
+    cleaned = re.sub(r"^[^。！？\n]{1,140}[。！？]\s*(?=好的|首先|以下|为了|根据|关于|可以|通常|如果|在)", "", cleaned).lstrip()
+    answer_markers = ["好的", "首先", "以下", "为了", "根据", "关于", "可以", "通常", "如果", "在"]
+    if re.match(r"^[^。！？\n]{1,140}[。！？]\s*", cleaned):
+        marker_indexes = [cleaned.find(marker) for marker in answer_markers if cleaned.find(marker) != -1]
+        if marker_indexes:
+            first_idx = min(marker_indexes)
+            if 0 < first_idx < 220:
+                cleaned = cleaned[first_idx:].lstrip()
+    return cleaned or text
+
+
 def check_project_permission(user, project_id):
     """
     检查用户是否有访问指定项目的权限
@@ -63,6 +129,67 @@ def check_project_permission(user, project_id):
         return None
     except Project.DoesNotExist:
         return None
+
+
+def _extract_token_usage_from_messages(messages) -> tuple[int, int]:
+    """从最近一条 AI 消息中提取 token 使用量。"""
+    last_human_text = ""
+    last_ai_text = ""
+
+    for msg in reversed(messages or []):
+        if not last_human_text and isinstance(msg, HumanMessage):
+            last_human_text = str(getattr(msg, "content", "") or "")
+
+        if not last_ai_text and isinstance(msg, AIMessage):
+            last_ai_text = str(getattr(msg, "content", "") or "")
+
+        if not isinstance(msg, AIMessage):
+            continue
+
+        usage_metadata = getattr(msg, "usage_metadata", None) or {}
+        if usage_metadata:
+            input_tokens = int(
+                usage_metadata.get("input_tokens")
+                or usage_metadata.get("prompt_tokens")
+                or 0
+            )
+            output_tokens = int(
+                usage_metadata.get("output_tokens")
+                or usage_metadata.get("completion_tokens")
+                or 0
+            )
+            if input_tokens or output_tokens:
+                return input_tokens, output_tokens
+
+        response_metadata = getattr(msg, "response_metadata", None) or {}
+        token_usage = (
+            response_metadata.get("token_usage")
+            or response_metadata.get("usage")
+            or {}
+        )
+        if token_usage:
+            input_tokens = int(
+                token_usage.get("prompt_tokens")
+                or token_usage.get("input_tokens")
+                or 0
+            )
+            output_tokens = int(
+                token_usage.get("completion_tokens")
+                or token_usage.get("output_tokens")
+                or 0
+            )
+            if input_tokens or output_tokens:
+                return input_tokens, output_tokens
+
+    def _estimate_tokens(text: str) -> int:
+        stripped = "".join((text or "").split())
+        if not stripped:
+            return 0
+        cjk_chars = sum(1 for ch in stripped if "\u4e00" <= ch <= "\u9fff")
+        other_chars = max(len(stripped) - cjk_chars, 0)
+        return max(cjk_chars + ((other_chars + 3) // 4), 1)
+
+    return _estimate_tokens(last_human_text), _estimate_tokens(last_ai_text)
 
 
 # --- 新增导入 ---
@@ -594,7 +721,10 @@ async def _format_project_skills(project):
             return ""
 
         skills_text = "\n\n# Available Skills\n\n"
-        skills_text += "以下是可用的 Skills 列表。需要使用某个 Skill 时，先调用 `read_skill_content` 工具获取完整的使用说明，再调用 `execute_skill_script` 执行命令。\n\n"
+        skills_text += (
+            "以下是可用的 Skills 列表。需要使用某个 Skill 时，先调用 `read_skill_content` 工具获取完整的使用说明，再调用 `execute_skill_script` 执行命令。"
+            "如果用户明确点名了某个 Skill，不能只读取说明后停止，必须至少执行一次对应命令，再基于执行结果回答。\n\n"
+        )
         for skill in skills:
             skills_text += f"- **{skill.name}**: {skill.description}\n"
 
@@ -1447,6 +1577,7 @@ class ChatAPIView(APIView):
                                 content = (
                                     msg.content if hasattr(msg, "content") else str(msg)
                                 )
+                                content = _sanitize_user_visible_ai_text(content)
 
                                 # 跳过空的AI消息（工具调用前的中间状态）
                                 if not content or content.strip() == "":
@@ -1487,7 +1618,7 @@ class ChatAPIView(APIView):
                     if user_message_index == -1 and messages:
                         last_message = messages[-1]
                         if hasattr(last_message, "content"):
-                            ai_response_content = last_message.content
+                            ai_response_content = _sanitize_user_visible_ai_text(last_message.content)
 
                 logger.info(
                     f"ChatAPIView: Successfully processed message for thread_id: {thread_id}. AI response: {ai_response_content[:100]}..."
@@ -1495,6 +1626,21 @@ class ChatAPIView(APIView):
                 logger.info(
                     f"ChatAPIView: Conversation flow contains {len(conversation_flow)} messages"
                 )
+
+                input_tokens, output_tokens = _extract_token_usage_from_messages(
+                    messages
+                )
+                if input_tokens or output_tokens:
+                    await sync_to_async(ChatSession.objects.filter(session_id=session_id).update)(
+                        total_input_tokens=F("total_input_tokens") + input_tokens,
+                        total_output_tokens=F("total_output_tokens") + output_tokens,
+                        total_tokens=F("total_tokens") + input_tokens + output_tokens,
+                        request_count=F("request_count") + 1,
+                    )
+                else:
+                    await sync_to_async(ChatSession.objects.filter(session_id=session_id).update)(
+                        request_count=F("request_count") + 1
+                    )
 
                 return Response(
                     {
@@ -1792,6 +1938,7 @@ class ChatHistoryAPIView(APIView):
                                         )
                                     else:
                                         content = raw_content
+                                    content = _sanitize_user_visible_ai_text(content)
 
                                     # 跳过空的AI消息（工具调用前的中间状态）
                                     if not content or (

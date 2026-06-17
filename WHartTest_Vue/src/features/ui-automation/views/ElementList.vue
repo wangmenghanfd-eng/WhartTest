@@ -135,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, onBeforeUnmount } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { IconPlus, IconEdit, IconDelete } from '@arco-design/web-vue/es/icon'
 import { elementApi } from '../api'
@@ -152,6 +152,7 @@ const isEdit = ref(false)
 const currentElement = ref<UiElement | null>(null)
 const formRef = ref()
 const searchKey = ref('')
+let searchTimer: number | undefined
 
 const locatorTypes = [
   { value: 'xpath', label: 'XPath' },
@@ -329,6 +330,17 @@ const deleteElement = async (record: UiElement) => {
 }
 
 watch(() => props.page, fetchElements, { immediate: true })
+
+watch(searchKey, () => {
+  if (searchTimer) window.clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(() => {
+    fetchElements()
+  }, 250)
+})
+
+onBeforeUnmount(() => {
+  if (searchTimer) window.clearTimeout(searchTimer)
+})
 </script>
 
 <style scoped>
