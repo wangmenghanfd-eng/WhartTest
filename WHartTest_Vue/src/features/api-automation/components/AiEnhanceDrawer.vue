@@ -5,7 +5,7 @@
     :width="640"
     :ok-text="hasSuggestion ? '应用建议到用例' : '关闭'"
     :ok-button-props="{ disabled: !hasSuggestion, loading: applying }"
-    @ok="onApply"
+    :on-before-ok="onApply"
     @cancel="visibleProxy = false"
   >
     <div v-if="loading" class="state-block">
