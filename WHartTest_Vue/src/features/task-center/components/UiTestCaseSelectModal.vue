@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, watch } from 'vue';
 import { testCaseApi, moduleApi } from '@/features/ui-automation/api';
 
 const props = defineProps<{
@@ -67,6 +67,7 @@ const selectedKeys = ref<number[]>([]);
 const searchText = ref('');
 const moduleFilter = ref<number | undefined>(undefined);
 const pagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true });
+let searchTimer: number | undefined;
 
 const levelColors: Record<string, string> = {
   P0: 'red', P1: 'orangered', P2: 'orange', P3: 'blue',
@@ -118,6 +119,19 @@ const onPageChange = (page: number) => {
   pagination.current = page;
   loadData();
 };
+
+watch(searchText, () => {
+  pagination.current = 1;
+  if (searchTimer) window.clearTimeout(searchTimer);
+  searchTimer = window.setTimeout(() => {
+    loadData();
+  }, 250);
+});
+
+watch(moduleFilter, () => {
+  pagination.current = 1;
+  loadData();
+});
 
 const handleCancel = () => {
   visible.value = false;

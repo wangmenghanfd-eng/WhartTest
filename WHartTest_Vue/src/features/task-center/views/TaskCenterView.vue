@@ -203,6 +203,7 @@ const executionList = ref<TaskExecution[]>([]);
 const executionLoading = ref(false);
 const executionPage = ref(1);
 const executionTotal = ref(0);
+const searchTimer = ref<number | null>(null);
 
 const formModalRef = ref<InstanceType<typeof TaskFormModal> | null>(null);
 const logModalRef = ref<InstanceType<typeof LogViewModal> | null>(null);
@@ -321,6 +322,15 @@ const handleSearch = () => {
   fetchTasks();
 };
 
+const handleKeywordInput = () => {
+  if (searchTimer.value) {
+    window.clearTimeout(searchTimer.value);
+  }
+  searchTimer.value = window.setTimeout(() => {
+    handleSearch();
+  }, 250);
+};
+
 const onPageChange = (p: number) => {
   page.value = p;
   fetchTasks();
@@ -404,6 +414,10 @@ watch(currentProjectId, (newId, oldId) => {
     moduleFilter.value = undefined;
     fetchTasks();
   }
+});
+
+watch(searchKeyword, () => {
+  handleKeywordInput();
 });
 
 onMounted(() => {

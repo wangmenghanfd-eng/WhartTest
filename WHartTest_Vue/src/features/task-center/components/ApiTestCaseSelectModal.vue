@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { apiCaseApi, apiModuleApi } from '@/features/api-automation/api'
 
 const props = defineProps<{ projectId: number }>()
@@ -66,6 +66,7 @@ const selectedKeys = ref<number[]>([])
 const searchText = ref('')
 const moduleFilter = ref<number | undefined>(undefined)
 const pagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true })
+let searchTimer: number | undefined
 const statusMap: Record<number, string> = { 0: '未执行', 1: '执行中', 2: '成功', 3: '失败' }
 
 const columns = [
@@ -115,6 +116,19 @@ const onPageChange = (page: number) => {
   pagination.current = page
   loadData()
 }
+
+watch(searchText, () => {
+  pagination.current = 1
+  if (searchTimer) window.clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(() => {
+    loadData()
+  }, 250)
+})
+
+watch(moduleFilter, () => {
+  pagination.current = 1
+  loadData()
+})
 
 const handleCancel = () => {
   visible.value = false
