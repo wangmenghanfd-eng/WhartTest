@@ -1,4 +1,5 @@
 import httpx
+from collections import defaultdict, deque
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -16,6 +17,9 @@ from .models import (
     ApiExecutionRecord,
     ApiModule,
     ApiPublicData,
+    ApiScenario,
+    ApiScenarioExecutionRecord,
+    ApiScenarioStep,
     ApiScript,
     ApiTestCase,
 )
@@ -26,11 +30,13 @@ from .serializers import (
     ApiExecutionRecordSerializer,
     ApiModuleSerializer,
     ApiPublicDataSerializer,
+    ApiScenarioExecutionRecordSerializer,
+    ApiScenarioSerializer,
     ApiScriptSerializer,
     ApiTestCaseSerializer,
 )
 from .services import import_openapi_spec, load_openapi_spec
-from .tasks import execute_api_batch_task, execute_api_case_task
+from .tasks import execute_api_batch_task, execute_api_case_task, execute_api_scenario_task
 from .trace_to_api_cases import (
     materialize_from_execution,
     preview_from_execution,
@@ -416,4 +422,114 @@ class ApiBatchExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ApiBatchExecutionRecord.objects.select_related("project", "executor").prefetch_related("execution_records")
     serializer_class = ApiBatchExecutionRecordSerializer
     filterset_fields = ["project", "status", "trigger_type"]
+
+
+
+def _expand_module_ids(module_id, project_id=None):
+    try:
+        root_id = int(module_id)
+    except (TypeError, ValueError):
+        return []
+    modules = ApiModule.objects.all()
+    if project_id:
+        modules = modules.filter(project_id=project_id)
+    children_map = defaultdict(list)
+    for item in modules.values("id", "parent_id"):
+        children_map[item["parent_id"]].append(item["id"])
+    collected = []
+    queue = deque([root_id])
+    seen = set()
+    while queue:
+        current = queue.popleft()
+        if current in seen:
+            continue
+        seen.add(current)
+        collected.append(current)
+        queue.extend(children_map.get(current, []))
+    return collected
+
+class ApiScenarioViewSet(CreatorMixin, viewsets.ModelViewSet):
+    queryset = ApiScenario.objects.select_related("project", "module", "creator").prefetch_related("steps__test_case")
+    serializer_class = ApiScenarioSerializer
+    filterset_fields = ["project", "status"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(module_id__in=module_ids or [-1])
+        keyword = (self.request.query_params.get("search") or "").strip()
+        if keyword:
+            queryset = queryset.filter(Q(name__icontains=keyword) | Q(description__icontains=keyword))
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        payload = dict(request.data)
+        steps = payload.pop("steps", [])
+        serializer = self.get_serializer(data=payload)
+        serializer.is_valid(raise_exception=True)
+        scenario = serializer.save(creator=request.user)
+        self._sync_steps(scenario, steps)
+        return Response(self.get_serializer(scenario).data, status=status.HTTP_201_CREATED)
+
+    def partial_update(self, request, *args, **kwargs):
+        scenario = self.get_object()
+        payload = dict(request.data)
+        steps = payload.pop("steps", None)
+        serializer = self.get_serializer(scenario, data=payload, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        if steps is not None:
+            self._sync_steps(scenario, steps)
+        return Response(self.get_serializer(scenario).data)
+
+    def _sync_steps(self, scenario: ApiScenario, steps):
+        scenario.steps.all().delete()
+        normalized = []
+        for index, step in enumerate(steps or [], start=1):
+            test_case_id = step.get("test_case") or step.get("test_case_id")
+            if not test_case_id:
+                continue
+            normalized.append(ApiScenarioStep(
+                scenario=scenario,
+                order=int(step.get("order") or index),
+                test_case_id=int(test_case_id),
+                name=(step.get("name") or "").strip(),
+                is_enabled=bool(step.get("is_enabled", True)),
+                stop_on_failure=bool(step.get("stop_on_failure", True)),
+            ))
+        if normalized:
+            ApiScenarioStep.objects.bulk_create(normalized)
+
+    @action(detail=True, methods=["post"])
+    def execute(self, request, pk=None):
+        scenario = self.get_object()
+        env_id = request.data.get("environment")
+        record = ApiScenarioExecutionRecord.objects.create(
+            project=scenario.project,
+            scenario=scenario,
+            environment_id=env_id,
+            status=0,
+            trigger_type=request.data.get("trigger_type") or "manual",
+            executor=request.user if request.user.is_authenticated else None,
+        )
+        execute_api_scenario_task.delay(record.id)
+        return Response({"record_id": record.id, "message": "接口场景已提交执行"})
+
+
+class ApiScenarioExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ApiScenarioExecutionRecord.objects.select_related("project", "scenario", "environment", "executor").prefetch_related("step_records__test_case", "step_records__step")
+    serializer_class = ApiScenarioExecutionRecordSerializer
+    filterset_fields = ["project", "scenario", "status", "trigger_type"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(scenario__module_id__in=module_ids or [-1])
+        return queryset
 
