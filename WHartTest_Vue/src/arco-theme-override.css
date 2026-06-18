@@ -955,3 +955,47 @@
 :root[data-theme='black'] body[arco-theme='dark'] .arco-drawer-resize-trigger {
   background: rgba(148, 163, 184, 0.14) !important;
 }
+
+:root[data-theme='black'] body[arco-theme='dark'] .arco-table .arco-btn-text.arco-btn-size-mini {
+  background: rgba(var(--theme-accent-rgb), 0.18) !important;
+  border: 1px solid rgba(var(--theme-accent-rgb), 0.28) !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  padding: 2px 8px !important;
+  color: #dbeafe !important;
+}
+
+:root[data-theme='black'] body[arco-theme='dark'] .arco-table .arco-btn-text.arco-btn-size-mini:hover {
+  background: rgba(var(--theme-accent-rgb), 0.28) !important;
+  border-color: rgba(var(--theme-accent-rgb), 0.42) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme='black'] body[arco-theme='dark'] .arco-table .arco-btn-text.arco-btn-size-small {
+  background: rgba(var(--theme-accent-rgb), 0.18) !important;
+  border: 1px solid rgba(var(--theme-accent-rgb), 0.28) !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  padding: 2px 10px !important;
+  color: #dbeafe !important;
+}
+
+:root[data-theme='black'] body[arco-theme='dark'] .arco-table .arco-btn-text.arco-btn-size-small:hover {
+  background: rgba(var(--theme-accent-rgb), 0.28) !important;
+  border-color: rgba(var(--theme-accent-rgb), 0.42) !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme='black'] body[arco-theme='dark'] .arco-table .arco-btn-text.arco-btn-status-danger.arco-btn-size-mini,
+:root[data-theme='black'] body[arco-theme='dark'] .arco-table .arco-btn-text.arco-btn-status-danger.arco-btn-size-small {
+  color: rgb(var(--danger-4)) !important;
+  background: rgba(var(--danger-6), 0.14) !important;
+  border-color: rgba(var(--danger-6), 0.24) !important;
+}
+
+:root[data-theme='black'] body[arco-theme='dark'] .arco-table .arco-btn-text.arco-btn-status-danger.arco-btn-size-mini:hover,
+:root[data-theme='black'] body[arco-theme='dark'] .arco-table .arco-btn-text.arco-btn-status-danger.arco-btn-size-small:hover {
+  color: rgb(var(--danger-3)) !important;
+  background: rgba(var(--danger-6), 0.2) !important;
+  border-color: rgba(var(--danger-6), 0.34) !important;
+}

@@ -13,10 +13,6 @@ export interface VersionInfo {
   checkTime?: Date
 }
 
-// GitHub 仓库配置
-const GITHUB_REPO = 'mgdaaslab/WHartTest'
-const GITHUB_API_BASE = 'https://api.github.com'
-
 // 缓存版本信息，避免频繁请求
 let cachedVersionInfo: VersionInfo | null = null
 let lastCheckTime: number = 0
@@ -47,7 +43,7 @@ export function compareVersions(v1: string, v2: string): number {
 }
 
 /**
- * 检查 GitHub 最新版本
+ * 检查本地版本元数据
  */
 export async function checkLatestVersion(): Promise<VersionInfo> {
   const now = Date.now()
@@ -64,28 +60,22 @@ export async function checkLatestVersion(): Promise<VersionInfo> {
   }
   
   try {
-    const response = await fetch(
-      `${GITHUB_API_BASE}/repos/${GITHUB_REPO}/releases/latest`,
-      {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      }
-    )
+    const response = await fetch('/version-meta.json', {
+      headers: { 'Accept': 'application/json' }
+    })
     
     if (!response.ok) {
-      // 可能是没有发布的 release，或者 API 限制
-      console.warn('无法获取最新版本信息:', response.status)
+      console.warn('无法获取本地版本元数据:', response.status)
       return versionInfo
     }
     
-    const release = await response.json()
-    const latestVersion = release.tag_name?.replace(/^v/, '') || ''
+    const meta = await response.json()
+    const latestVersion = String(meta.latest || current).replace(/^v/, '')
     
     versionInfo.latest = latestVersion
     versionInfo.hasUpdate = compareVersions(latestVersion, current) > 0
-    versionInfo.releaseUrl = release.html_url
-    versionInfo.releaseNotes = release.body
+    versionInfo.releaseUrl = meta.releaseUrl || ''
+    versionInfo.releaseNotes = meta.releaseNotes || ''
     versionInfo.checkTime = new Date()
     
     // 更新缓存
@@ -93,7 +83,7 @@ export async function checkLatestVersion(): Promise<VersionInfo> {
     lastCheckTime = now
     
   } catch (error) {
-    console.warn('检查版本更新失败:', error)
+    console.warn('检查本地版本元数据失败:', error)
   }
   
   return versionInfo

@@ -38,27 +38,28 @@
           <icon-moon-fill v-else class="theme-switch-icon" />
         </button>
         <!-- 版本号显示 -->
-        <a-popover v-if="hasUpdate" position="bottom" trigger="hover" content-class="version-popover">
-          <a 
-            class="version-badge update-available" 
-            :href="versionInfo?.releaseUrl || 'https://github.com/mgdaaslab/WHartTest/releases'"
-            target="_blank"
+        <a-popover position="bottom" trigger="click" content-class="version-popover">
+          <button
+            type="button"
+            class="version-badge"
+            :class="{ 'update-available': hasUpdate, 'version-badge-clickable': true }"
           >
             当前版本: {{ currentVersion }}
-            <span class="update-dot"></span>
-          </a>
+            <span v-if="hasUpdate" class="update-dot"></span>
+          </button>
           <template #content>
             <div class="version-update-info">
               <div class="version-update-header">
-                <span class="update-title">🎉 新版本可用</span>
-                <span class="update-version">v{{ versionInfo?.latest }}</span>
+                <span class="update-title">{{ hasUpdate ? '🎉 新版本可用' : `${versionInfo?.latest || currentVersion} 版本说明` }}</span>
+                <span class="update-version">v{{ versionInfo?.latest || currentVersion }}</span>
               </div>
               <div class="version-update-notes" v-if="releaseNotesPreview">
                 {{ releaseNotesPreview }}
               </div>
-              <a 
+              <a
+                v-if="versionInfo?.releaseUrl"
                 class="version-update-footer"
-                :href="versionInfo?.releaseUrl || 'https://github.com/mgdaaslab/WHartTest/releases'"
+                :href="versionInfo?.releaseUrl"
                 target="_blank"
               >
                 点击查看完整更新日志
@@ -66,7 +67,6 @@
             </div>
           </template>
         </a-popover>
-        <span v-else class="version-badge">当前版本: {{ currentVersion }}</span>
         
         <a-avatar class="avatar">
           <span>{{ userInitial }}</span>
@@ -684,6 +684,12 @@ onMounted(async () => {
   align-items: center;
   gap: 4px;
   line-height: 1.5;
+  border: none;
+  cursor: pointer;
+}
+
+.version-badge-clickable:hover {
+  background: #e5e6eb;
 }
 
 .version-badge.update-available {

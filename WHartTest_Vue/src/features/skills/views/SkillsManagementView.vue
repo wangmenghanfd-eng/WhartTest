@@ -5,6 +5,9 @@
       <p class="page-description">
         管理项目的 Agent Skills。Skills 是模块化的能力扩展，包含指令和可执行脚本。
       </p>
+      <div class="trigger-help">
+        <strong>触发方式：</strong>普通 LLM 对话会先根据问题内容自动决定是否读取并调用 Skill；不需要像 IDE 那样必须手动斜杠选择。若想更稳定触发，可以在问题里明确写出 Skill 名称，例如“请使用 firecrawl”或“请使用 context7-mcp”。
+      </div>
     </div>
 
     <div v-if="currentProjectId" class="skills-container">
@@ -42,6 +45,16 @@ const currentProjectId = computed(() => projectStore.currentProjectId)
 .page-description {
   color: var(--color-text-2);
   margin: 0;
+}
+
+.trigger-help {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-surface-soft) 78%, rgba(var(--theme-accent-rgb), 0.08));
+  border: 1px solid var(--theme-border);
+  color: var(--theme-text-secondary);
+  line-height: 1.6;
 }
 
 .skills-container {
