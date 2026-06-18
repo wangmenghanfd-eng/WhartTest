@@ -142,6 +142,15 @@
           </a-table>
         </a-tab-pane>
 
+        <a-tab-pane key="scenarios" title="接口场景">
+          <ApiAutomationScenarios
+            :project-id="projectId"
+            :selected-module-id="selectedModuleId"
+            :module-options="flatModuleOptions"
+            :env-configs="envConfigs"
+          />
+        </a-tab-pane>
+
         <a-tab-pane key="reports" title="报告">
           <ApiAutomationReports :project-id="projectId" :reload-key="reportsReloadKey" />
         </a-tab-pane>
@@ -285,6 +294,7 @@ import TraceImportModal from '../components/TraceImportModal.vue'
 import FunctionalCaseAiModal from '../components/FunctionalCaseAiModal.vue'
 import AiEnhanceDrawer from '../components/AiEnhanceDrawer.vue'
 import ApiAutomationReports from '../components/ApiAutomationReports.vue'
+import ApiAutomationScenarios from '../components/ApiAutomationScenarios.vue'
 import ApiAutomationScheduledTasks from '../components/ApiAutomationScheduledTasks.vue'
 import type {
   ApiBatchExecutionRecord,

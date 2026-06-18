@@ -46,6 +46,7 @@ export interface ApiTestCase {
   module_name?: string
   definition?: number | null
   environment?: number | null
+  environment_name?: string
   name: string
   method: string
   path: string
@@ -76,6 +77,35 @@ export interface ApiScript {
   content: string
 }
 
+export interface ApiScenarioStep {
+  id?: number
+  scenario?: number
+  order: number
+  test_case: number
+  test_case_name?: string
+  test_case_method?: string
+  test_case_path?: string
+  name?: string
+  is_enabled: boolean
+  stop_on_failure: boolean
+}
+
+export interface ApiScenario {
+  id: number
+  project: number
+  module: number
+  module_name?: string
+  name: string
+  description?: string
+  status: number
+  last_result?: Record<string, unknown>
+  error_message?: string
+  steps?: ApiScenarioStep[]
+  step_count?: number
+  created_at?: string
+  updated_at?: string
+}
+
 export interface ApiExecutionRecord {
   id: number
   test_case: number
@@ -86,6 +116,39 @@ export interface ApiExecutionRecord {
   error_message?: string
   request_data?: Record<string, unknown>
   response_data?: Record<string, unknown>
+  created_at?: string
+  start_time?: string
+  end_time?: string
+}
+
+export interface ApiScenarioStepRecord {
+  id: number
+  scenario_execution: number
+  step: number
+  test_case?: number | null
+  test_case_name?: string
+  step_name?: string
+  order: number
+  status: number
+  extracted_variables?: Record<string, unknown>
+  error_message?: string
+  duration?: number | null
+  created_at?: string
+}
+
+export interface ApiScenarioExecutionRecord {
+  id: number
+  scenario: number
+  scenario_name?: string
+  environment?: number | null
+  environment_name?: string
+  status: number
+  trigger_type: 'manual' | 'scheduled'
+  variables_snapshot?: Record<string, unknown>
+  result_summary?: Record<string, unknown>
+  error_message?: string
+  duration?: number | null
+  step_records?: ApiScenarioStepRecord[]
   created_at?: string
 }
 
@@ -101,6 +164,8 @@ export interface ApiBatchExecutionRecord {
   duration?: number | null
   execution_records?: ApiExecutionRecord[]
   created_at?: string
+  start_time?: string
+  end_time?: string
 }
 
 export const STATUS_LABELS: Record<number, string> = {
@@ -127,4 +192,3 @@ export function unwrapPage<T>(res: any): { items: T[]; count: number } {
   if (Array.isArray(data)) return { items: data, count: data.length }
   return { items: data?.results ?? [], count: data?.count ?? 0 }
 }
-
