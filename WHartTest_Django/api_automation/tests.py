@@ -5,10 +5,10 @@ import httpx
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from projects.models import Project
+from projects.models import Project, ProjectMember
 
-from .models import ApiBatchExecutionRecord, ApiDefinition, ApiEnvironmentConfig, ApiExecutionRecord, ApiModule, ApiPublicData, ApiTestCase
-from .services import execute_api_case, import_openapi_spec, load_openapi_spec, update_batch_summary
+from .models import ApiBatchExecutionRecord, ApiDefinition, ApiEnvironmentConfig, ApiExecutionRecord, ApiModule, ApiPublicData, ApiScenario, ApiScenarioExecutionRecord, ApiScenarioStep, ApiTestCase
+from .services import execute_api_case, execute_api_scenario, import_openapi_spec, load_openapi_spec, update_batch_summary
 
 
 User = get_user_model()
@@ -1389,3 +1389,122 @@ class AiEnhanceCaseTests(TestCase):
         self.assertFalse(resp.data["applied"])
         self.case.refresh_from_db()
         self.assertEqual(len(self.case.assertions), 1)  # 保持不变
+
+
+class ApiScenarioServiceTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="api_scenario_tester", password="test123456")
+        self.project = Project.objects.create(name="api-scenario-project", creator=self.user)
+
+    @patch("api_automation.services.httpx.Client")
+    def test_execute_api_scenario_shares_extracted_variables(self, client_cls):
+        module = ApiModule.objects.create(project=self.project, name="流程模块", creator=self.user)
+        env = ApiEnvironmentConfig.objects.create(
+            project=self.project,
+            name="测试环境",
+            base_url="https://api.example.com",
+            creator=self.user,
+        )
+        login_case = ApiTestCase.objects.create(
+            project=self.project,
+            module=module,
+            environment=env,
+            name="01 登录",
+            method="POST",
+            path="/login",
+            extractors=[{"name": "token", "source": "json_path", "path": "token"}],
+            assertions=[{"type": "status_code", "operator": "eq", "expected": 200}],
+            creator=self.user,
+        )
+        profile_case = ApiTestCase.objects.create(
+            project=self.project,
+            module=module,
+            environment=env,
+            name="02 用户信息",
+            method="GET",
+            path="/me",
+            headers={"Authorization": "Bearer ${{token}}"},
+            assertions=[{"type": "status_code", "operator": "eq", "expected": 200}],
+            creator=self.user,
+        )
+        scenario = ApiScenario.objects.create(project=self.project, module=module, name="登录流程", creator=self.user)
+        ApiScenarioStep.objects.create(scenario=scenario, order=1, test_case=login_case, name="登录")
+        ApiScenarioStep.objects.create(scenario=scenario, order=2, test_case=profile_case, name="查询用户")
+        scenario_record = ApiScenarioExecutionRecord.objects.create(
+            project=self.project,
+            scenario=scenario,
+            environment=env,
+            status=0,
+            trigger_type="manual",
+            executor=self.user,
+        )
+
+        responses = [
+            httpx.Response(200, json={"token": "abc123"}, request=httpx.Request("POST", "https://api.example.com/login")),
+            httpx.Response(200, json={"name": "Alice"}, request=httpx.Request("GET", "https://api.example.com/me")),
+        ]
+        client_cls.return_value.__enter__.return_value.request.side_effect = responses
+
+        result = execute_api_scenario(scenario_record.id)
+
+        self.assertEqual(result["status"], "success")
+        scenario_record.refresh_from_db()
+        self.assertEqual(scenario_record.status, 2)
+        second_record = ApiExecutionRecord.objects.filter(test_case=profile_case).latest("id")
+        self.assertEqual(second_record.request_data["headers"]["Authorization"], "Bearer abc123")
+
+
+class ApiScenarioViewSetTests(TestCase):
+    def setUp(self):
+        from rest_framework.test import APIClient
+
+        self.user = User.objects.create_superuser(
+            username="api_scenario_view_tester",
+            password="test123456",
+            email="api_scenario_view_tester@example.com",
+        )
+        self.project = Project.objects.create(name="api-scenario-view-project", creator=self.user)
+        ProjectMember.objects.create(project=self.project, user=self.user, role="owner")
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+        self.module = ApiModule.objects.create(project=self.project, name="用户管理", creator=self.user)
+        self.env_a = ApiEnvironmentConfig.objects.create(
+            project=self.project,
+            name="环境A",
+            base_url="https://api.example.com",
+            creator=self.user,
+        )
+
+    def test_scenario_create_and_execute_endpoint(self):
+        case = ApiTestCase.objects.create(
+            project=self.project,
+            module=self.module,
+            environment=self.env_a,
+            name="接口1",
+            method="GET",
+            path="/users",
+            creator=self.user,
+        )
+        create_resp = self.client.post("/api/api-automation/scenarios/", {
+            "project": self.project.id,
+            "module": self.module.id,
+            "name": "用户场景",
+            "description": "冒烟流程",
+            "steps": [{"order": 1, "test_case": case.id, "is_enabled": True, "stop_on_failure": True}],
+        }, format="json")
+        self.assertEqual(create_resp.status_code, 201)
+        scenario_id = create_resp.json()["data"]["id"]
+
+        with patch("api_automation.views.execute_api_scenario_task.delay") as delay:
+            execute_resp = self.client.post(f"/api/api-automation/scenarios/{scenario_id}/execute/", {}, format="json")
+        self.assertEqual(execute_resp.status_code, 200)
+        delay.assert_called_once()
+
+    def test_scenario_list_supports_parent_module_filter(self):
+        child = ApiModule.objects.create(project=self.project, name="场景子模块", parent=self.module, creator=self.user)
+        ApiScenario.objects.create(project=self.project, module=child, name="子模块场景", creator=self.user)
+        response = self.client.get("/api/api-automation/scenarios/", {"project": self.project.id, "module": self.module.id})
+        self.assertEqual(response.status_code, 200)
+        results = response.json()["data"]
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["name"], "子模块场景")
