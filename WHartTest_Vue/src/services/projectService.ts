@@ -656,6 +656,26 @@ export interface ProjectStatistics {
   };
 }
 
+export interface ProjectStatisticsDetailRow {
+  id: number | string;
+  name: string;
+  module: string;
+  status: string;
+  extra: string;
+  updated_at: string;
+}
+
+export interface ProjectStatisticsDetailResponseData {
+  title: string;
+  kind: string;
+  review_status?: string | null;
+  count: number;
+  page: number;
+  page_size: number;
+  num_pages: number;
+  results: ProjectStatisticsDetailRow[];
+}
+
 interface ProjectStatisticsResponse {
   success: boolean;
   data?: ProjectStatistics;
@@ -707,6 +727,55 @@ export const getProjectStatistics = async (projectId: number): Promise<ProjectSt
     return {
       success: false,
       error: error.response?.data?.message || error.message || '获取项目统计数据时发生错误',
+      statusCode: error.response?.status,
+    };
+  }
+};
+
+export const getProjectStatisticsDetail = async (
+  projectId: number,
+  params: {
+    kind: 'functional_cases' | 'ui_cases' | 'api_cases' | 'functional_executions' | 'mcp_skills';
+    review_status?: string;
+    page?: number;
+    page_size?: number;
+  }
+): Promise<{ success: boolean; data?: ProjectStatisticsDetailResponseData; error?: string; statusCode?: number }> => {
+  const authStore = useAuthStore();
+  const accessToken = authStore.getAccessToken;
+
+  if (!accessToken) {
+    return { success: false, error: '未登录或会话已过期' };
+  }
+
+  try {
+    const response = await axios.get(`${API_BASE_URL}/projects/${projectId}/statistics-detail/`, {
+      params,
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+
+    if (response.data?.status === 'success' && response.data?.data) {
+      return {
+        success: true,
+        data: response.data.data,
+        statusCode: response.data.code || response.status,
+      };
+    }
+
+    return {
+      success: true,
+      data: response.data,
+      statusCode: response.status,
+    };
+  } catch (error: any) {
+    console.error('获取项目统计详情出错:', error);
+    return {
+      success: false,
+      error: error.response?.data?.error || error.message || '获取项目统计详情时发生错误',
       statusCode: error.response?.status,
     };
   }

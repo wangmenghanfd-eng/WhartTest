@@ -19,7 +19,9 @@
               <icon-file class="overview-icon" />
               <span class="overview-title">功能用例</span>
             </div>
-            <div class="overview-value">{{ statistics?.testcases?.total || 0 }}</div>
+            <div class="overview-card-click" @click="openStatisticsDetail('functional_cases')">
+              <div class="overview-value">{{ statistics?.testcases?.total || 0 }}</div>
+            </div>
             <div class="overview-sub">
               <span class="sub-item approved">通过 {{ statistics?.testcases?.by_review_status?.approved || 0 }}</span>
               <span class="sub-item pending">待审 {{ statistics?.testcases?.by_review_status?.pending_review || 0 }}</span>
@@ -33,7 +35,9 @@
               <icon-desktop class="overview-icon" />
               <span class="overview-title">UI自动化</span>
             </div>
-            <div class="overview-value">{{ statistics?.ui_automation?.total_cases || 0 }}</div>
+            <div class="overview-card-click" @click="openStatisticsDetail('ui_cases')">
+              <div class="overview-value">{{ statistics?.ui_automation?.total_cases || 0 }}</div>
+            </div>
             <div class="overview-sub">
               <span class="sub-item">执行 {{ statistics?.ui_automation?.total_executions || 0 }}</span>
               <span class="sub-item passed">成功 {{ statistics?.ui_automation?.by_status?.success || 0 }}</span>
@@ -46,7 +50,9 @@
               <icon-code-block class="overview-icon" />
               <span class="overview-title">接口自动化</span>
             </div>
-            <div class="overview-value">{{ statistics?.api_automation?.total_cases || 0 }}</div>
+            <div class="overview-card-click" @click="openStatisticsDetail('api_cases')">
+              <div class="overview-value">{{ statistics?.api_automation?.total_cases || 0 }}</div>
+            </div>
             <div class="overview-sub">
               <span class="sub-item">模块 {{ statistics?.api_automation?.total_modules || 0 }}</span>
               <span class="sub-item">执行 {{ statistics?.api_automation?.total_executions || 0 }}</span>
@@ -58,12 +64,16 @@
           <div class="overview-card">
             <div class="overview-header">
               <icon-thunderbolt class="overview-icon" />
-              <span class="overview-title">执行统计</span>
+              <span class="overview-title">功能执行</span>
             </div>
-            <div class="overview-value">{{ statistics?.executions?.total_executions || 0 }}</div>
+            <div class="overview-card-click" @click="openStatisticsDetail('functional_executions')">
+              <div class="overview-value">{{ statistics?.executions?.case_results?.total || 0 }}</div>
+            </div>
             <div class="overview-sub">
               <span class="sub-item passed">通过 {{ statistics?.executions?.case_results?.passed || 0 }}</span>
               <span class="sub-item failed">失败 {{ statistics?.executions?.case_results?.failed || 0 }}</span>
+              <span class="sub-item optimization">跳过 {{ statistics?.executions?.case_results?.skipped || 0 }}</span>
+              <span class="sub-item failed">错误 {{ statistics?.executions?.case_results?.error || 0 }}</span>
             </div>
           </div>
 
@@ -72,7 +82,9 @@
               <icon-apps class="overview-icon" />
               <span class="overview-title">MCP / Skills</span>
             </div>
-            <div class="overview-value">{{ (statistics?.mcp?.total || 0) + (statistics?.skills?.total || 0) }}</div>
+            <div class="overview-card-click" @click="openStatisticsDetail('mcp_skills')">
+              <div class="overview-value">{{ (statistics?.mcp?.total || 0) + (statistics?.skills?.total || 0) }}</div>
+            </div>
             <div class="overview-sub">
               <span class="sub-item">MCP {{ statistics?.mcp?.active || 0 }}/{{ statistics?.mcp?.total || 0 }}</span>
               <span class="sub-item">Skills {{ statistics?.skills?.active || 0 }}/{{ statistics?.skills?.total || 0 }}</span>
@@ -90,7 +102,12 @@
             </div>
             <div class="panel-body">
               <div class="status-bars">
-                <div class="status-bar-item" v-for="item in reviewStatusData" :key="item.key">
+                <div
+                  class="status-bar-item clickable-row"
+                  v-for="item in reviewStatusData"
+                  :key="item.key"
+                  @click="openStatisticsDetail('functional_cases', item.rawKey)"
+                >
                   <div class="bar-header">
                     <span class="bar-label">{{ item.label }}</span>
                     <span class="bar-value">{{ item.value }} <span class="bar-percent">({{ item.percent }}%)</span></span>
@@ -103,7 +120,7 @@
             </div>
           </div>
 
-          <!-- 中间：通过率环形图 -->
+          <!-- 中间：执行通过率环形图 -->
           <div class="panel rate-panel">
             <div class="panel-header">
               <span class="panel-title">执行通过率</span>
@@ -151,7 +168,7 @@
           <!-- 右侧：Token 使用统计 -->
           <div class="panel resource-panel">
             <div class="panel-header">
-              <span class="panel-title">Token 统计</span>
+              <span class="panel-title">Token 统计（当前用户）</span>
               <div class="token-period-selector">
                 <span
                   v-for="opt in periodOptions"
@@ -188,6 +205,19 @@
                     </div>
                   </div>
                 </div>
+                <div class="resource-block">
+                  <div class="resource-label">统计周期</div>
+                  <div class="resource-stats">
+                    <div class="stat-row">
+                      <span>开始</span>
+                      <span class="stat-num">{{ tokenStats?.period?.start_date || '-' }}</span>
+                    </div>
+                    <div class="stat-row">
+                      <span>结束</span>
+                      <span class="stat-num">{{ tokenStats?.period?.end_date || '-' }}</span>
+                    </div>
+                  </div>
+                </div>
                 <div class="resource-block" v-if="tokenStats?.by_user?.length">
                   <div class="resource-label">用户排行</div>
                   <div class="resource-stats">
@@ -206,40 +236,40 @@
         <div class="trend-section">
           <div class="panel trend-panel">
             <div class="panel-header">
-              <span class="panel-title">近7天执行趋势</span>
+              <span class="panel-title">近7天执行趋势（功能 + UI + 接口）</span>
               <div class="trend-summary">
                 <span class="summary-item">
-                  近30天: <strong>{{ statistics?.execution_trend?.summary_30d?.execution_count || 0 }}</strong> 次
+                  近7天: <strong>{{ trendSummary7d.execution_count }}</strong> 次
                 </span>
                 <span class="summary-item passed">
-                  通过 <strong>{{ statistics?.execution_trend?.summary_30d?.passed || 0 }}</strong>
+                  通过 <strong>{{ trendSummary7d.passed }}</strong>
                 </span>
                 <span class="summary-item failed">
-                  失败 <strong>{{ statistics?.execution_trend?.summary_30d?.failed || 0 }}</strong>
+                  失败 <strong>{{ trendSummary7d.failed }}</strong>
                 </span>
               </div>
             </div>
             <div class="panel-body">
               <div class="trend-chart">
-                <div
+                <a-tooltip
                   v-for="(day, index) in statistics?.execution_trend?.daily_7d || []"
                   :key="index"
-                  class="trend-column"
+                  :content="`${day.date}｜执行 ${day.execution_count}｜通过 ${day.passed}｜失败 ${day.failed}`"
                 >
-                  <div class="column-bars">
-                    <div
-                      class="column-bar passed"
-                      :style="{ height: getBarHeight(day.passed) }"
-                      :title="`通过: ${day.passed}`"
-                    ></div>
-                    <div
-                      class="column-bar failed"
-                      :style="{ height: getBarHeight(day.failed) }"
-                      :title="`失败: ${day.failed}`"
-                    ></div>
+                  <div class="trend-column">
+                    <div class="column-bars">
+                      <div
+                        class="column-bar passed"
+                        :style="{ height: getBarHeight(day.passed) }"
+                      ></div>
+                      <div
+                        class="column-bar failed"
+                        :style="{ height: getBarHeight(day.failed) }"
+                      ></div>
+                    </div>
+                    <div class="column-label">{{ formatDate(day.date) }}</div>
                   </div>
-                  <div class="column-label">{{ formatDate(day.date) }}</div>
-                </div>
+                </a-tooltip>
               </div>
               <div class="trend-legend">
                 <span class="legend-tag passed">通过</span>
@@ -250,6 +280,33 @@
         </div>
       </a-spin>
     </div>
+
+    <a-modal
+      v-model:visible="detailVisible"
+      :title="detailTitle"
+      width="980px"
+      :footer="false"
+    >
+      <a-table
+        :data="detailRows"
+        :columns="detailColumns"
+        :loading="detailLoading"
+        :pagination="detailPagination"
+        size="small"
+        @page-change="onDetailPageChange"
+        @page-size-change="onDetailPageSizeChange"
+      >
+        <template #detailStatus="{ record }">
+          <a-tag :color="getStatusTagColor(record.status)">{{ record.status }}</a-tag>
+        </template>
+        <template #detailUpdated="{ record }">{{ formatDateTime(record.updated_at) }}</template>
+        <template #detailExtra="{ record }">
+          <a-tooltip :content="record.extra">
+            <span class="detail-ellipsis">{{ record.extra }}</span>
+          </a-tooltip>
+        </template>
+      </a-table>
+    </a-modal>
   </div>
 </template>
 
@@ -257,9 +314,16 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { Message } from '@arco-design/web-vue';
 import {
-  IconBarChart, IconFile, IconThunderbolt, IconApps, IconDesktop
+  IconBarChart, IconFile, IconThunderbolt, IconApps, IconDesktop, IconCodeBlock
 } from '@arco-design/web-vue/es/icon';
-import { getProjectStatistics, getTokenUsageStats, type ProjectStatistics, type TokenUsageStats } from '@/services/projectService';
+import {
+  getProjectStatistics,
+  getProjectStatisticsDetail,
+  getTokenUsageStats,
+  type ProjectStatistics,
+  type TokenUsageStats,
+  type ProjectStatisticsDetailRow,
+} from '@/services/projectService';
 import { useProjectStore } from '@/store/projectStore';
 
 const projectStore = useProjectStore();
@@ -267,6 +331,15 @@ const loading = ref(false);
 const statistics = ref<ProjectStatistics | null>(null);
 const tokenStats = ref<TokenUsageStats | null>(null);
 const tokenPeriod = ref<'day' | 'week' | 'month'>('day');
+const detailVisible = ref(false);
+const detailLoading = ref(false);
+const detailTitle = ref('');
+const detailKind = ref<'functional_cases' | 'ui_cases' | 'api_cases' | 'functional_executions' | 'mcp_skills'>('functional_cases');
+const detailReviewStatus = ref<string | undefined>(undefined);
+const detailRows = ref<ProjectStatisticsDetailRow[]>([]);
+const detailPage = ref(1);
+const detailPageSize = ref(10);
+const detailTotal = ref(0);
 
 const periodOptions = [
   { label: '日', value: 'day' as const },
@@ -295,11 +368,53 @@ const reviewStatusData = computed(() => {
   const statuses = statistics.value?.testcases?.by_review_status;
 
   return [
-    { key: 'approved', label: '已通过', value: statuses?.approved || 0, percent: getPercent(statuses?.approved || 0), color: '#52c41a' },
-    { key: 'pending', label: '待审核', value: statuses?.pending_review || 0, percent: getPercent(statuses?.pending_review || 0), color: '#faad14' },
-    { key: 'optimization', label: '待优化', value: statuses?.needs_optimization || 0, percent: getPercent(statuses?.needs_optimization || 0), color: '#1890ff' },
-    { key: 'opt_pending', label: '优化待审', value: statuses?.optimization_pending_review || 0, percent: getPercent(statuses?.optimization_pending_review || 0), color: '#722ed1' },
-    { key: 'unavailable', label: '不可用', value: statuses?.unavailable || 0, percent: getPercent(statuses?.unavailable || 0), color: '#ff4d4f' },
+    { key: 'approved', rawKey: 'approved', label: '已通过', value: statuses?.approved || 0, percent: getPercent(statuses?.approved || 0), color: '#52c41a' },
+    { key: 'pending', rawKey: 'pending_review', label: '待审核', value: statuses?.pending_review || 0, percent: getPercent(statuses?.pending_review || 0), color: '#faad14' },
+    { key: 'optimization', rawKey: 'needs_optimization', label: '待优化', value: statuses?.needs_optimization || 0, percent: getPercent(statuses?.needs_optimization || 0), color: '#1890ff' },
+    { key: 'opt_pending', rawKey: 'optimization_pending_review', label: '优化待审', value: statuses?.optimization_pending_review || 0, percent: getPercent(statuses?.optimization_pending_review || 0), color: '#722ed1' },
+    { key: 'unavailable', rawKey: 'unavailable', label: '不可用', value: statuses?.unavailable || 0, percent: getPercent(statuses?.unavailable || 0), color: '#ff4d4f' },
+  ];
+});
+
+const trendSummary7d = computed(() => {
+  const daily = statistics.value?.execution_trend?.daily_7d || [];
+  return daily.reduce(
+    (acc, item) => {
+      acc.execution_count += item.execution_count || 0;
+      acc.passed += item.passed || 0;
+      acc.failed += item.failed || 0;
+      return acc;
+    },
+    { execution_count: 0, passed: 0, failed: 0 }
+  );
+});
+
+const detailPagination = computed(() => ({
+  current: detailPage.value,
+  pageSize: detailPageSize.value,
+  total: detailTotal.value,
+  showTotal: true,
+  showPageSize: true,
+  pageSizeOptions: [10, 20, 50],
+}));
+
+const detailColumns = computed(() => {
+  const base = [
+    { title: 'ID', dataIndex: 'id', width: 100 },
+    { title: '名称', dataIndex: 'name', ellipsis: true, tooltip: true },
+    { title: '模块/分类', dataIndex: 'module', width: 160, ellipsis: true, tooltip: true },
+    { title: '状态', slotName: 'detailStatus', width: 120 },
+  ];
+  if (detailKind.value === 'mcp_skills') {
+    return [
+      ...base,
+      { title: '更新时间', slotName: 'detailUpdated', width: 180 },
+    ];
+  }
+  return [
+    ...base,
+    { title: '详情', slotName: 'detailExtra', ellipsis: true, tooltip: true },
+    { title: '更新时间', slotName: 'detailUpdated', width: 180 },
   ];
 });
 
@@ -317,6 +432,13 @@ const formatDate = (dateStr: string): string => {
   return `${date.getMonth() + 1}/${date.getDate()}`;
 };
 
+const formatDateTime = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return dateStr || '-';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
 const formatTokenCount = (count: number): string => {
   return count.toLocaleString('zh-CN');
 };
@@ -327,6 +449,58 @@ const avgTokensPerRequest = computed(() => {
   if (requests === 0) return '0';
   return formatTokenCount(Math.round(total / requests));
 });
+
+const getStatusTagColor = (status: string) => {
+  if (['成功', '已通过', '启用', '已完成', '通过'].includes(status)) return 'green';
+  if (['失败', '不可用', '停用'].includes(status)) return 'red';
+  if (['待审核', '待优化', '优化待审', '执行中'].includes(status)) return 'orange';
+  return 'arcoblue';
+};
+
+const fetchStatisticsDetail = async () => {
+  if (!currentProjectId.value) return;
+  detailLoading.value = true;
+  try {
+    const response = await getProjectStatisticsDetail(currentProjectId.value, {
+      kind: detailKind.value,
+      review_status: detailReviewStatus.value,
+      page: detailPage.value,
+      page_size: detailPageSize.value,
+    });
+    if (response.success && response.data) {
+      detailTitle.value = response.data.title;
+      detailRows.value = response.data.results;
+      detailTotal.value = response.data.count;
+    } else {
+      Message.error(response.error || '获取详情失败');
+    }
+  } finally {
+    detailLoading.value = false;
+  }
+};
+
+const openStatisticsDetail = (
+  kind: 'functional_cases' | 'ui_cases' | 'api_cases' | 'functional_executions' | 'mcp_skills',
+  reviewStatus?: string
+) => {
+  detailKind.value = kind;
+  detailReviewStatus.value = reviewStatus;
+  detailPage.value = 1;
+  detailPageSize.value = 10;
+  detailVisible.value = true;
+  fetchStatisticsDetail();
+};
+
+const onDetailPageChange = (page: number) => {
+  detailPage.value = page;
+  fetchStatisticsDetail();
+};
+
+const onDetailPageSizeChange = (pageSize: number) => {
+  detailPageSize.value = pageSize;
+  detailPage.value = 1;
+  fetchStatisticsDetail();
+};
 
 const fetchTokenStats = async () => {
   try {
@@ -436,6 +610,10 @@ onMounted(() => {
   box-shadow: 4px 0 12px rgba(var(--theme-accent-rgb), 0.22), 0 4px 12px rgba(var(--theme-accent-rgb), 0.22), 0 0 12px rgba(var(--theme-accent-rgb), 0.18);
 }
 
+.overview-card-click {
+  cursor: pointer;
+}
+
 .overview-header {
   display: flex;
   align-items: center;
@@ -487,8 +665,9 @@ onMounted(() => {
 /* 主内容区域 */
 .main-section {
   display: grid;
-  grid-template-columns: 1fr 280px 1fr;
+  grid-template-columns: minmax(340px, 1fr) 280px minmax(380px, 1fr);
   gap: 10px;
+  align-items: stretch;
 }
 
 .panel {
@@ -535,6 +714,13 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.status-bar-item:hover {
+  background: rgba(var(--theme-accent-rgb), 0.06);
 }
 
 .bar-header {
@@ -617,7 +803,7 @@ onMounted(() => {
 .rate-value {
   font-size: 28px;
   font-weight: 700;
-  color: #1d2129;
+  color: var(--theme-text);
 }
 
 .rate-unit {
@@ -662,13 +848,14 @@ onMounted(() => {
 
 /* 资源统计 */
 .resource-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
 }
 
 .resource-block {
-  padding-bottom: 12px;
+  min-width: 0;
+  padding: 0 0 12px;
   border-bottom: 1px solid var(--theme-border);
 }
 
@@ -733,6 +920,7 @@ onMounted(() => {
 .token-total {
   text-align: center;
   padding-bottom: 16px !important;
+  grid-column: 1 / -1;
 }
 
 .token-value {
@@ -809,6 +997,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  cursor: default;
 }
 
 .column-bars {
@@ -859,6 +1048,18 @@ onMounted(() => {
 .legend-tag.passed::before { background: #52c41a; }
 .legend-tag.failed::before { background: #ff4d4f; }
 
+.clickable-row {
+  cursor: pointer;
+}
+
+.detail-ellipsis {
+  display: inline-block;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* 响应式 */
 @media (max-width: 1200px) {
   .overview-section {
@@ -871,6 +1072,10 @@ onMounted(() => {
 
   .rate-panel {
     order: -1;
+  }
+
+  .resource-grid {
+    grid-template-columns: 1fr;
   }
 }
 
