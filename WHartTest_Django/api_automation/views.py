@@ -89,10 +89,15 @@ class ApiEnvironmentConfigViewSet(CreatorMixin, viewsets.ModelViewSet):
 class ApiDefinitionViewSet(CreatorMixin, viewsets.ModelViewSet):
     queryset = ApiDefinition.objects.select_related("project", "module", "creator")
     serializer_class = ApiDefinitionSerializer
-    filterset_fields = ["project", "module", "method", "source"]
+    filterset_fields = ["project", "method", "source"]
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(module_id__in=module_ids or [-1])
         keyword = (self.request.query_params.get("search") or "").strip()
         if keyword:
             queryset = queryset.filter(
@@ -181,10 +186,15 @@ class ApiDefinitionViewSet(CreatorMixin, viewsets.ModelViewSet):
 class ApiTestCaseViewSet(CreatorMixin, viewsets.ModelViewSet):
     queryset = ApiTestCase.objects.select_related("project", "module", "definition", "environment", "creator")
     serializer_class = ApiTestCaseSerializer
-    filterset_fields = ["project", "module", "definition", "environment", "status", "source"]
+    filterset_fields = ["project", "definition", "environment", "status", "source"]
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(module_id__in=module_ids or [-1])
         keyword = (self.request.query_params.get("search") or "").strip()
         if keyword:
             queryset = queryset.filter(Q(name__icontains=keyword) | Q(path__icontains=keyword))
@@ -409,13 +419,31 @@ class ApiPublicDataViewSet(CreatorMixin, viewsets.ModelViewSet):
 class ApiScriptViewSet(CreatorMixin, viewsets.ModelViewSet):
     queryset = ApiScript.objects.select_related("project", "module", "creator")
     serializer_class = ApiScriptSerializer
-    filterset_fields = ["project", "module", "script_type"]
+    filterset_fields = ["project", "script_type"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(Q(module__isnull=True) | Q(module_id__in=module_ids or [-1]))
+        return queryset
 
 
 class ApiExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ApiExecutionRecord.objects.select_related("project", "test_case", "environment", "executor")
     serializer_class = ApiExecutionRecordSerializer
     filterset_fields = ["project", "test_case", "batch", "status", "trigger_type"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        module_id = self.request.query_params.get("module")
+        project_id = self.request.query_params.get("project")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            queryset = queryset.filter(test_case__module_id__in=module_ids or [-1])
+        return queryset
 
 
 class ApiBatchExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
