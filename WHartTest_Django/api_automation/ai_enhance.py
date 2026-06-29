@@ -168,34 +168,50 @@ def _build_messages(case: ApiTestCase) -> list:
     ]
 
 
-def enhance_api_case(case_id: int, apply: bool = False) -> dict[str, Any]:
+def enhance_api_case(
+    case_id: int,
+    apply: bool = False,
+    suggested_override: dict[str, Any] | None = None,
+    fast_mode: bool = False,
+) -> dict[str, Any]:
     """让 LLM 给用例补充断言/提取器。
 
     apply=False（默认）只返回建议；apply=True 会把建议合并写回用例。
+    - suggested_override: 直接用传入的建议（{assertions, extractors}），跳过 LLM —— 供批量 apply 复用预览结果。
+    - fast_mode: 跳过 LLM，快速返回空建议（批量预览的快速档；本平台保持 #1 断言 schema，不做老式启发式）。
+    所有建议仍只走 dev 的 #1 schema（path 字段 + 6 种执行器支持类型），不引入 target/json_path_length 等。
     """
     case = ApiTestCase.objects.get(id=case_id)
-    config = LLMConfig.objects.filter(is_active=True).first()
-    if not config:
-        return {
-            "case_id": case.id,
-            "current": {"assertions": case.assertions or [], "extractors": case.extractors or []},
-            "suggested": {"assertions": [], "extractors": []},
-            "merged": {"assertions": case.assertions or [], "extractors": case.extractors or []},
-            "rationale": "",
-            "applied": False,
-            "error": "未找到激活的 LLM 配置",
-        }
-
-    llm = create_llm_instance(config, temperature=0.2)
-    messages = _build_messages(case)
-    response = safe_llm_invoke(llm, messages, max_retries=3, retry_delay=2)
-    content = getattr(response, "content", "") or ""
-    payload = extract_json_from_response(content) or {}
-    rationale = payload.get("rationale", "") if isinstance(payload, dict) else ""
-    suggestion = _normalize_suggestion(payload) or {"assertions": [], "extractors": []}
-
     last_summary = _summarize_last_execution(case)
     last_status_code = (last_summary or {}).get("status_code") if last_summary else None
+
+    rationale = ""
+    if suggested_override is not None:
+        suggestion = _normalize_suggestion(suggested_override) or {"assertions": [], "extractors": []}
+    elif fast_mode:
+        suggestion = {"assertions": [], "extractors": []}
+        rationale = "快速模式：未调用 LLM，仅基于已有信息合并。"
+    else:
+        config = LLMConfig.objects.filter(is_active=True).first()
+        if not config:
+            return {
+                "case_id": case.id,
+                "current": {"assertions": case.assertions or [], "extractors": case.extractors or []},
+                "suggested": {"assertions": [], "extractors": []},
+                "merged": {"assertions": case.assertions or [], "extractors": case.extractors or []},
+                "rationale": "",
+                "applied": False,
+                "error": "未找到激活的 LLM 配置",
+            }
+
+        llm = create_llm_instance(config, temperature=0.2)
+        messages = _build_messages(case)
+        response = safe_llm_invoke(llm, messages, max_retries=3, retry_delay=2)
+        content = getattr(response, "content", "") or ""
+        payload = extract_json_from_response(content) or {}
+        rationale = payload.get("rationale", "") if isinstance(payload, dict) else ""
+        suggestion = _normalize_suggestion(payload) or {"assertions": [], "extractors": []}
+
     suggestion["assertions"] = _adjust_status_code_assertions(
         suggestion["assertions"], case.method, last_status_code
     )

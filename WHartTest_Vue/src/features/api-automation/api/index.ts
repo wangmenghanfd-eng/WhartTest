@@ -64,6 +64,12 @@ export const apiCaseApi = {
     request.post(`${BASE_URL}/testcases/generate-from-ui-trace/`, data),
   aiEnhance: (id: number, data?: { apply?: boolean; suggested?: Record<string, unknown> }) =>
     request.post(`${BASE_URL}/testcases/${id}/ai-enhance/`, data || {}),
+  batchAiEnhance: (data: {
+    case_ids: number[]
+    apply?: boolean
+    mode?: 'accurate' | 'fast'
+    items?: Array<Record<string, unknown>>
+  }) => request.post(`${BASE_URL}/testcases/batch-ai-enhance/`, data),
 }
 
 export const apiPublicDataApi = {

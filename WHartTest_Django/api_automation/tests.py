@@ -1508,3 +1508,55 @@ class ApiScenarioViewSetTests(TestCase):
         results = response.json()["data"]
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["name"], "子模块场景")
+
+
+class ApiBatchAiEnhanceTests(TestCase):
+    def setUp(self):
+        from rest_framework.test import APIClient
+
+        self.user = User.objects.create_superuser(
+            username="api_batch_enh_tester",
+            password="test123456",
+            email="api_batch_enh_tester@example.com",
+        )
+        self.project = Project.objects.create(name="api-batch-enh-project", creator=self.user)
+        ProjectMember.objects.create(project=self.project, user=self.user, role="owner")
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+        self.module = ApiModule.objects.create(project=self.project, name="批量增强模块", creator=self.user)
+
+    def test_batch_ai_enhance_apply_with_suggested_no_llm(self):
+        # apply + items 复用预览建议,串行执行、不调用 LLM;验证批量端点把建议写回,且保持 #1 schema
+        case = ApiTestCase.objects.create(
+            project=self.project, module=self.module, name="批量用例1",
+            method="GET", path="/users",
+            assertions=[{"type": "status_code", "operator": "eq", "expected": 200}],
+            creator=self.user,
+        )
+        resp = self.client.post("/api/api-automation/testcases/batch-ai-enhance/", {
+            "case_ids": [case.id],
+            "apply": True,
+            "items": [{
+                "case_id": case.id,
+                "suggested": {
+                    "assertions": [{"type": "json_path", "operator": "eq", "path": "id", "expected": 1}],
+                    "extractors": [{"name": "uid", "source": "json_path", "path": "id"}],
+                },
+            }],
+        }, format="json")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()["data"]
+        self.assertEqual(data["total"], 1)
+        self.assertEqual(data["error_count"], 0)
+        self.assertTrue(data["applied"])
+        self.assertEqual(data["items"][0]["case_id"], case.id)
+        case.refresh_from_db()
+        supported = {"status_code", "body_contains", "body_not_contains", "header_exists", "header_value", "json_path"}
+        self.assertTrue(all(a.get("type") in supported for a in case.assertions))
+        self.assertTrue(any(a.get("type") == "json_path" and "path" in a for a in case.assertions))
+
+    def test_batch_ai_enhance_requires_case_ids(self):
+        resp = self.client.post("/api/api-automation/testcases/batch-ai-enhance/", {
+            "case_ids": [],
+        }, format="json")
+        self.assertEqual(resp.status_code, 400)

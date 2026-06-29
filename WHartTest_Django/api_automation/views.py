@@ -411,11 +411,126 @@ class ApiTestCaseViewSet(CreatorMixin, viewsets.ModelViewSet):
 
         case = self.get_object()
         apply = bool(request.data.get("apply", False))
+        suggested_override = request.data.get("suggested")
         try:
-            payload = enhance_api_case(case.id, apply=apply)
+            payload = enhance_api_case(case.id, apply=apply, suggested_override=suggested_override)
         except Exception as exc:
             return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(payload)
+
+    @action(detail=False, methods=["post"], url_path="batch-ai-enhance", permission_classes=[IsAuthenticated])
+    def batch_ai_enhance(self, request):
+        """批量为多个用例补全 assertions / extractors。
+
+        Body:
+          - case_ids (list[int], required)
+          - apply (bool, default false): true 时把(预览给出的或新生成的)建议写回各用例
+          - mode ('accurate'|'fast', default accurate): fast 跳过 LLM
+          - items (list, optional): 预览阶段的结果,apply 时按 case_id 复用其 suggested
+        """
+        from .ai_enhance import enhance_api_case
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        case_ids = request.data.get("case_ids") or []
+        apply = bool(request.data.get("apply", False))
+        mode = str(request.data.get("mode") or "accurate").strip().lower()
+        preview_items = request.data.get("items") or []
+        if not case_ids:
+            return Response({"error": "请选择接口用例"}, status=status.HTTP_400_BAD_REQUEST)
+
+        cases = {case.id: case for case in ApiTestCase.objects.filter(id__in=case_ids)}
+        override_map = {}
+        if isinstance(preview_items, list):
+            for item in preview_items:
+                if not isinstance(item, dict):
+                    continue
+                case_id = item.get("case_id")
+                suggested = item.get("suggested")
+                if case_id in cases and isinstance(suggested, dict):
+                    override_map[int(case_id)] = suggested
+
+        def _build_missing_item(raw_case_id):
+            return {"case_id": raw_case_id, "case_name": f"#{raw_case_id}", "error": "用例不存在"}
+
+        def _run_case_enhance(case):
+            payload = enhance_api_case(
+                case.id,
+                apply=apply,
+                suggested_override=override_map.get(case.id) if apply else None,
+                fast_mode=(not apply and mode == "fast"),
+            )
+            suggested = payload.get("suggested") or {}
+            return {
+                "case_id": case.id,
+                "case_name": case.name,
+                "method": case.method,
+                "path": case.path,
+                "current": payload.get("current") or {"assertions": [], "extractors": []},
+                "merged": payload.get("merged") or {"assertions": [], "extractors": []},
+                "rationale": payload.get("rationale") or "",
+                "suggested": suggested,
+                "added_assertions": len(suggested.get("assertions") or []),
+                "added_extractors": len(suggested.get("extractors") or []),
+                "applied": bool(payload.get("applied")),
+            }
+
+        def _run_case_enhance_threaded(case):
+            # 仅线程预览路径用：每个 worker 用完关闭其线程本地连接,避免连接泄漏;不碰主连接。
+            from django.db import connection as _conn
+            try:
+                return _run_case_enhance(case)
+            finally:
+                _conn.close()
+
+        items_map = {}
+        error_count = 0
+        missing_case_ids = []
+        valid_cases = []
+        for raw_case_id in case_ids:
+            case = cases.get(int(raw_case_id))
+            if not case:
+                missing_case_ids.append(raw_case_id)
+                error_count += 1
+                continue
+            valid_cases.append(case)
+
+        if apply:
+            for case in valid_cases:
+                try:
+                    items_map[case.id] = _run_case_enhance(case)
+                except Exception as exc:
+                    error_count += 1
+                    items_map[case.id] = {"case_id": case.id, "case_name": case.name, "error": str(exc)}
+        else:
+            max_workers = min(max(len(valid_cases), 1), 4)
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_map = {executor.submit(_run_case_enhance_threaded, case): case for case in valid_cases}
+                for future in as_completed(future_map):
+                    case = future_map[future]
+                    try:
+                        items_map[case.id] = future.result()
+                    except Exception as exc:
+                        error_count += 1
+                        items_map[case.id] = {"case_id": case.id, "case_name": case.name, "error": str(exc)}
+
+        for missing_case_id in missing_case_ids:
+            items_map[int(missing_case_id)] = _build_missing_item(missing_case_id)
+
+        items = []
+        enhanced_count = 0
+        for raw_case_id in case_ids:
+            item = items_map.get(int(raw_case_id)) or _build_missing_item(raw_case_id)
+            if (item.get("added_assertions") or 0) + (item.get("added_extractors") or 0) > 0 and not item.get("error"):
+                enhanced_count += 1
+            items.append(item)
+
+        return Response({
+            "items": items,
+            "total": len(case_ids),
+            "enhanced_count": enhanced_count,
+            "error_count": error_count,
+            "applied": apply,
+        })
 
 
 class ApiPublicDataViewSet(CreatorMixin, viewsets.ModelViewSet):
