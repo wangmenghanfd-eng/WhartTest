@@ -26,8 +26,11 @@ class ApiModuleSerializer(serializers.ModelSerializer):
         read_only_fields = ["level", "creator", "created_at", "updated_at"]
 
     def get_children(self, obj):
+        visible_ids = set(self.context.get("visible_ids") or [])
         children = obj.children.all()
-        return ApiModuleSerializer(children, many=True).data if children else []
+        if visible_ids:
+            children = children.filter(id__in=visible_ids)
+        return ApiModuleSerializer(children, many=True, context=self.context).data if children else []
 
 
 class ApiEnvironmentConfigSerializer(serializers.ModelSerializer):

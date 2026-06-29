@@ -69,8 +69,13 @@ class ApiModuleViewSet(CreatorMixin, viewsets.ModelViewSet):
         project_id = request.query_params.get("project")
         if not project_id:
             return Response({"error": "project 参数必填"}, status=status.HTTP_400_BAD_REQUEST)
+        visible_ids = _visible_module_ids(int(project_id))
         modules = self.get_queryset().filter(project_id=project_id, parent__isnull=True)
-        return Response(self.get_serializer(modules, many=True).data)
+        if visible_ids:
+            modules = modules.filter(id__in=visible_ids)
+        else:
+            modules = modules.none()
+        return Response(self.get_serializer(modules, many=True, context={"visible_ids": visible_ids}).data)
 
 
 class ApiEnvironmentConfigViewSet(CreatorMixin, viewsets.ModelViewSet):
@@ -475,6 +480,32 @@ def _expand_module_ids(module_id, project_id=None):
         collected.append(current)
         queue.extend(children_map.get(current, []))
     return collected
+
+
+def _visible_module_ids(project_id: int) -> set[int]:
+    modules = list(ApiModule.objects.filter(project_id=project_id).values("id", "parent_id"))
+    children_map = defaultdict(list)
+    for item in modules:
+        children_map[item["parent_id"]].append(item["id"])
+
+    content_ids = set(ApiDefinition.objects.filter(project_id=project_id).values_list("module_id", flat=True))
+    content_ids.update(ApiTestCase.objects.filter(project_id=project_id).values_list("module_id", flat=True))
+    content_ids.update(ApiScenario.objects.filter(project_id=project_id).values_list("module_id", flat=True))
+    content_ids.update(ApiScript.objects.filter(project_id=project_id).values_list("module_id", flat=True))
+
+    visible = set(content_ids)
+    if not visible:
+        return visible
+
+    parent_map = {item["id"]: item["parent_id"] for item in modules}
+    queue = deque(visible)
+    while queue:
+        current = queue.popleft()
+        parent_id = parent_map.get(current)
+        if parent_id and parent_id not in visible:
+            visible.add(parent_id)
+            queue.append(parent_id)
+    return visible
 
 class ApiScenarioViewSet(CreatorMixin, viewsets.ModelViewSet):
     queryset = ApiScenario.objects.select_related("project", "module", "creator").prefetch_related("steps__test_case")
