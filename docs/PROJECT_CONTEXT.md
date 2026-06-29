@@ -1,6 +1,6 @@
 # WHartTest 项目上下文交接文档
 
-> 给新会话 Cascade 使用——读完此文即可接手，无需再重新扫描整个工程。最后更新：2026-06-18。
+> 给新会话 Cascade 使用——读完此文即可接手，无需再重新扫描整个工程。最后更新：2026-06-29。
 
 ---
 
@@ -12,7 +12,7 @@
 - 存储：PostgreSQL + Redis + Qdrant（向量库）
 - AI：LLM（LangGraph 智能体）+ MCP 工具（Playwright、内置 WHartTest 工具、远程 MCP）+ RAG 知识库
 - 部署：Docker Compose，一键启动 6~7 个服务
-- 测试覆盖：3 个核心模块共 **125 个单元测试**（见 §10）
+- 测试覆盖：3 个核心模块共 **127 个单元测试**（见 §10）
 
 本地部署根目录：`/Users/wangmenghan/WHartTest`。用户时区：**UTC+4 (Asia/Dubai)**，Django 默认配置时区：**Asia/Shanghai (UTC+8)**（定时任务支持按任务覆盖时区，见 §5.2）。
 
@@ -23,14 +23,29 @@
 > 这次把 scenario worktree 的工作按组并入 dev,并梳理了运行环境/正式库现状。要点:
 
 1. **接口场景(scenario)已合入 dev**:模型(`ApiScenario`/`ApiScenarioStep`/`ApiScenarioExecutionRecord`/`ApiScenarioStepRecord`)、迁移 `0002–0005`、执行引擎(`services.execute_api_scenario` + `_execute_api_record` + JS 步骤执行器 `js_script_runner.js`)、场景 API(`ApiScenarioViewSet`/`ApiScenarioExecutionRecordViewSet` + 路由 + `execute_api_scenario_task`)、前端「接口场景」Tab(`ApiAutomationScenarios.vue`)。**正式库已是迁移后状态**(0001–0005 全部 applied),且有真实场景数据(scenario 29 / step 138 / 执行记录 41 行)。
-2. **scenario 分支 `codex/feature-api-automation-dev` 仍有未合的独立功能**,需要时单独评估(当时为保 #1 修复、避免改动现有行为而 hold):
+2. **scenario 分支 `codex/feature-api-automation-dev` 仍有未合的独立功能**（**已于 2026-06-29 全部合入并部署,见 §1.6**;以下为当时 hold 记录):
    - **batchAiEnhance 批量 AI 增强**(后端 `batch_ai_enhance` action + 前端批量增强 UI,依赖 `ai_enhance` 的 `suggested_override`/`fast_mode` 扩展)
    - **B-1 模块树可视化过滤**(`tree` 端点按 `_visible_module_ids` 只显示有内容的模块)
    - **B-2 模块递归子树过滤**(Definition/TestCase/Script/ExecutionRecord 的 `module` 过滤含子模块,`_expand_module_ids`)
    - **B-3 generate_case 替换语义**(同 definition 已有用例时先删后建,返回 `replaced`)
 3. **版本检查改本地化**:`versionService.ts` 已从 GitHub Releases API 改为读 `WHartTest_Vue/public/version-meta.json`(去外网依赖,适配内网)。**发版需手动维护该 JSON 的 `latest` 字段**,否则前端永远显示"已是最新"。
 4. **单元测试数**:api_automation 现 **71**(含场景 3 项:`test_execute_api_scenario_shares_extracted_variables` / `test_scenario_create_and_execute_endpoint` / `test_scenario_list_supports_parent_module_filter`);三模块合计 **125**(见 §10)。
-5. **运行环境切换待办** ⚠️:`wharttest-backend` 容器目前仍跑 **2f41 worktree(`/Users/wangmenghan/.codex/worktrees/2f41/WHartTest`)的镜像**(代码 build 时 COPY 进镜像,非挂载)。要切到 dev 代码需**从 dev 重新 build 镜像 + 重建容器**;切换计划已就绪,**媒体已合并**(`2f41/data/media` 的 577 个文件已 `rsync --ignore-existing` 增量并入 `dev/data/media`,零覆盖),**数据库已备份** `data/backups/wharttest-20260618-150633.sql`(26M)。entrypoint 启动会自动 `migrate`(已验证对正式库 no-op)。切换前勿删 2f41(它是当前运行镜像的可复现源 + 回退依据)。
+5. **运行环境切换待办** ⚠️（**已于 2026-06-29 完成,见 §1.6**）:此前 `wharttest-backend` 容器跑的是 2f41 worktree 的镜像(代码 build 时 COPY,非挂载);媒体已 `rsync --ignore-existing` 合并、DB 已备份 `data/backups/wharttest-20260618-150633.sql`(26M)。现已从 dev 重 build 并切换。
+
+---
+
+## 1.6 最新状态变化（2026-06-29）
+
+> §1.5 列为"未合"的 4 个独立功能已全部合入 dev 并部署上线;运行环境已切到 dev。
+
+1. **scenario 分支的 4 个独立功能已全部合入 dev**(§1.5 第 2 点待办清零):
+   - **B-2 模块递归子树过滤**(`0e843a9`):`_expand_module_ids` 用于 Definition/TestCase/Script/ExecutionRecord 的 `module` 过滤,递归含子模块;不传 module 行为不变。
+   - **B-1 模块树可视化过滤**(`306b90a`):`modules/tree/` 经 `_visible_module_ids` 只返回有内容的模块+祖先,空则 `.none()`;`ApiModuleSerializer.get_children` 按 visible_ids 过滤。
+   - **B-3 generate_case 替换语义**(`fd491ef`):同 definition 已有 `source=definition` 用例时先删后建,返回 `replaced`。⚠️ 边界:`existing_cases.delete()` 删到被 `ApiScenarioStep.test_case`(PROTECT)引用的用例会 ProtectedError 500,目前按原样合入未加保护。
+   - **batchAiEnhance 批量 AI 增强**:**方案B**(后端 `256f097`)——不引入 scenario 那 946 行老 schema(target/json_path_length),而在 dev 的 #1 版 `enhance_api_case` 上加 `suggested_override`/`fast_mode` 钩子 + `batch_ai_enhance` action;**方案C**(前端 `3b404ba`)——只复用用例表多选 + 「批量AI增强」按钮 + 结果提示,不做 scenario 的 3 弹窗预览/逐条编辑。**#1 全程保留**;顺手修了 scenario 原代码隐患(`close_old_connections` 串行路径误关主连接 → 改为仅线程 worker 关线程本地连接)。
+2. **运行环境已切到 dev 并完成本批部署**(§1.5 第 5 点完成):backend 已从 dev 重 build(镜像 `wharttest-backend:latest`,`ffcbd94`)、重建;working_dir/data 挂载均为 dev;`migrate` 对正式库 no-op;场景 / `batch-ai-enhance` / `modules/tree` 端点 401(路由在)、health healthy。**dev = origin/dev = 运行容器**,一致到 `3b404ba`。
+3. **2f41 worktree 已退役**(`git worktree remove`);分支 `codex/feature-api-automation-dev`(@ `a1c6bcb`)保留在本地 + origin;旧 rollback 镜像已清理(仅留 `:latest`);DB 备份 `data/backups/wharttest-20260618-150633.sql` 保留。
+4. **单元测试数**:api_automation **73**(新增 `ApiBatchAiEnhanceTests` 2 项);三模块合计 **127**。
 
 ---
 
@@ -123,7 +138,7 @@ WHartTest/
 | UI 自动化（Actuator 派单） | ✅ | WebSocket 派单 + OPEN 任务调度开关 |
 | 接口自动化 | ✅ | OpenAPI 导入 + 单个/批量执行 + 默认环境自动创建 + AI 增强/功能用例转换/UI Trace 导入 + 报告/定时 |
 | 任务中心 | ✅ | UI/API/Suite 三种调度都通；时区支持按任务覆盖 |
-| 单元测试 | ✅ | 125 个测试覆盖 ui_automation/api_automation/task_center（api_automation 含场景 3 项） |
+| 单元测试 | ✅ | 127 个测试覆盖 ui_automation/api_automation/task_center（api_automation 含场景3+批量增强2 项） |
 | Playwright-MCP | ✅ | 容器可运行 |
 
 ---
@@ -284,9 +299,9 @@ docker exec wharttest-backend python manage.py test ui_automation api_automation
 | 模块 | 测试文件 | 测试数 |
 |------|---------|--------|
 | `ui_automation` | `WHartTest_Django/ui_automation/tests.py` | 25 |
-| `api_automation` | `WHartTest_Django/api_automation/tests.py` | 71 |
+| `api_automation` | `WHartTest_Django/api_automation/tests.py` | 73 |
 | `task_center` | `WHartTest_Django/task_center/tests.py` | 29 |
-| **合计** | | **125** |
+| **合计** | | **127** |
 
 ### 关键覆盖点（每条都对应 §5 / §6 的修复，回归保护用）
 - **OPEN 开关**：`SocketUserManagerActuatorTests`、`TriggerBatchExecutionViewTests`
