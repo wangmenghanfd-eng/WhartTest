@@ -142,23 +142,33 @@ class ApiDefinitionViewSet(CreatorMixin, viewsets.ModelViewSet):
         if env is None:
             env = ApiEnvironmentConfig.objects.filter(project=definition.project, is_default=True).first()
 
-        case = ApiTestCase.objects.create(
+        defaults = {
+            "project": definition.project,
+            "module": module,
+            "definition": definition,
+            "environment": env,
+            "name": f"{definition.method}-{definition.name or definition.path}"[:255],
+            "method": definition.method,
+            "path": definition.path,
+            "assertions": _default_assertions(definition.responses or {}),
+            "source": "definition",
+        }
+        existing_cases = ApiTestCase.objects.filter(
             project=definition.project,
             module=module,
             definition=definition,
-            environment=env,
-            name=f"{definition.method}-{definition.name or definition.path}"[:255],
-            method=definition.method,
-            path=definition.path,
-            assertions=_default_assertions(definition.responses or {}),
             source="definition",
-            creator=request.user,
         )
+        replaced = existing_cases.exists()
+        if replaced:
+            existing_cases.delete()
+        case = ApiTestCase.objects.create(creator=request.user, **defaults)
         return Response({
             "case_id": case.id,
             "name": case.name,
             "method": case.method,
             "path": case.path,
+            "replaced": replaced,
         })
 
     @action(detail=False, methods=["post"], url_path="import-openapi")
