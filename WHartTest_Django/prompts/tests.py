@@ -16,6 +16,8 @@ class UserPromptModelTests(TestCase):
             email='test@example.com',
             password='testpass123'
         )
+        # accounts 信号在建用户时会自动初始化 10 条默认提示词,清掉以聚焦本测试显式创建的提示词
+        UserPrompt.objects.filter(user=self.user).delete()
 
         # 创建默认提示词
         self.default_prompt = UserPrompt.objects.create(
@@ -70,11 +72,13 @@ class UserPromptAPITests(TestCase):
     def setUp(self):
         """测试前准备"""
         self.client = APIClient()
-        self.user = User.objects.create_user(
+        self.user = User.objects.create_superuser(
             username='testuser',
             email='test@example.com',
             password='testpass123'
         )
+        # accounts 信号在建用户时会自动初始化 10 条默认提示词,清掉以聚焦本测试显式创建的提示词
+        UserPrompt.objects.filter(user=self.user).delete()
 
         # 创建默认提示词
         self.default_prompt = UserPrompt.objects.create(
@@ -123,7 +127,7 @@ class UserPromptAPITests(TestCase):
         url = '/api/prompts/user-prompts/'
         data = {
             'name': '新提示词',
-            'content': '这是新提示词内容',
+            'content': '这是新提示词的内容,长度足以通过最少十个字符的校验',
             'description': '新提示词描述',
             'is_default': False,
             'is_active': True
