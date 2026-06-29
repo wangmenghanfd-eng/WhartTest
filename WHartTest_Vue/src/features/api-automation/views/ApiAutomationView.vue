@@ -44,6 +44,9 @@
             <a-button @click="handleGenerateFromFunctional">功能用例转接口用例</a-button>
             <a-button type="primary" @click="openCaseModal()">新增用例</a-button>
             <a-button type="outline" :disabled="!selectedCaseIds.length" @click="batchExecute">批量执行</a-button>
+            <a-popconfirm content="将对选中用例调用 LLM 补全断言/提取器并直接合并写回,确认?" @ok="batchAiEnhanceCases">
+              <a-button type="outline" :disabled="!selectedCaseIds.length" :loading="batchAiEnhancing">批量AI增强</a-button>
+            </a-popconfirm>
           </div>
           <a-table
             row-key="id"
@@ -827,6 +830,24 @@ const batchExecute = async () => {
   } finally {
     fetchRecords()
     reportsReloadKey.value += 1
+  }
+}
+const batchAiEnhancing = ref(false)
+const batchAiEnhanceCases = async () => {
+  if (!selectedCaseIds.value.length) return
+  const msgId = `batch-ai-${Date.now()}`
+  batchAiEnhancing.value = true
+  Message.loading({ id: msgId, content: `正在批量 AI 增强 ${selectedCaseIds.value.length} 条用例...`, duration: 0 })
+  try {
+    const res = await apiCaseApi.batchAiEnhance({ case_ids: selectedCaseIds.value, apply: true, mode: 'accurate' })
+    const data = unwrapData<any>(res) || {}
+    Message.success({ id: msgId, content: `批量 AI 增强完成：已增强 ${data?.enhanced_count ?? '-'} / 异常 ${data?.error_count ?? '-'}`, duration: 3500 })
+    selectedCaseIds.value = []
+  } catch (err: any) {
+    Message.error({ id: msgId, content: err?.error || '批量 AI 增强失败', duration: 4000 })
+  } finally {
+    batchAiEnhancing.value = false
+    fetchCases()
   }
 }
 const enhanceCase = (record: ApiTestCase) => {
