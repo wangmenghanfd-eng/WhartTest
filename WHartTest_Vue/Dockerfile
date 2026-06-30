@@ -18,7 +18,9 @@ RUN npm config set registry "${NPM_REGISTRY}" && \
       -e "s#https://registry\\.npmjs\\.org/#${NPM_REGISTRY%/}/#g" \
       package-lock.json
 
-# 安装依赖（npm ci更快更可靠，基于lock文件）
+# 安装依赖（npm ci 更快更可靠，基于 lock 文件）。
+# 注意：package.json 不要把 @rollup/rollup-* 这类平台专属原生包写进 devDependencies，
+# 否则 lock 会把 macOS 的 rollup-darwin-arm64 钉成根依赖，导致 linux 下 npm ci 报 EBADPLATFORM。
 RUN npm ci
 
 # 复制TypeScript配置和构建配置
