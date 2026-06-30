@@ -213,6 +213,23 @@ def _get_by_path(data: Any, path: str) -> Any:
     return current
 
 
+def _json_type_name(value: Any) -> str:
+    """返回值的 JSON 类型名:null/boolean/number/string/array/object。"""
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, (int, float)):
+        return "number"
+    if isinstance(value, str):
+        return "string"
+    if isinstance(value, list):
+        return "array"
+    if isinstance(value, dict):
+        return "object"
+    return "unknown"
+
+
 def _safe_response_json(response: httpx.Response) -> Any:
     try:
         return response.json()
@@ -314,8 +331,12 @@ def _assert_response(response: httpx.Response, assertions: list[dict[str, Any]])
             actual = body_text
             passed = str(expected) not in body_text
         elif typ == "header_exists":
-            actual = dict(response.headers)
-            passed = str(expected).lower() in {k.lower() for k in response.headers.keys()}
+            header_name = str(
+                assertion.get("path") or assertion.get("header") or expected or ""
+            ).lower()
+            keys = {k.lower() for k in response.headers.keys()}
+            actual = header_name in keys
+            passed = bool(actual)
         elif typ == "header_value":
             header_name = str(assertion.get("path") or assertion.get("header") or "").lower()
             actual = next(
@@ -327,6 +348,23 @@ def _assert_response(response: httpx.Response, assertions: list[dict[str, Any]])
             if parsed_body is None:
                 parsed_body = _safe_response_json(response)
             actual = _get_by_path(parsed_body, assertion.get("path") or "")
+            passed = _compare(actual, operator, expected)
+        elif typ == "json_path_type":
+            if parsed_body is None:
+                parsed_body = _safe_response_json(response)
+            path = assertion.get("path") or ""
+            value = parsed_body if not path.strip().lstrip("$").lstrip(".") else _get_by_path(parsed_body, path)
+            actual = _json_type_name(value)
+            passed = _compare(actual, operator, expected)
+        elif typ == "json_path_length":
+            if parsed_body is None:
+                parsed_body = _safe_response_json(response)
+            path = assertion.get("path") or ""
+            value = parsed_body if not path.strip().lstrip("$").lstrip(".") else _get_by_path(parsed_body, path)
+            try:
+                actual = len(value) if value is not None else 0
+            except TypeError:
+                actual = None
             passed = _compare(actual, operator, expected)
         else:
             actual = None
@@ -690,7 +728,8 @@ def _execute_api_record(record: ApiExecutionRecord, inherited_variables: dict[st
                     headers["Referer"] = f"{env.base_url.rstrip('/')}/dashboard"
                 request_data["headers"] = headers
                 response = _send(headers)
-        passed, assertion_results = _assert_response(response, case.assertions or [])
+        rendered_assertions = _render_value(deepcopy(case.assertions or []), variables)
+        passed, assertion_results = _assert_response(response, rendered_assertions)
         extracted = _extract_variables(response, case.extractors or [])
         duration = time.perf_counter() - start
         response_data = {

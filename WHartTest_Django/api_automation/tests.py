@@ -170,6 +170,55 @@ class ApiServiceHelperTests(TestCase):
         ])
         self.assertTrue(ok)
 
+    def test_assert_response_json_path_type_and_length(self):
+        from .services import _assert_response
+
+        resp = httpx.Response(
+            200,
+            text='{"id": 134, "items": ["a", "b"], "formData": {}}',
+            headers={"content-type": "application/json"},
+            request=httpx.Request("GET", "https://x"),
+        )
+        ok, results = _assert_response(resp, [
+            {"type": "json_path_type", "path": "id", "expected": "number", "operator": "eq"},
+            {"type": "json_path_type", "path": "items", "expected": "array", "operator": "eq"},
+            {"type": "json_path_length", "path": "items", "expected": 2, "operator": "eq"},
+            {"type": "json_path_length", "path": "formData", "expected": 0, "operator": "eq"},
+            # 空 path 表示整个 body
+            {"type": "json_path_type", "path": "", "expected": "object", "operator": "eq"},
+        ])
+        self.assertTrue(ok, results)
+
+    def test_assert_response_header_exists_by_path(self):
+        from .services import _assert_response
+
+        resp = httpx.Response(
+            200,
+            text="[]",
+            headers={"content-type": "application/json", "x-trace-id": "abc"},
+            request=httpx.Request("GET", "https://x"),
+        )
+        # 头名放在 path(而非 expected)也应识别
+        ok, _results = _assert_response(resp, [
+            {"type": "header_exists", "path": "content-type"},
+            {"type": "header_exists", "path": "x-trace-id"},
+        ])
+        self.assertTrue(ok)
+
+    def test_assert_array_body_root_type(self):
+        from .services import _assert_response
+
+        resp = httpx.Response(
+            200,
+            text='["Dubai", "Abu Dhabi"]',
+            headers={"content-type": "application/json"},
+            request=httpx.Request("GET", "https://x"),
+        )
+        ok, _r = _assert_response(resp, [
+            {"type": "json_path_type", "path": "", "expected": "array", "operator": "eq"},
+        ])
+        self.assertTrue(ok)
+
     def test_assert_response_partial_failure(self):
         from .services import _assert_response
 
