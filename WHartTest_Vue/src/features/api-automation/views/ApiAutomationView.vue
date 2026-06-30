@@ -870,10 +870,27 @@ const executeCase = async (record: ApiTestCase) => {
   try {
     const res = await apiCaseApi.execute(record.id, { environment: selectedEnvId.value })
     const data = unwrapData<any>(res) || {}
-    if (data?.status === 3) {
-      Message.error({ id: msgId, content: `执行未通过：${data?.error_message || '断言失败'}`, duration: 4000 })
+    const recordId = data?.record_id
+    // 执行接口是异步的，只返回 record_id；轮询执行记录直到出结果，再据实提示通过/失败
+    let rec: any = null
+    if (recordId) {
+      for (let i = 0; i < 40; i++) {
+        await new Promise((r) => setTimeout(r, 1500))
+        try {
+          rec = unwrapData<any>(await apiRecordApi.getRecord(recordId))
+        } catch { /* 继续轮询 */ }
+        if (rec && (rec.status === 2 || rec.status === 3)) break
+      }
     } else {
-      Message.success({ id: msgId, content: `执行完成（耗时 ${(data?.duration ?? 0).toFixed?.(2) ?? data?.duration} s）`, duration: 3000 })
+      rec = data // 兼容旧的同步返回
+    }
+    if (rec?.status === 2) {
+      const dur = typeof rec?.duration === 'number' ? `（耗时 ${rec.duration.toFixed(2)} s）` : ''
+      Message.success({ id: msgId, content: `执行通过${dur}`, duration: 3000 })
+    } else if (rec?.status === 3) {
+      Message.error({ id: msgId, content: `执行未通过：${rec?.error_message || '断言失败'}`, duration: 4000 })
+    } else {
+      Message.warning({ id: msgId, content: '已提交执行，结果待定，请到“执行记录”查看', duration: 3500 })
     }
   } catch (err: any) {
     Message.error({ id: msgId, content: err?.error || '执行失败', duration: 4000 })
