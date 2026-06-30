@@ -1,13 +1,19 @@
+// 统一按阿布扎比/迪拜时区(UTC+4)显示时间,不随浏览器/系统时区变化
+export const APP_TIME_ZONE = 'Asia/Dubai';
+
 export const formatDateTime = (dateString?: string): string => {
   if (!dateString) return '-';
   try {
     const date = new Date(dateString);
-    // 检查日期是否有效
     if (isNaN(date.getTime())) {
       return '-';
     }
-    // 使用 toLocaleString 来同时显示日期和时间
-    return date.toLocaleString();
+    return date.toLocaleString('zh-CN', {
+      timeZone: APP_TIME_ZONE,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false,
+    });
   } catch (error) {
     console.error("Error formatting datetime:", dateString, error);
     return '-';

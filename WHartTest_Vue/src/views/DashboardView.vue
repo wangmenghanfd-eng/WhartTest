@@ -427,16 +427,28 @@ const getBarHeight = (value: number): string => {
   return height + 'px';
 };
 
+// 统一按阿布扎比/迪拜时区(UTC+4)显示,不随浏览器/系统时区变化
+const APP_TZ = 'Asia/Dubai';
+const dubaiParts = (date: Date) => {
+  const p = new Intl.DateTimeFormat('en-CA', {
+    timeZone: APP_TZ, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(date);
+  return Object.fromEntries(p.map((x) => [x.type, x.value])) as Record<string, string>;
+};
+
 const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr);
-  return `${date.getMonth() + 1}/${date.getDate()}`;
+  if (Number.isNaN(date.getTime())) return dateStr || '';
+  const p = dubaiParts(date);
+  return `${Number(p.month)}/${Number(p.day)}`;
 };
 
 const formatDateTime = (dateStr: string): string => {
   const date = new Date(dateStr);
   if (Number.isNaN(date.getTime())) return dateStr || '-';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  const p = dubaiParts(date);
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;
 };
 
 const formatTokenCount = (count: number): string => {

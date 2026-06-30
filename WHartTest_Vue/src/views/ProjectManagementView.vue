@@ -22,11 +22,7 @@
             v-model="searchKeyword"
             placeholder="搜索项目名称/描述"
             allow-clear
-            search-button
             style="width: 300px"
-            @search="onSearch"
-            @press-enter="onSearch(searchKeyword)"
-            @clear="onSearch('')"
           />
         </div>
         <div class="action-buttons">
@@ -414,7 +410,16 @@ const fetchProjectList = async () => {
   }
 };
 
-// 搜索项目
+// 搜索项目(实时响应:输入即搜,300ms 防抖)
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+watch(searchKeyword, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    pagination.current = 1;
+    fetchProjectList();
+  }, 300);
+});
+
 const onSearch = (value: string) => {
   searchKeyword.value = value;
   pagination.current = 1; // 重置到第一页
