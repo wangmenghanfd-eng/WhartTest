@@ -5,7 +5,7 @@
       <a-button type="primary" @click="openScenarioModal()">新增接口场景</a-button>
     </div>
 
-    <a-table :columns="scenarioColumns" :data="scenarios" :loading="loading" :pagination="false" :scroll="{ x: 1000 }">
+    <a-table :columns="scenarioColumns" :data="scenarios" :loading="loading" :pagination="{ pageSize: 20, showTotal: true }" :scroll="{ x: 1000 }">
       <template #scenario_status="{ record }">
         <a-tag :color="record.status === 2 ? 'green' : record.status === 3 ? 'red' : record.status === 1 ? 'arcoblue' : 'gray'">
           {{ STATUS_LABELS[record.status] }}
@@ -29,7 +29,7 @@
       :columns="recordColumns"
       :data="scenarioRecords"
       :loading="recordLoading"
-      :pagination="false"
+      :pagination="{ pageSize: 20, showTotal: true }"
       row-key="id"
       :expandable="{ expandedRowRender: renderExpanded }"
       :scroll="{ x: 1100 }"
