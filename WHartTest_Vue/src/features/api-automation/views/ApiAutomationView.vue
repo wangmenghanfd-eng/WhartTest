@@ -2,14 +2,28 @@
   <div class="api-automation-layout">
     <aside class="module-panel">
       <div class="panel-title">接口项目/模块</div>
-      <a-button type="primary" size="small" long @click="openModuleModal()">新增模块</a-button>
+      <a-button type="primary" size="small" long @click="openModuleModal()">新增根模块</a-button>
       <a-tree
         class="module-tree"
         :data="moduleTree"
         :field-names="{ key: 'id', title: 'name', children: 'children' }"
         block-node
         @select="onModuleSelect"
-      />
+      >
+        <template #title="node">
+          <div class="module-node">
+            <span class="module-node-name">{{ node.name }}</span>
+            <a-dropdown trigger="hover" @select="(v) => handleModuleAction(String(v), node)">
+              <a-button type="text" size="mini" class="module-node-more" @click.stop>···</a-button>
+              <template #content>
+                <a-doption value="addChild">添加子模块</a-doption>
+                <a-doption value="edit">编辑模块</a-doption>
+                <a-doption value="delete">删除模块</a-doption>
+              </template>
+            </a-dropdown>
+          </div>
+        </template>
+      </a-tree>
     </aside>
 
     <section class="layout-content">
@@ -178,7 +192,7 @@
       </a-form>
     </a-modal>
 
-    <a-modal v-model:visible="moduleModalVisible" title="接口模块" @before-ok="submitModule">
+    <a-modal v-model:visible="moduleModalVisible" :title="moduleModalTitle" @before-ok="submitModule">
       <a-input v-model="moduleForm.name" placeholder="模块名称" />
     </a-modal>
 
@@ -280,7 +294,7 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import { Message } from '@arco-design/web-vue'
+import { Message, Modal } from '@arco-design/web-vue'
 import { useProjectStore } from '@/store/projectStore'
 import {
   apiCaseApi,
@@ -321,6 +335,11 @@ const selectedEnvId = ref<number | undefined>()
 const selectedCaseIds = ref<number[]>([])
 
 const moduleTree = ref<ApiModule[]>([])
+const editingModuleId = ref<number | null>(null)
+const moduleParentId = ref<number | null>(null)
+const moduleModalTitle = computed(() =>
+  editingModuleId.value ? '编辑模块' : moduleParentId.value ? '新增子模块' : '新增根模块'
+)
 const definitions = ref<ApiDefinition[]>([])
 const cases = ref<ApiTestCase[]>([])
 const envConfigs = ref<ApiEnvironmentConfig[]>([])
@@ -521,7 +540,43 @@ const onModuleSelect = (keys: Array<string | number>) => {
   selectedModuleId.value = keys?.[0] ? Number(keys[0]) : undefined
   refreshActive()
 }
-const openModuleModal = () => { moduleForm.name = ''; moduleModalVisible.value = true }
+const openModuleModal = () => {
+  if (!projectId.value) { Message.warning('请先在顶部选择一个项目'); return }
+  editingModuleId.value = null
+  moduleParentId.value = null
+  moduleForm.name = ''
+  moduleModalVisible.value = true
+}
+
+const handleModuleAction = (action: string, node: ApiModule) => {
+  if (action === 'addChild') {
+    editingModuleId.value = null
+    moduleParentId.value = node.id
+    moduleForm.name = ''
+    moduleModalVisible.value = true
+  } else if (action === 'edit') {
+    editingModuleId.value = node.id
+    moduleParentId.value = null
+    moduleForm.name = node.name
+    moduleModalVisible.value = true
+  } else if (action === 'delete') {
+    Modal.warning({
+      title: '删除模块',
+      content: `确认删除模块「${node.name}」？该模块下的子模块/用例可能一并受影响。`,
+      hideCancel: false,
+      onOk: async () => {
+        try {
+          await apiModuleApi.delete(node.id)
+          Message.success('删除成功')
+          if (selectedModuleId.value === node.id) { selectedModuleId.value = undefined; refreshActive() }
+          fetchModules()
+        } catch (e: any) {
+          Message.error(e?.response?.data?.message || '删除失败，请检查该模块下是否仍有用例')
+        }
+      },
+    })
+  }
+}
 
 const openEnvModal = (record?: ApiEnvironmentConfig) => {
   if (record) {
@@ -626,11 +681,21 @@ const submitOpenApiImport = async (done: (closed: boolean) => void) => {
   }
 }
 const submitModule = async (done: (closed: boolean) => void) => {
-  if (!projectId.value || !moduleForm.name) return done(false)
-  await apiModuleApi.create({ project: projectId.value, name: moduleForm.name, parent: selectedModuleId.value ?? null })
-  Message.success('模块已创建')
-  done(true)
-  fetchModules()
+  if (!projectId.value || !moduleForm.name.trim()) return done(false)
+  try {
+    if (editingModuleId.value) {
+      await apiModuleApi.update(editingModuleId.value, { name: moduleForm.name.trim() })
+      Message.success('模块已更新')
+    } else {
+      await apiModuleApi.create({ project: projectId.value, name: moduleForm.name.trim(), parent: moduleParentId.value })
+      Message.success('模块已创建')
+    }
+    done(true)
+    fetchModules()
+  } catch (e: any) {
+    Message.error(e?.response?.data?.message || '操作失败')
+    done(false)
+  }
 }
 function tryParseJsonObj(text: string): { ok: boolean; data?: Record<string, unknown>; error?: string } {
   const t = (text || '').trim()
@@ -960,6 +1025,26 @@ watch(activeTab, refreshActive)
 }
 .module-tree {
   margin-top: 12px;
+}
+.module-node {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.module-node-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.module-node-more {
+  opacity: 0;
+  flex-shrink: 0;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+.module-node:hover .module-node-more {
+  opacity: 1;
 }
 .layout-content {
   flex: 1;

@@ -66,22 +66,77 @@
             {{ (record.success_rate ?? 0).toFixed(1) }}%
           </a-tag>
         </template>
+        <template #ops="{ record }">
+          <a-button type="text" size="mini" @click="openBatchDetail(record)">查看详情</a-button>
+        </template>
       </a-table>
     </a-spin>
+
+    <a-modal v-model:visible="detailVisible" :title="`批次详情 #${detailBatch?.id ?? ''} ${detailBatch?.name ?? ''}`" :width="900" :footer="false">
+      <a-spin :loading="detailLoading" style="width: 100%">
+        <a-descriptions :column="3" size="small" bordered style="margin-bottom: 12px">
+          <a-descriptions-item label="状态">
+            <a-tag :color="batchStatusColor(detailBatch?.status ?? 0)">{{ BATCH_STATUS_LABELS[detailBatch?.status ?? 0] }}</a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="通过/失败/总计">{{ detailBatch?.passed_cases ?? 0 }}/{{ detailBatch?.failed_cases ?? 0 }}/{{ detailBatch?.total_cases ?? 0 }}</a-descriptions-item>
+          <a-descriptions-item label="成功率">{{ (detailBatch?.success_rate ?? 0).toFixed(1) }}%</a-descriptions-item>
+        </a-descriptions>
+        <div v-if="!detailRecords.length" class="empty">该批次下没有用例执行明细</div>
+        <a-table
+          v-else
+          :data="detailRecords"
+          :columns="detailColumns"
+          :pagination="{ pageSize: 10 }"
+          size="small"
+          :scroll="{ x: 700 }"
+        >
+          <template #recStatus="{ record }">
+            <a-tag :color="record.status === 2 ? 'green' : record.status === 3 ? 'red' : 'gray'">{{ STATUS_LABELS[record.status] }}</a-tag>
+          </template>
+          <template #dur="{ record }">{{ record.duration != null ? record.duration.toFixed(0) + ' ms' : '-' }}</template>
+          <template #err="{ record }">
+            <a-tooltip v-if="record.error_message" :content="record.error_message">
+              <span class="err-text">{{ record.error_message }}</span>
+            </a-tooltip>
+            <span v-else>-</span>
+          </template>
+        </a-table>
+      </a-spin>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { apiRecordApi } from '../api'
-import { BATCH_STATUS_LABELS, unwrapPage } from '../types'
+import { BATCH_STATUS_LABELS, STATUS_LABELS, unwrapData, unwrapPage } from '../types'
 import type { ApiBatchExecutionRecord, ApiExecutionRecord } from '../types'
+import { Message } from '@arco-design/web-vue'
 
 const props = defineProps<{ projectId: number | undefined; reloadKey?: number }>()
 
 const loading = ref(false)
 const records = ref<ApiExecutionRecord[]>([])
 const batches = ref<ApiBatchExecutionRecord[]>([])
+
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detailBatch = ref<ApiBatchExecutionRecord | null>(null)
+const detailRecords = computed(() => detailBatch.value?.execution_records ?? [])
+
+async function openBatchDetail(record: ApiBatchExecutionRecord) {
+  detailBatch.value = record
+  detailVisible.value = true
+  detailLoading.value = true
+  try {
+    const res = await apiRecordApi.getBatch(record.id)
+    detailBatch.value = unwrapData<ApiBatchExecutionRecord>(res) ?? record
+  } catch {
+    Message.error('获取批次详情失败')
+  } finally {
+    detailLoading.value = false
+  }
+}
 
 const summary = computed(() => {
   const total = records.value.length
@@ -146,6 +201,13 @@ const batchColumns = [
   { title: '通过/失败/总计', render: (data?: { record?: ApiBatchExecutionRecord }) => { const r = data?.record; return r ? `${r.passed_cases}/${r.failed_cases}/${r.total_cases}` : '-' } },
   { title: '成功率', slotName: 'rate', width: 100 },
   { title: '触发', dataIndex: 'trigger_type', width: 90 },
+  { title: '操作', slotName: 'ops', width: 100 },
+]
+const detailColumns = [
+  { title: '用例', dataIndex: 'test_case_name', ellipsis: true, tooltip: true },
+  { title: '状态', slotName: 'recStatus', width: 90 },
+  { title: '耗时', slotName: 'dur', width: 100 },
+  { title: '错误信息', slotName: 'err', ellipsis: true },
 ]
 
 function batchStatusColor(s: number) {
@@ -219,5 +281,8 @@ watch(() => [props.projectId, props.reloadKey], load, { immediate: true })
   text-align: center;
   color: var(--color-text-3);
   padding: 24px;
+}
+.err-text {
+  color: rgb(var(--red-6));
 }
 </style>

@@ -34,10 +34,16 @@
           <template #icon><icon-file /></template>
           完整报告
         </a-button>
-        <a-button type="outline" @click="exportReport">
-          <template #icon><icon-download /></template>
-          导出报告
-        </a-button>
+        <a-dropdown @select="(v) => exportReport(String(v))">
+          <a-button type="outline" :loading="exporting">
+            <template #icon><icon-download /></template>
+            导出报告
+          </a-button>
+          <template #content>
+            <a-doption value="pdf">导出为 PDF</a-doption>
+            <a-doption value="docx">导出为 Word</a-doption>
+          </template>
+        </a-dropdown>
         <a-button type="primary" @click="shareReport">
           <template #icon><icon-share-alt /></template>
           分享报告
@@ -360,8 +366,34 @@ const viewFullReport = () => {
   }
 };
 
-const exportReport = () => {
-  Message.info('导出功能开发中...');
+const exporting = ref(false);
+
+const exportReport = async (format: string) => {
+  const fmt = format === 'docx' ? 'docx' : 'pdf';
+  const reportId = selectedReportId.value;
+  if (!reportId) {
+    Message.warning('没有可导出的报告');
+    return;
+  }
+  exporting.value = true;
+  try {
+    const blob = await RequirementDocumentService.exportReport(reportId, fmt);
+    const title = document.value?.title || '需求评审报告';
+    const ext = fmt === 'docx' ? 'docx' : 'pdf';
+    const url = window.URL.createObjectURL(blob);
+    const a = window.document.createElement('a');
+    a.href = url;
+    a.download = `${title}_评审报告.${ext}`;
+    window.document.body.appendChild(a);
+    a.click();
+    window.document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    Message.success('导出成功');
+  } catch (e: any) {
+    Message.error(e?.message || '导出失败');
+  } finally {
+    exporting.value = false;
+  }
 };
 
 const shareReport = () => {

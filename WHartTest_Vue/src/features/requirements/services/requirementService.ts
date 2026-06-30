@@ -371,6 +371,23 @@ export class RequirementDocumentService {
   }
 
   /**
+   * 导出评审报告（pdf / docx），返回二进制 Blob
+   */
+  static async exportReport(reportId: string, format: 'pdf' | 'docx'): Promise<Blob> {
+    const res = await request<Blob>({
+      url: `${BASE_URL}/reports/${reportId}/export/`,
+      method: 'GET',
+      params: { fmt: format },
+      responseType: 'blob',
+    });
+    const blob = (res as any)?.data ?? res;
+    if (!(blob instanceof Blob)) {
+      throw new Error((res as any)?.error || '导出失败');
+    }
+    return blob;
+  }
+
+  /**
    * 查询评审进度
    */
   static async getReviewProgress(id: string): Promise<ApiResponse<ReviewProgress>> {

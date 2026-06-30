@@ -123,6 +123,10 @@ const resetForm = () => {
 }
 
 const showAddModal = (parent: UiModule | null) => {
+  if (!projectId.value) {
+    Message.warning('请先在顶部选择一个项目')
+    return
+  }
   isEdit.value = false
   parentModule.value = parent
   resetForm()
@@ -146,13 +150,17 @@ const handleSubmit = async (done: (closed: boolean) => void) => {
     done(false)
     return
   }
+  if (!isEdit.value && !projectId.value) {
+    Message.warning('请先在顶部选择一个项目')
+    return
+  }
   submitting.value = true
   try {
     if (isEdit.value && currentModule.value) {
       await moduleApi.update(currentModule.value.id, formData)
       Message.success('更新成功')
     } else {
-      await moduleApi.create(formData)
+      await moduleApi.create({ ...formData, project: projectId.value as number })
       Message.success('创建成功')
     }
     done(true)

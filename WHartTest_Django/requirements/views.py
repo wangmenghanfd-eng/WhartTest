@@ -777,6 +777,39 @@ class ReviewReportViewSet(BaseModelViewSet):
             document__project__members__user=user
         ).distinct()
 
+    @action(detail=True, methods=["get"])
+    def export(self, request, *args, **kwargs):
+        """导出评审报告。?fmt=pdf|docx (默认 pdf)。
+
+        注意：查询参数用 ``fmt`` 而非 ``format``——``format`` 是 DRF 内容协商保留参数，
+        会触发渲染器查找导致 404。
+        """
+        from urllib.parse import quote
+        from django.http import HttpResponse
+        from .report_export import build_export
+
+        report = self.get_object()
+        fmt = (request.query_params.get("fmt") or "pdf").lower()
+        if fmt not in ("pdf", "docx", "word"):
+            return Response(
+                {"detail": "不支持的导出格式，仅支持 pdf / docx"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            filename, content_type, content = build_export(report, fmt)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("导出评审报告失败: %s", exc)
+            return Response(
+                {"detail": f"导出失败: {exc}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        resp = HttpResponse(content, content_type=content_type)
+        resp["Content-Disposition"] = (
+            f"attachment; filename*=UTF-8''{quote(filename)}"
+        )
+        resp["Content-Length"] = str(len(content))
+        return resp
+
 
 class ReviewIssueViewSet(BaseModelViewSet):
     """评审问题视图集"""
