@@ -158,6 +158,11 @@ def _public_variables(project) -> dict[str, str]:
 
 def _render_value(value: Any, variables: dict[str, str]) -> Any:
     if isinstance(value, str):
+        # 整串恰好是单个占位符时,保留变量原始类型(number/bool/对象),
+        # 避免 {"crisisId": "${{crisisId}}"} 把数字渲染成字符串导致后端 500
+        whole = VAR_RE.fullmatch(value.strip())
+        if whole and whole.group(1) in variables:
+            return variables[whole.group(1)]
         return VAR_RE.sub(lambda m: str(variables.get(m.group(1), m.group(0))), value)
     if isinstance(value, dict):
         return {k: _render_value(v, variables) for k, v in value.items()}

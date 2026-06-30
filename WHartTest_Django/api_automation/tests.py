@@ -139,6 +139,17 @@ class ApiServiceHelperTests(TestCase):
         self.assertEqual(_render_value(42, {"a": "b"}), 42)
         self.assertIsNone(_render_value(None, {}))
 
+    def test_render_value_preserves_type_for_whole_placeholder(self):
+        from .services import _render_value
+
+        variables = {"crisisId": 870, "ok": True, "obj": {"a": 1}}
+        # 整串单占位符 -> 保留原始类型
+        self.assertEqual(_render_value("${{crisisId}}", variables), 870)
+        self.assertIs(_render_value("${{ok}}", variables), True)
+        self.assertEqual(_render_value({"crisisId": "${{crisisId}}"}, variables), {"crisisId": 870})
+        # 嵌在更长字符串里仍走字符串替换
+        self.assertEqual(_render_value("/incident/${{crisisId}}/x", variables), "/incident/870/x")
+
     def test_assert_response_status_code_operators(self):
         from .services import _assert_response
 
