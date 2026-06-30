@@ -129,8 +129,9 @@ const fetchModules = async () => {
   loading.value = true;
   try {
     const res = await moduleApi.tree(projectId.value);
-    const data = Array.isArray((res as any).data) ? (res as any).data : [];
-    treeData.value = Array.isArray(data) ? data : [];
+    // 拦截器把响应包成 { data: { success, data: [...] } }，模块列表在 res.data.data
+    const payload = (res as any)?.data?.data ?? (res as any)?.data;
+    treeData.value = Array.isArray(payload) ? payload : [];
   } catch (error) {
     console.error('[ModulePanel] 获取模块失败:', error);
     Message.error('获取模块树失败');
@@ -172,6 +173,10 @@ const findNode = (nodes: UiModule[], id: number): UiModule | null => {
 const handleAction = async (value: string) => {
   switch (value) {
     case 'addRoot':
+      if (!projectId.value) {
+        Message.warning('请先在顶部选择一个项目');
+        return;
+      }
       isEditing.value = false;
       parentModule.value = null;
       resetForm();
@@ -261,7 +266,7 @@ const handleSubmit = async (done: (closed: boolean) => void) => {
       await moduleApi.update(currentModule.value.id, formData.value);
       Message.success('更新成功');
     } else {
-      await moduleApi.create(formData.value);
+      await moduleApi.create({ ...formData.value, project: (projectId.value as number) || formData.value.project });
       Message.success('创建成功');
     }
     
