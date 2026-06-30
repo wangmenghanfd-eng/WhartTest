@@ -34,7 +34,7 @@
             <a-button type="primary" @click="importModalVisible = true">OpenAPI/Swagger 导入</a-button>
             <a-button @click="openDefinitionModal()">手动新增接口</a-button>
           </div>
-          <a-table :columns="definitionColumns" :data="definitions" :loading="loading" :pagination="false" :scroll="{ x: 1100 }">
+          <a-table :columns="definitionColumns" :data="definitions" :loading="loading" :pagination="{ pageSize: 20, showTotal: true }" :scroll="{ x: 1100 }">
             <template #method="{ record }"><a-tag color="arcoblue">{{ record.method }}</a-tag></template>
             <template #def_ops="{ record }">
               <a-space size="mini">
@@ -69,7 +69,7 @@
             :columns="caseColumns"
             :data="cases"
             :loading="loading"
-            :pagination="false"
+            :pagination="{ pageSize: 20, showTotal: true }"
             :scroll="{ x: 1100 }"
           >
             <template #method="{ record }"><a-tag color="arcoblue">{{ record.method }}</a-tag></template>
@@ -91,7 +91,7 @@
           <div class="toolbar">
             <a-button type="primary" @click="openScriptModal()">新增脚本</a-button>
           </div>
-          <a-table :columns="scriptColumns" :data="scripts" :loading="loading" :pagination="false" :scroll="{ x: 900 }">
+          <a-table :columns="scriptColumns" :data="scripts" :loading="loading" :pagination="{ pageSize: 20, showTotal: true }" :scroll="{ x: 900 }">
             <template #script_type="{ record }"><a-tag>{{ record.script_type === 'pre' ? '前置' : '后置' }}</a-tag></template>
             <template #script_ops="{ record }">
               <a-space size="mini">
@@ -109,7 +109,7 @@
             <a-input-search v-model="publicDataSearch" placeholder="搜索变量名/变量值" allow-clear @search="fetchPublicData" @clear="fetchPublicData" />
             <a-button type="primary" @click="openPublicDataModal()">新增公共数据</a-button>
           </div>
-          <a-table :columns="publicDataColumns" :data="publicData" :loading="loading" :pagination="false" :scroll="{ x: 800 }">
+          <a-table :columns="publicDataColumns" :data="publicData" :loading="loading" :pagination="{ pageSize: 20, showTotal: true }" :scroll="{ x: 800 }">
             <template #enabled="{ record }"><a-tag :color="record.is_enabled ? 'green' : 'gray'">{{ record.is_enabled ? '启用' : '停用' }}</a-tag></template>
             <template #pd_ops="{ record }">
               <a-space size="mini">
@@ -127,7 +127,7 @@
             <a-input-search v-model="envSearch" placeholder="搜索环境名称/URL" allow-clear @search="fetchEnvConfigs" @clear="fetchEnvConfigs" />
             <a-button type="primary" @click="openEnvModal()">新增环境</a-button>
           </div>
-          <a-table :columns="envColumns" :data="envConfigs" :loading="loading" :pagination="false" :scroll="{ x: 900 }">
+          <a-table :columns="envColumns" :data="envConfigs" :loading="loading" :pagination="{ pageSize: 20, showTotal: true }" :scroll="{ x: 900 }">
             <template #is_default_cell="{ record }"><a-tag v-if="record.is_default" color="green">默认</a-tag><span v-else>-</span></template>
             <template #env_ops="{ record }">
               <a-space size="mini">
@@ -141,14 +141,14 @@
         </a-tab-pane>
 
         <a-tab-pane key="batch" title="批量执行">
-          <a-table :columns="batchColumns" :data="batches" :loading="loading" :pagination="false" :scroll="{ x: 900 }">
+          <a-table :columns="batchColumns" :data="batches" :loading="loading" :pagination="{ pageSize: 20, showTotal: true }" :scroll="{ x: 900 }">
             <template #batch_status="{ record }"><a-tag>{{ BATCH_STATUS_LABELS[record.status] }}</a-tag></template>
             <template #rate="{ record }">{{ record.success_rate?.toFixed?.(1) ?? record.success_rate }}%</template>
           </a-table>
         </a-tab-pane>
 
         <a-tab-pane key="records" title="执行记录">
-          <a-table :columns="recordColumns" :data="records" :loading="loading" :pagination="false" :scroll="{ x: 1000 }">
+          <a-table :columns="recordColumns" :data="records" :loading="loading" :pagination="{ pageSize: 20, showTotal: true }" :scroll="{ x: 1000 }">
             <template #record_status="{ record }"><a-tag :color="record.status === 2 ? 'green' : record.status === 3 ? 'red' : 'gray'">{{ STATUS_LABELS[record.status] }}</a-tag></template>
             <template #error="{ record }">
               <a-tooltip v-if="record.error_message" :content="record.error_message">
@@ -161,6 +161,7 @@
 
         <a-tab-pane key="scenarios" title="接口场景">
           <ApiAutomationScenarios
+            v-if="activeTab === 'scenarios'"
             :project-id="projectId"
             :selected-module-id="selectedModuleId"
             :module-options="flatModuleOptions"
@@ -169,11 +170,11 @@
         </a-tab-pane>
 
         <a-tab-pane key="reports" title="报告">
-          <ApiAutomationReports :project-id="projectId" :reload-key="reportsReloadKey" />
+          <ApiAutomationReports v-if="activeTab === 'reports'" :project-id="projectId" :reload-key="reportsReloadKey" />
         </a-tab-pane>
 
         <a-tab-pane key="scheduled" title="定时任务">
-          <ApiAutomationScheduledTasks :project-id="projectId" :reload-key="scheduledReloadKey" />
+          <ApiAutomationScheduledTasks v-if="activeTab === 'scheduled'" :project-id="projectId" :reload-key="scheduledReloadKey" />
         </a-tab-pane>
       </a-tabs>
     </section>
@@ -524,16 +525,34 @@ const fetchRecords = async () => {
   records.value = unwrapPage<ApiExecutionRecord>(recordRes).items
   batches.value = unwrapPage<ApiBatchExecutionRecord>(batchRes).items
 }
-const refreshActive = () => {
-  if (activeTab.value === 'definitions') fetchDefinitions()
-  if (activeTab.value === 'cases') fetchCases()
-  if (activeTab.value === 'env') fetchEnvConfigs()
-  if (activeTab.value === 'public-data') fetchPublicData()
-  if (activeTab.value === 'scripts') fetchScripts()
-  if (activeTab.value === 'records' || activeTab.value === 'batch') fetchRecords()
+const tabFetchers: Record<string, () => unknown> = {
+  definitions: fetchDefinitions,
+  cases: fetchCases,
+  env: fetchEnvConfigs,
+  'public-data': fetchPublicData,
+  scripts: fetchScripts,
+  records: fetchRecords,
+  batch: fetchRecords,
 }
+// 已加载过的 tab,避免每次切换/初始化都重复拉取大数据(执行记录/用例量大时很卡)
+const loadedTabs = new Set<string>()
+// 懒加载:首次进入某 tab 才拉取它的数据
+const ensureTabLoaded = (tab: string) => {
+  if (loadedTabs.has(tab)) return
+  loadedTabs.add(tab)
+  tabFetchers[tab]?.()
+}
+// 强制刷新当前 tab(新增/执行/切模块等数据变更后调用)
+const refreshActive = () => {
+  loadedTabs.add(activeTab.value)
+  tabFetchers[activeTab.value]?.()
+}
+// 进入项目:只加载左侧模块树 + 环境(小、多 tab 共用)+ 当前 tab,其余 tab 用时再拉
 const refreshAllBase = async () => {
-  await Promise.all([fetchModules(), fetchEnvConfigs(), fetchDefinitions(), fetchCases(), fetchPublicData(), fetchScripts(), fetchRecords()])
+  loadedTabs.clear()
+  await Promise.all([fetchModules(), fetchEnvConfigs()])
+  loadedTabs.add('env')
+  ensureTabLoaded(activeTab.value)
 }
 
 const onModuleSelect = (keys: Array<string | number>) => {
@@ -1018,7 +1037,7 @@ watch(projectId, () => {
   selectedModuleId.value = undefined
   if (projectId.value) refreshAllBase()
 }, { immediate: true })
-watch(activeTab, refreshActive)
+watch(activeTab, (tab) => ensureTabLoaded(tab))
 </script>
 
 <style scoped>
