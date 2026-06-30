@@ -248,6 +248,8 @@ const saving = ref(false)
 const discarding = ref(false)
 const waitingForStart = ref(false)
 const currentRecordingId = ref<number | null>(null)
+const cancelRequested = ref(false)
+const lastHandledResultId = ref<number | null>(null)
 const currentSession = ref<UiRecordingSession | null>(null)
 const draftName = ref('')
 const editableActions = ref<Array<UiRecordingAction & { _key?: string }>>([])
@@ -336,6 +338,7 @@ const resetState = () => {
   discarding.value = false
   waitingForStart.value = false
   currentRecordingId.value = null
+  cancelRequested.value = false
   currentSession.value = null
   draftName.value = ''
   editableActions.value = []
@@ -388,13 +391,17 @@ const onRecordResult = (socketData: SocketDataModel) => {
   const payload = socketData.data?.func_args as { recording_id: number; status: string; recording?: UiRecordingSession } | undefined
   if (!payload) return
   if (currentRecordingId.value && payload.recording_id !== currentRecordingId.value) return
+  // 去重:同一录制的结果只处理一次(避免执行器/后端重发导致重复 toast)
+  if (lastHandledResultId.value === payload.recording_id) return
+  lastHandledResultId.value = payload.recording_id
   waitingForStart.value = false
   stopping.value = false
   submitting.value = false
   currentRecordingId.value = payload.recording_id
   currentSession.value = payload.recording || null
   syncDraftEditor(payload.recording || null)
-  if (payload.status === 'cancelled') {
+  // 用户主动取消,或后端标记 cancelled:统一按"已取消"处理,不弹"未提取到结构化数据"
+  if (cancelRequested.value || payload.status === 'cancelled') {
     Message.info('录制已取消')
     emit('update:visible', false)
     resetState()
@@ -474,7 +481,10 @@ const handleStopRecording = async (cancel: boolean) => {
   }
 }
 
-const handleCancelRecording = () => handleStopRecording(true)
+const handleCancelRecording = () => {
+  cancelRequested.value = true
+  handleStopRecording(true)
+}
 
 const handleMaterialize = async () => {
   if (!currentRecordingId.value) return
