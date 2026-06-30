@@ -299,15 +299,15 @@ def _parse_target_locator(target: str) -> Optional[Dict[str, Any]]:
         name_match = _ROLE_NAME_RE.search(options)
         name = _decode_js_string(name_match.group("name")) if name_match else ""
         if name:
-            # 表单输入类控件用 label 定位(get_by_label 返回的是输入框本身,可 fill);
-            # 用 text 会命中标签文字而不是 input,导致 fill 超时。
-            # 其它角色(button/link 等)仍按文本定位。
-            input_roles = {"textbox", "combobox", "searchbox", "spinbutton", "slider", "checkbox", "radio"}
-            locator_type = "label" if role in input_roles else "text"
+            # 忠实复刻 Playwright codegen 的 getByRole(role,{name}):用 role 选择器引擎
+            # `role=ROLE[name="NAME"]`,执行器走 page.locator() 即可命中 input/button 本身
+            # (可 fill / 可 click)。早先用 text/label 会命中标签文字或匹配不到,导致超时。
+            safe_name = name.replace("\\", "\\\\").replace('"', '\\"')
+            role_selector = f'role={role}[name="{safe_name}"]'
             return {
-                "selector": name,
-                "locator_type": locator_type,
-                "locator_value": name,
+                "selector": role_selector,
+                "locator_type": "css",
+                "locator_value": role_selector,
                 "source": "role_name",
                 "role": role,
             }
