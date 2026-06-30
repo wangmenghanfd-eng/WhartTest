@@ -373,6 +373,11 @@ const loadOptions = async () => {
   if (!formData.actuator_id && openActuators.value.length) {
     formData.actuator_id = openActuators.value[0].id
   }
+  // 自动选中执行环境:优先项目默认环境(is_default),否则取第一个,省去每次手动选
+  if (!formData.env_config_id && envConfigs.value.length) {
+    const defaultEnv = envConfigs.value.find(env => env.is_default)
+    formData.env_config_id = (defaultEnv || envConfigs.value[0]).id
+  }
 }
 
 const onRecordStatus = (socketData: SocketDataModel) => {
