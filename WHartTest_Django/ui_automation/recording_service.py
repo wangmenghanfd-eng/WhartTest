@@ -299,9 +299,14 @@ def _parse_target_locator(target: str) -> Optional[Dict[str, Any]]:
         name_match = _ROLE_NAME_RE.search(options)
         name = _decode_js_string(name_match.group("name")) if name_match else ""
         if name:
+            # 表单输入类控件用 label 定位(get_by_label 返回的是输入框本身,可 fill);
+            # 用 text 会命中标签文字而不是 input,导致 fill 超时。
+            # 其它角色(button/link 等)仍按文本定位。
+            input_roles = {"textbox", "combobox", "searchbox", "spinbutton", "slider", "checkbox", "radio"}
+            locator_type = "label" if role in input_roles else "text"
             return {
                 "selector": name,
-                "locator_type": "text",
+                "locator_type": locator_type,
                 "locator_value": name,
                 "source": "role_name",
                 "role": role,
