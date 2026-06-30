@@ -176,7 +176,7 @@ const filteredPageOptions = computed(() => {
   return pageOptions.value.filter((p) => p.module === formData.module)
 })
 
-const filters = reactive({ page: undefined as number | undefined, module: undefined as number | undefined, search: '' })
+const filters = reactive({ page: undefined as number | undefined, module: props.selectedModuleId as number | undefined, search: '' })
 const pagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true, showPageSize: true })
 
 const formData = reactive<UiPageStepsForm>({

@@ -255,7 +255,8 @@ const currentTestCase = ref<UiTestCase | null>(null)
 const formRef = ref()
 
 const filters = reactive({
-  module: undefined as number | undefined,
+  // 用左侧树选中的模块初始化,避免懒挂载后首拉时丢失模块过滤(显示了全部角色用例)
+  module: props.selectedModuleId as number | undefined,
   level: undefined as string | undefined,
   search: '',
 })

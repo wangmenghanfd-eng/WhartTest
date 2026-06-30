@@ -19,10 +19,14 @@
       <div class="page-header">
         <div class="search-box">
           <a-input-search
+            v-model="searchKeyword"
             placeholder="搜索项目名称/描述"
             allow-clear
+            search-button
             style="width: 300px"
             @search="onSearch"
+            @press-enter="onSearch(searchKeyword)"
+            @clear="onSearch('')"
           />
         </div>
         <div class="action-buttons">
