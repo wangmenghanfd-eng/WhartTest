@@ -1,0 +1,8 @@
+node_modules
+node_modules/
+state.json
+cookie.txt
+*.log
+.last-run.json
+test-results/
+playwright-report/
