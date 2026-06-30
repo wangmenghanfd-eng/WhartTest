@@ -725,7 +725,7 @@ onMounted(() => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background-color: #fff;
+  background-color: var(--color-bg-2);
   border-radius: 8px;
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2), 0 4px 10px rgba(0, 0, 0, 0.2), 0 0 10px rgba(0, 0, 0, 0.15);
   padding: 20px; /* 添加内边距，与其他卡片保持一致 */

@@ -1067,7 +1067,7 @@ watch(activeTab, refreshActive)
   flex: 1;
   min-width: 0;
   padding: 20px;
-  background: #fff;
+  background: var(--color-bg-2);
   border-radius: 8px;
   overflow: auto;
 }

@@ -632,7 +632,7 @@ defineExpose({
 <style scoped>
 .testcase-content {
   flex: 1;
-  background-color: #fff;
+  background-color: var(--color-bg-2);
   border-radius: 8px;
   padding: 16px;
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2), 0 4px 10px rgba(0, 0, 0, 0.2), 0 0 10px rgba(0, 0, 0, 0.15);
@@ -785,7 +785,7 @@ defineExpose({
   gap: 6px;
   position: sticky;
   bottom: 16px;
-  background-color: #fff;
+  background-color: var(--color-bg-2);
   z-index: 1;
   padding: 8px 0;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);

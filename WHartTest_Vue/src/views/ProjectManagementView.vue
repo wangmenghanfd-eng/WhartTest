@@ -931,7 +931,7 @@ const deleteProject = (project: Project, event?: Event) => {
 
 <style scoped>
 .project-management {
-  background-color: #fff;
+  background-color: var(--color-bg-2);
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);

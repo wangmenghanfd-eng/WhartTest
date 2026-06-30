@@ -1007,7 +1007,7 @@ const handleBatchDeleteScreenshots = () => {
 
 <style scoped>
 .testcase-form-container { /* 复用 TestCaseForm.vue 的样式 */
-  background-color: #fff;
+  background-color: var(--color-bg-2);
   border-radius: 8px;
   padding: 20px;
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2), 0 4px 10px rgba(0, 0, 0, 0.2), 0 0 10px rgba(0, 0, 0, 0.15);
@@ -1158,7 +1158,7 @@ const handleBatchDeleteScreenshots = () => {
   flex-direction: column;
   border: 1px solid #e5e6eb;
   border-radius: 8px;
-  background-color: #fff;
+  background-color: var(--color-bg-2);
   transition: all 0.3s ease;
   overflow: hidden;
   position: relative;
@@ -1189,7 +1189,7 @@ const handleBatchDeleteScreenshots = () => {
   flex-direction: column;
   border: 1px solid #e5e6eb;
   border-radius: 8px;
-  background-color: #fff;
+  background-color: var(--color-bg-2);
   transition: all 0.3s ease;
   overflow: hidden;
 }
@@ -1443,7 +1443,7 @@ const handleBatchDeleteScreenshots = () => {
 /* 左侧信息面板 */
 .preview-sidebar {
   width: 320px;
-  background-color: #fff;
+  background-color: var(--color-bg-2);
   border-right: 1px solid #e5e6eb;
   display: flex;
   flex-direction: column;
@@ -1568,7 +1568,7 @@ const handleBatchDeleteScreenshots = () => {
   object-fit: contain;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  background-color: #fff;
+  background-color: var(--color-bg-2);
 }
 
 /* 图片切换按钮 */
@@ -1596,7 +1596,7 @@ const handleBatchDeleteScreenshots = () => {
 }
 
 .nav-button:hover:not(:disabled) {
-  background-color: #fff;
+  background-color: var(--color-bg-2);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transform: scale(1.1);
 }

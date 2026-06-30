@@ -288,7 +288,7 @@ const handleSubmit = async () => {
 
 /* 注册卡片 */
 .register-card {
-  background: #ffffff;
+  background: var(--color-bg-2);
   border-radius: 20px;
   box-shadow:
     0 25px 50px rgba(0, 0, 0, 0.08),
@@ -403,7 +403,7 @@ const handleSubmit = async () => {
 .form-input:focus {
   outline: none;
   border-color: var(--theme-accent);
-  background: #ffffff;
+  background: var(--color-bg-2);
   box-shadow: 0 0 0 4px rgba(var(--theme-accent-rgb), 0.08);
   transform: translateY(-1px);
 }

@@ -369,7 +369,7 @@ defineExpose({
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #fff;
+  background-color: var(--color-bg-2);
   border-radius: 8px;
   box-shadow: -4px 0 10px rgba(0, 0, 0, 0.2), 0 4px 10px rgba(0, 0, 0, 0.2), 0 0 10px rgba(0, 0, 0, 0.15);
   overflow: hidden; /* 防止内容溢出容器 */
@@ -451,12 +451,12 @@ defineExpose({
 
 .module-action-button {
   width: 80px;
-  background-color: #ffffff; /* 修改操作按钮背景色 */
+  background-color: var(--color-bg-2); /* 修改操作按钮背景色 */
   border-color: #ffffff;
 }
 
 .module-action-button:hover {
-  background-color: #ffffff; /* 悬停时的颜色 */
+  background-color: var(--color-bg-2); /* 悬停时的颜色 */
   border-color: #ffffff;
 }
 

@@ -599,7 +599,7 @@ onMounted(() => {
 }
 
 .overview-card {
-  background: #ffffff;
+  background: var(--color-bg-2);
   border-radius: 8px;
   padding: 16px 20px;
   transition: all 0.2s;
@@ -671,7 +671,7 @@ onMounted(() => {
 }
 
 .panel {
-  background: #ffffff;
+  background: var(--color-bg-2);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2), 0 4px 10px rgba(0, 0, 0, 0.2), 0 0 10px rgba(0, 0, 0, 0.15);

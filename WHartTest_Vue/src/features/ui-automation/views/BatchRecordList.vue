@@ -417,7 +417,7 @@ watch(projectId, () => {
 }
 
 .step-table {
-  background: #fff;
+  background: var(--color-bg-2);
   border-radius: 4px;
 }
 
