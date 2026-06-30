@@ -539,6 +539,24 @@ def get_skill_tools(
                         f"请继续执行测试步骤，不要尝试安装环境。"
                     )
 
+        # playwright-skill 只能用 `node run.js "<可执行JS>"` 调用。模型偶尔会臆造
+        # python 脚本名(如 playwright_tools.py / playwright_script.py)或加非法参数,
+        # 那样会落到子进程报 "can't open file" 而非可纠正的提示。这里直接拦截并给出可执行的纠正指引。
+        if skill_name == "playwright-skill":
+            _norm = command.strip()
+            if not (_norm.startswith("node ") and "run.js" in _norm):
+                logger.warning(
+                    f"[execute_skill_script] playwright-skill 命令不合规, 已拦截: {command!r}"
+                )
+                return (
+                    "错误: playwright-skill 只能用 `node run.js \"<可执行JavaScript>\"` 调用，"
+                    "不要用 python 或其它脚本名(例如 playwright_tools.py / playwright_script.py)，"
+                    "也不要加 --session/--inline/--eval 等参数。请把浏览器动作写成一行 JS 后改用 run.js，例如:\n"
+                    "node run.js \"const browser = await chromium.launch({ headless: false }); "
+                    "const page = await browser.newPage(); await page.goto('https://example.com'); "
+                    "console.log(await page.title()); await browser.close();\""
+                )
+
         try:
             skill = Skill.objects.filter(name=skill_name, is_active=True).first()
 
