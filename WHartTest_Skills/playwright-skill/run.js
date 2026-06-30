@@ -133,8 +133,29 @@ function wrapCodeIfNeeded(code) {
   // 若仅是 Playwright 指令，套用完整模板
   if (!hasRequire) {
     return `
-const { chromium, firefox, webkit, devices } = require('playwright');
+const __pw = require('playwright');
 const helpers = require('./lib/helpers');
+
+// 容器内无显示器(no XServer)：强制 headless:true，避免模型写 headless:false 导致
+// "launched a headed browser without having a XServer running" 启动失败。
+function __forceHeadless(bt) {
+  return new Proxy(bt, {
+    get(target, prop) {
+      if (prop === 'launch') {
+        return (opts = {}) => target.launch({ ...opts, headless: true });
+      }
+      if (prop === 'launchPersistentContext') {
+        return (dir, opts = {}) => target.launchPersistentContext(dir, { ...opts, headless: true });
+      }
+      const v = target[prop];
+      return typeof v === 'function' ? v.bind(target) : v;
+    },
+  });
+}
+const chromium = __forceHeadless(__pw.chromium);
+const firefox = __forceHeadless(__pw.firefox);
+const webkit = __forceHeadless(__pw.webkit);
+const devices = __pw.devices;
 
 // 从环境变量读取额外请求头（如有配置）
 const __extraHeaders = helpers.getExtraHeadersFromEnv();

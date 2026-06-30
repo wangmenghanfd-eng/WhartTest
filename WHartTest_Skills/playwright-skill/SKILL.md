@@ -50,6 +50,15 @@ node run.js "your playwright code here"
 
 **重要**：代码必须写在一行，语句用分号分隔。run.js 会自动包装 async IIFE 和 require 语句。**禁止添加 --session、--inline、--eval 等参数，run.js 不支持这些参数。**
 
+### ⚠️ 避免转义错误（最常见的失败原因）
+
+inline 命令外层用双引号 `"..."` 包裹，所以**命令内部禁止再出现未转义的裸双引号**，否则会被 shell 截断成 `xxx: not found` 之类错误。硬性约定：
+
+1. **字符串一律用单引号** `'...'`，不要用双引号。选择器里的属性值也用单引号：`page.fill('input[name=\"x\"]', 'v')` 这种需要转义的写法尽量避免，改用 `page.fill('#x', 'v')` 等无引号选择器。
+2. **禁止使用反引号模板字符串**（`` `...` ``）。路径/消息拼接一律用 `+`，例如 `dir + '/a.png'`，不要写 `` `${dir}/a.png` ``。
+3. **console.log 不要带冒号等特殊字符开头的裸文本**，先把值存进变量再打印：`const t = await page.title(); console.log('title', t);`
+4. 命令越短越稳：一次只做一件事（先打开+截图，再单独取标题），不要把十几步塞进一行。
+
 ## WHartTest 功能测试执行链路
 
 当你是在执行 WHartTest 的“功能测试用例”时，职责分工必须固定：
@@ -92,19 +101,19 @@ await page.screenshot({ path: `${screenshotDir}/case_11_step1.png` });
 ### 打开页面并截图
 
 ```bash
-node run.js "const dir = process.env.SCREENSHOT_DIR; const browser = await chromium.launch({ headless: false }); const page = await browser.newPage(); await page.goto('http://example.com'); await page.screenshot({ path: dir + '/example.png' }); console.log('截图已保存:', dir + '/example.png'); await browser.close();"
+node run.js "const dir = process.env.SCREENSHOT_DIR; const browser = await chromium.launch({ headless: true }); const page = await browser.newPage(); await page.goto('http://example.com'); await page.screenshot({ path: dir + '/example.png' }); console.log('截图已保存:', dir + '/example.png'); await browser.close();"
 ```
 
 ### 登录测试（带截图）
 
 ```bash
-node run.js "const dir = process.env.SCREENSHOT_DIR; const browser = await chromium.launch({ headless: false, slowMo: 100 }); const page = await browser.newPage(); await page.goto('http://192.168.150.114:8913/'); await page.screenshot({ path: dir + '/step1_open.png' }); await page.fill('input[type=\"text\"]', 'admin'); await page.fill('input[type=\"password\"]', 'admin123456'); await page.screenshot({ path: dir + '/step2_filled.png' }); await page.click('button[type=\"submit\"]'); await page.waitForTimeout(2000); await page.screenshot({ path: dir + '/step3_result.png' }); console.log('截图已保存到', dir); await browser.close();"
+node run.js "const dir = process.env.SCREENSHOT_DIR; const browser = await chromium.launch({ headless: true, slowMo: 100 }); const page = await browser.newPage(); await page.goto('http://192.168.150.114:8913/'); await page.screenshot({ path: dir + '/step1_open.png' }); await page.fill('input[type=\"text\"]', 'admin'); await page.fill('input[type=\"password\"]', 'admin123456'); await page.screenshot({ path: dir + '/step2_filled.png' }); await page.click('button[type=\"submit\"]'); await page.waitForTimeout(2000); await page.screenshot({ path: dir + '/step3_result.png' }); console.log('截图已保存到', dir); await browser.close();"
 ```
 
 ### 表单填写
 
 ```bash
-node run.js "const browser = await chromium.launch({ headless: false }); const page = await browser.newPage(); await page.goto('http://example.com/form'); await page.fill('input[name=\"username\"]', 'testuser'); await page.fill('input[name=\"email\"]', 'test@example.com'); await page.click('button[type=\"submit\"]'); console.log('表单提交完成'); await browser.close();"
+node run.js "const browser = await chromium.launch({ headless: true }); const page = await browser.newPage(); await page.goto('http://example.com/form'); await page.fill('input[name=\"username\"]', 'testuser'); await page.fill('input[name=\"email\"]', 'test@example.com'); await page.click('button[type=\"submit\"]'); console.log('表单提交完成'); await browser.close();"
 ```
 
 ## 其他 helpers 函数
@@ -131,12 +140,16 @@ console.log(text);
 
 ### 浏览器启动
 
-```javascript
-// 可见模式（推荐调试）
-const browser = await chromium.launch({ headless: false, slowMo: 100 });
+> ⚠️ **本技能运行在无显示器(no XServer)的容器内，浏览器必须 `headless: true`。**
+> 禁止使用 `headless: false`——会报 `launched a headed browser without having a XServer running` 直接失败。
+> （即使写了 `false`，run.js 也会强制改回 `true`，请直接写 `true` 避免误导。）
 
-// 无头模式（后台执行）
+```javascript
+// 无头模式（容器内唯一可用模式）
 const browser = await chromium.launch({ headless: true });
+
+// 需要放慢动作便于排查时，可加 slowMo（仍是无头）
+const browser = await chromium.launch({ headless: true, slowMo: 100 });
 ```
 
 ### 页面导航
@@ -253,7 +266,7 @@ await page.waitForLoadState('networkidle');  // 等待网络空闲
 执行一个完整的登录测试：
 
 ```bash
-node run.js "const dir = process.env.SCREENSHOT_DIR; const browser = await chromium.launch({ headless: false, slowMo: 100 }); const page = await browser.newPage(); console.log('步骤1: 打开登录页'); await page.goto('http://192.168.150.114:8913/'); await page.screenshot({ path: dir + '/step1_open.png' }); console.log('步骤2: 输入账号'); await page.fill('input[type=\"text\"]', 'admin'); console.log('步骤3: 输入密码'); await page.fill('input[type=\"password\"]', 'admin123456'); await page.screenshot({ path: dir + '/step2_input.png' }); console.log('步骤4: 点击登录'); await page.click('button[type=\"submit\"]'); await page.waitForTimeout(2000); await page.screenshot({ path: dir + '/step3_result.png' }); console.log('登录结果 - 当前URL:', page.url()); await browser.close(); console.log('测试完成，截图保存在:', dir);"
+node run.js "const dir = process.env.SCREENSHOT_DIR; const browser = await chromium.launch({ headless: true, slowMo: 100 }); const page = await browser.newPage(); console.log('步骤1: 打开登录页'); await page.goto('http://192.168.150.114:8913/'); await page.screenshot({ path: dir + '/step1_open.png' }); console.log('步骤2: 输入账号'); await page.fill('input[type=\"text\"]', 'admin'); console.log('步骤3: 输入密码'); await page.fill('input[type=\"password\"]', 'admin123456'); await page.screenshot({ path: dir + '/step2_input.png' }); console.log('步骤4: 点击登录'); await page.click('button[type=\"submit\"]'); await page.waitForTimeout(2000); await page.screenshot({ path: dir + '/step3_result.png' }); console.log('登录结果 - 当前URL:', page.url()); await browser.close(); console.log('测试完成，截图保存在:', dir);"
 ```
 
 ## 注意事项
@@ -263,7 +276,7 @@ node run.js "const dir = process.env.SCREENSHOT_DIR; const browser = await chrom
 3. **引号转义**：字符串内的双引号需要转义 `\"`
 4. **browser.close()**：非持久化模式下执行完毕后务必关闭浏览器
 5. **console.log()**：用于输出执行进度和结果
-6. **headless: false**：调试时使用可见模式，方便观察
+6. **headless: true**：容器内无显示器，必须无头模式，禁止 `headless: false`
 
 ## 持久化会话模式
 

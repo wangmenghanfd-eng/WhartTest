@@ -783,6 +783,9 @@ def get_skill_tools(
             # Windows 编码处理：cmd.exe 默认使用 GBK (cp936)，需要使用系统默认编码
             import locale
 
+            # playwright-skill 走 argv 直传（shell=False），避免 JS 里的 $(...)、引号等被
+            # shell 当成命令替换/截断（例如 page.$('btn') 会被 /bin/sh 解释为命令替换）。
+            playwright_argv = None
             if skill_name == "playwright-skill" and "run.js" in command:
                 run_js_args = extract_runjs_args(exec_command)
                 if run_js_args is not None:
@@ -791,12 +794,25 @@ def get_skill_tools(
                     )
                     if normalized_code is None:
                         return guidance or "错误: playwright-skill 需要可执行的 JavaScript。"
-                    if normalized_code != (run_js_args[0] if run_js_args else ""):
-                        escaped_code = normalized_code.replace("\\", "\\\\").replace('"', '\\"')
-                        exec_command = f'node run.js "{escaped_code}"'
+                    if guidance:
                         logger.warning(f"[execute_skill_script] {guidance}")
+                    playwright_argv = ["node", "run.js", normalized_code]
 
-            if platform.system() == "Windows":
+            if playwright_argv is not None:
+                result = subprocess.run(
+                    playwright_argv,
+                    shell=False,
+                    cwd=skill_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                    env=env,
+                    encoding="utf-8",
+                    errors="replace",
+                )
+                stdout = strip_terminal_control_sequences(result.stdout or "")
+                stderr = strip_terminal_control_sequences(result.stderr or "")
+            elif platform.system() == "Windows":
                 # Windows cmd 默认使用 GBK 编码，使用 None 让 subprocess 自动检测
                 result = subprocess.run(
                     exec_command,
