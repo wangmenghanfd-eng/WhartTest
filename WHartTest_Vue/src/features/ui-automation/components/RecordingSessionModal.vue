@@ -153,11 +153,8 @@
                     </a-option>
                   </a-select>
                 </a-col>
-                <a-col :xs="24" :sm="8">
+                <a-col :xs="24" :sm="16">
                   <a-input v-model="action.locator_value" size="small" placeholder="定位表达式" />
-                </a-col>
-                <a-col :xs="24" :sm="8">
-                  <a-input v-model="action.selector" size="small" placeholder="原始 selector" />
                 </a-col>
               </a-row>
             </div>
