@@ -4,28 +4,28 @@
     <div class="layout-content">
       <a-tabs v-model:active-key="activeTab" type="card-gutter">
         <a-tab-pane key="pages" title="页面管理">
-          <PageList ref="pageListRef" :selected-module-id="selectedModuleId" />
+          <PageList v-if="activeTab === 'pages'" ref="pageListRef" :selected-module-id="selectedModuleId" />
         </a-tab-pane>
         <a-tab-pane key="page-steps" title="页面步骤">
-          <PageStepList ref="pageStepListRef" :selected-module-id="selectedModuleId" />
+          <PageStepList v-if="activeTab === 'page-steps'" ref="pageStepListRef" :selected-module-id="selectedModuleId" />
         </a-tab-pane>
         <a-tab-pane key="testcases" title="测试用例">
-          <TestCaseList ref="testCaseListRef" :selected-module-id="selectedModuleId" />
+          <TestCaseList v-if="activeTab === 'testcases'" ref="testCaseListRef" :selected-module-id="selectedModuleId" />
         </a-tab-pane>
         <a-tab-pane key="execution-records" title="执行记录">
-          <ExecutionRecordList ref="executionRecordListRef" :selected-module-id="selectedModuleId" />
+          <ExecutionRecordList v-if="activeTab === 'execution-records'" ref="executionRecordListRef" :selected-module-id="selectedModuleId" />
         </a-tab-pane>
         <a-tab-pane key="batch-records" title="批量执行">
-          <BatchRecordList ref="batchRecordListRef" />
+          <BatchRecordList v-if="activeTab === 'batch-records'" ref="batchRecordListRef" />
         </a-tab-pane>
         <a-tab-pane key="public-data" title="公共数据">
-          <PublicDataList ref="publicDataListRef" />
+          <PublicDataList v-if="activeTab === 'public-data'" ref="publicDataListRef" />
         </a-tab-pane>
         <a-tab-pane key="env-config" title="环境配置">
-          <EnvConfigList ref="envConfigListRef" />
+          <EnvConfigList v-if="activeTab === 'env-config'" ref="envConfigListRef" />
         </a-tab-pane>
         <a-tab-pane key="actuators" title="执行器">
-          <ActuatorList ref="actuatorListRef" />
+          <ActuatorList v-if="activeTab === 'actuators'" ref="actuatorListRef" />
         </a-tab-pane>
       </a-tabs>
     </div>
