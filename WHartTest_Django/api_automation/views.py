@@ -28,6 +28,7 @@ from .serializers import (
     ApiDefinitionSerializer,
     ApiEnvironmentConfigSerializer,
     ApiExecutionRecordSerializer,
+    ApiExecutionRecordListSerializer,
     ApiModuleSerializer,
     ApiPublicDataSerializer,
     ApiScenarioExecutionRecordSerializer,
@@ -565,6 +566,12 @@ class ApiExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ApiExecutionRecord.objects.select_related("project", "test_case", "environment", "executor")
     serializer_class = ApiExecutionRecordSerializer
     filterset_fields = ["project", "test_case", "batch", "status", "trigger_type"]
+
+    def get_serializer_class(self):
+        # 列表用轻量序列化器(不含 request_data/response_data),详情仍返回完整数据
+        if self.action == "list":
+            return ApiExecutionRecordListSerializer
+        return ApiExecutionRecordSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()

@@ -51,6 +51,9 @@
         </template>
       </a-table>
 
+    </a-spin>
+
+    <a-spin :loading="batchesLoading">
       <a-divider>最近 10 个批次</a-divider>
       <a-table
         :data="recentBatches"
@@ -116,6 +119,7 @@ import { Message } from '@arco-design/web-vue'
 const props = defineProps<{ projectId: number | undefined; reloadKey?: number }>()
 
 const loading = ref(false)
+const batchesLoading = ref(false)
 const records = ref<ApiExecutionRecord[]>([])
 const batches = ref<ApiBatchExecutionRecord[]>([])
 
@@ -224,19 +228,35 @@ function barHeight(v: number) {
   return Math.max(2, (v / max) * 80)
 }
 
-async function load() {
+// 批次列表很小、且“查看详情”依赖它，独立加载使其立即渲染；
+// 执行记录(汇总/趋势/按接口)数据量大(可能十几 MB)，单独加载，不阻塞批次表。
+async function loadBatches() {
+  if (!props.projectId) return
+  batchesLoading.value = true
+  try {
+    const batchRes = await apiRecordApi.batches({ project: props.projectId })
+    batches.value = unwrapPage<ApiBatchExecutionRecord>(batchRes).items
+  } finally {
+    batchesLoading.value = false
+  }
+}
+
+async function loadRecords() {
   if (!props.projectId) return
   loading.value = true
   try {
-    const [recordRes, batchRes] = await Promise.all([
-      apiRecordApi.list({ project: props.projectId }),
-      apiRecordApi.batches({ project: props.projectId }),
-    ])
+    const recordRes = await apiRecordApi.list({ project: props.projectId })
     records.value = unwrapPage<ApiExecutionRecord>(recordRes).items
-    batches.value = unwrapPage<ApiBatchExecutionRecord>(batchRes).items
   } finally {
     loading.value = false
   }
+}
+
+function load() {
+  if (!props.projectId) return
+  // 两者并行但互不阻塞，各自独立的 loading 状态
+  loadBatches()
+  loadRecords()
 }
 
 watch(() => [props.projectId, props.reloadKey], load, { immediate: true })

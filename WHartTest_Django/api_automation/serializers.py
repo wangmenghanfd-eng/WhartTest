@@ -95,6 +95,23 @@ class ApiExecutionRecordSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "start_time", "end_time"]
 
 
+class ApiExecutionRecordListSerializer(serializers.ModelSerializer):
+    """列表用轻量序列化器：排除 request_data/response_data 等大字段，
+    避免一次拉全部记录时响应体过大（报告页/执行记录页只需汇总字段）。"""
+
+    test_case_name = serializers.CharField(source="test_case.name", read_only=True)
+    test_case_module = serializers.IntegerField(source="test_case.module_id", read_only=True)
+    test_case_method = serializers.CharField(source="test_case.method", read_only=True)
+    test_case_path = serializers.CharField(source="test_case.path", read_only=True)
+    environment_name = serializers.CharField(source="environment.name", read_only=True)
+    executor_name = serializers.CharField(source="executor.username", read_only=True)
+
+    class Meta:
+        model = ApiExecutionRecord
+        exclude = ["request_data", "response_data"]
+        read_only_fields = ["created_at", "start_time", "end_time"]
+
+
 class ApiBatchExecutionRecordSerializer(serializers.ModelSerializer):
     executor_name = serializers.CharField(source="executor.username", read_only=True)
     success_rate = serializers.FloatField(read_only=True)
