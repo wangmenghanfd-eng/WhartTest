@@ -52,6 +52,22 @@ class ApiDefinitionSerializer(serializers.ModelSerializer):
         read_only_fields = ["creator", "created_at", "updated_at"]
 
 
+class ApiTestCaseListSerializer(serializers.ModelSerializer):
+    """列表用轻量序列化器:排除 body/headers/query_params/assertions/extractors/
+    脚本/result_data 等大字段(result_data 含上次执行的完整响应体,列表全量拉曾达 6.7MB)。"""
+
+    module_name = serializers.CharField(source="module.name", read_only=True)
+    definition_name = serializers.CharField(source="definition.name", read_only=True)
+    environment_name = serializers.CharField(source="environment.name", read_only=True)
+    creator_name = serializers.CharField(source="creator.username", read_only=True)
+
+    class Meta:
+        model = ApiTestCase
+        exclude = ["body", "headers", "query_params", "assertions", "extractors",
+                   "pre_script", "post_script", "result_data"]
+        read_only_fields = ["status", "error_message", "creator", "created_at", "updated_at"]
+
+
 class ApiTestCaseSerializer(serializers.ModelSerializer):
     module_name = serializers.CharField(source="module.name", read_only=True)
     definition_name = serializers.CharField(source="definition.name", read_only=True)

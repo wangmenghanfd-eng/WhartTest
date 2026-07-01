@@ -36,6 +36,7 @@ from .serializers import (
     ApiScenarioExecutionRecordSerializer,
     ApiScenarioSerializer,
     ApiScriptSerializer,
+    ApiTestCaseListSerializer,
     ApiTestCaseSerializer,
 )
 from .services import import_openapi_spec, load_openapi_spec
@@ -206,8 +207,17 @@ class ApiTestCaseViewSet(CreatorMixin, viewsets.ModelViewSet):
     serializer_class = ApiTestCaseSerializer
     filterset_fields = ["project", "definition", "environment", "status", "source"]
 
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ApiTestCaseListSerializer
+        return ApiTestCaseSerializer
+
     def get_queryset(self):
         queryset = super().get_queryset()
+        if self.action == "list":
+            # 列表不取大 JSON 列(body/result_data 等),避免从 PG 读大字段
+            queryset = queryset.defer("body", "headers", "query_params", "assertions",
+                                      "extractors", "pre_script", "post_script", "result_data")
         module_id = self.request.query_params.get("module")
         project_id = self.request.query_params.get("project")
         if module_id:
@@ -583,6 +593,13 @@ class ApiExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
             module_ids = _expand_module_ids(module_id, project_id)
             queryset = queryset.filter(test_case__module_id__in=module_ids or [-1])
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        # 执行记录是历史流水,列表只取最近 500 条(按 -id),避免全量(3000+)序列化耗时 25s。
+        # 汇总/按接口聚合走 stats 端点;查看单条走详情。切片在过滤之后做(否则 DRF 过滤已切片查询会报错)。
+        queryset = self.filter_queryset(self.get_queryset())[:500]
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
     def stats(self, request):
