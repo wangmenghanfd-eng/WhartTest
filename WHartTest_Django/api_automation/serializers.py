@@ -35,6 +35,7 @@ class ApiModuleSerializer(serializers.ModelSerializer):
 
 class ApiEnvironmentConfigSerializer(serializers.ModelSerializer):
     creator_name = serializers.CharField(source="creator.username", read_only=True)
+    env_type_display = serializers.CharField(source="get_env_type_display", read_only=True)
 
     class Meta:
         model = ApiEnvironmentConfig

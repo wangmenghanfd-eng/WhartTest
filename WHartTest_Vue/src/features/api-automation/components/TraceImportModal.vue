@@ -42,10 +42,13 @@
           v-model="form.environmentId"
           placeholder="不选则按 base_url 自动查找/创建环境"
           allow-clear
+          allow-search
         >
-          <a-option v-for="env in envConfigs" :key="env.id" :value="env.id">
-            {{ env.name }} ({{ env.base_url || '—' }})
-          </a-option>
+          <a-optgroup v-for="g in envGroups" :key="g.label" :label="g.label">
+            <a-option v-for="env in g.envs" :key="env.id" :value="env.id">
+              {{ env.name }} ({{ env.base_url || '—' }})
+            </a-option>
+          </a-optgroup>
         </a-select>
       </a-form-item>
 
@@ -137,6 +140,20 @@ const submitting = ref(false)
 const hasLoaded = ref(false)
 const executionRecords = ref<Array<Record<string, any>>>([])
 const envConfigs = ref<ApiEnvironmentConfig[]>([])
+
+// 环境按类型分组(开发/测试/预发布/生产),下拉更清爽
+const ENV_TYPE_ORDER: { key: string; label: string }[] = [
+  { key: 'dev', label: '开发' },
+  { key: 'test', label: '测试' },
+  { key: 'staging', label: '预发布' },
+  { key: 'prod', label: '生产' },
+]
+const envGroups = computed(() =>
+  ENV_TYPE_ORDER.map((t) => ({
+    label: t.label,
+    envs: envConfigs.value.filter((e) => ((e as any).env_type || 'dev') === t.key),
+  })).filter((g) => g.envs.length),
+)
 
 const columns = [
   { title: '#', dataIndex: 'index', width: 50 },

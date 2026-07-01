@@ -16,6 +16,8 @@ export interface ApiEnvironmentConfig {
   id: number
   project: number
   name: string
+  env_type?: 'dev' | 'test' | 'staging' | 'prod'
+  env_type_display?: string
   base_url: string
   headers: Record<string, string>
   variables: Record<string, string>

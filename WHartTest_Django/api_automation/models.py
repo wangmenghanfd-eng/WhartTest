@@ -30,8 +30,16 @@ class ApiModule(models.Model):
 
 
 class ApiEnvironmentConfig(models.Model):
+    ENV_TYPE_CHOICES = [
+        ("dev", _("开发")),
+        ("test", _("测试")),
+        ("staging", _("预发布")),
+        ("prod", _("生产")),
+    ]
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="api_env_configs", verbose_name=_("所属项目"))
     name = models.CharField(_("环境名称"), max_length=80)
+    env_type = models.CharField(_("环境类型"), max_length=16, choices=ENV_TYPE_CHOICES, default="dev")
     base_url = models.URLField(_("基础 URL"), max_length=500, blank=True, default="")
     headers = models.JSONField(_("公共请求头"), default=dict, blank=True)
     variables = models.JSONField(_("环境变量"), default=dict, blank=True)

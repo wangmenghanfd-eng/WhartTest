@@ -128,6 +128,7 @@
             <a-button type="primary" @click="openEnvModal()">新增环境</a-button>
           </div>
           <a-table :columns="envColumns" :data="envConfigs" :loading="loading" :pagination="{ pageSize: 20, showTotal: true }" :scroll="{ x: 900 }">
+            <template #env_type_cell="{ record }"><a-tag :color="{dev:'arcoblue',test:'orange',staging:'purple',prod:'red'}[record.env_type] || 'gray'">{{ record.env_type_display || {dev:'开发',test:'测试',staging:'预发布',prod:'生产'}[record.env_type] || '开发' }}</a-tag></template>
             <template #is_default_cell="{ record }"><a-tag v-if="record.is_default" color="green">默认</a-tag><span v-else>-</span></template>
             <template #env_ops="{ record }">
               <a-space size="mini">
@@ -200,6 +201,14 @@
     <a-modal v-model:visible="envModalVisible" :title="editingEnvId ? '编辑环境' : '新增环境'" :width="640" @before-ok="submitEnv">
       <a-form layout="vertical">
         <a-form-item label="环境名称" required><a-input v-model="envForm.name" /></a-form-item>
+        <a-form-item label="环境类型">
+          <a-select v-model="envForm.env_type" placeholder="选择环境类型">
+            <a-option value="dev">开发</a-option>
+            <a-option value="test">测试</a-option>
+            <a-option value="staging">预发布</a-option>
+            <a-option value="prod">生产</a-option>
+          </a-select>
+        </a-form-item>
         <a-form-item label="基础 URL" required><a-input v-model="envForm.base_url" placeholder="https://api.example.com" /></a-form-item>
         <a-form-item label="默认环境"><a-switch v-model="envForm.is_default" /></a-form-item>
         <a-form-item label="Headers（JSON）" extra="可选。会被所有请求默认使用，用例 headers 会覆盖同名项。">
@@ -396,6 +405,7 @@ const importForm = reactive({ url: '', content: '', create_cases: true })
 const moduleForm = reactive({ name: '' })
 const envForm = reactive({
   name: '',
+  env_type: 'dev',
   base_url: '',
   is_default: false,
   headersText: '',
@@ -442,6 +452,7 @@ const caseColumns = [
 ]
 const envColumns = [
   { title: '环境名称', dataIndex: 'name' },
+  { title: '类型', slotName: 'env_type_cell', width: 90 },
   { title: '基础 URL', dataIndex: 'base_url', ellipsis: true, tooltip: true },
   { title: '默认', slotName: 'is_default_cell', width: 80 },
   { title: '操作', slotName: 'env_ops', width: 160, fixed: 'right' as const },
@@ -602,6 +613,7 @@ const openEnvModal = (record?: ApiEnvironmentConfig) => {
     editingEnvId.value = record.id
     Object.assign(envForm, {
       name: record.name,
+      env_type: (record as any).env_type || 'dev',
       base_url: record.base_url,
       is_default: !!record.is_default,
       headersText: record.headers ? JSON.stringify(record.headers, null, 2) : '',
@@ -609,7 +621,7 @@ const openEnvModal = (record?: ApiEnvironmentConfig) => {
     })
   } else {
     editingEnvId.value = null
-    Object.assign(envForm, { name: '', base_url: '', is_default: false, headersText: '', variablesText: '' })
+    Object.assign(envForm, { name: '', env_type: 'dev', base_url: '', is_default: false, headersText: '', variablesText: '' })
   }
   envModalVisible.value = true
 }
@@ -746,6 +758,7 @@ const submitEnv = async (done: (closed: boolean) => void) => {
   const payload: Record<string, unknown> = {
     project: projectId.value,
     name: envForm.name,
+    env_type: envForm.env_type,
     base_url: envForm.base_url,
     is_default: envForm.is_default,
     headers: headersResult.data,
