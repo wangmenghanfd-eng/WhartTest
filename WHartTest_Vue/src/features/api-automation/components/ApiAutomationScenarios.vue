@@ -525,6 +525,13 @@ watch(() => [props.projectId, props.selectedModuleId], () => {
   fetchScenarios()
   fetchRecords()
 }, { immediate: true })
+
+// 实时搜索(防抖 300ms),不用敲回车
+let _searchTimer: number | undefined
+watch(search, () => {
+  window.clearTimeout(_searchTimer)
+  _searchTimer = window.setTimeout(() => fetchScenarios(), 300)
+})
 </script>
 
 <style scoped>

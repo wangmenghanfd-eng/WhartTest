@@ -1038,6 +1038,17 @@ watch(projectId, () => {
   if (projectId.value) refreshAllBase()
 }, { immediate: true })
 watch(activeTab, (tab) => ensureTabLoaded(tab))
+
+// 实时搜索:输入即防抖(300ms)触发查询,和项目管理等页面保持一致,不用敲回车/点按钮
+const _searchTimers: Record<string, number> = {}
+const _debounced = (key: string, fn: () => void) => {
+  window.clearTimeout(_searchTimers[key])
+  _searchTimers[key] = window.setTimeout(fn, 300)
+}
+watch(definitionSearch, () => _debounced('def', fetchDefinitions))
+watch(caseSearch, () => _debounced('case', fetchCases))
+watch(envSearch, () => _debounced('env', fetchEnvConfigs))
+watch(publicDataSearch, () => _debounced('pub', fetchPublicData))
 </script>
 
 <style scoped>
