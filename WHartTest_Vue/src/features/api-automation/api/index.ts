@@ -109,6 +109,8 @@ export const apiRecordApi = {
   batches: (params?: { project?: number; status?: number; trigger_type?: string; page_size?: number }) =>
     request.get<PaginatedResponse<ApiBatchExecutionRecord>>(`${BASE_URL}/batch-records/`, { params }),
   getBatch: (id: number) => request.get<ApiBatchExecutionRecord>(`${BASE_URL}/batch-records/${id}/`),
+  stats: (params?: { project?: number; module?: number }) =>
+    request.get(`${BASE_URL}/execution-records/stats/`, { params }),
   scenarios: (params?: { project?: number; scenario?: number; status?: number; trigger_type?: string; page_size?: number }) =>
     request.get<PaginatedResponse<ApiScenarioExecutionRecord>>(`${BASE_URL}/scenario-records/`, { params }),
   getScenarioRecord: (id: number) => request.get<ApiScenarioExecutionRecord>(`${BASE_URL}/scenario-records/${id}/`),

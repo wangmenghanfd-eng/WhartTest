@@ -1,42 +1,7 @@
 <template>
   <div class="reports-wrap">
     <a-spin :loading="loading">
-      <!-- 总览卡片 -->
-      <a-grid :cols="4" :col-gap="16" :row-gap="16">
-        <a-grid-item>
-          <a-card hoverable>
-            <a-statistic title="累计执行" :value="summary.total" />
-          </a-card>
-        </a-grid-item>
-        <a-grid-item>
-          <a-card hoverable>
-            <a-statistic title="通过" :value="summary.passed" :value-style="{ color: 'rgb(var(--green-6))' }" />
-          </a-card>
-        </a-grid-item>
-        <a-grid-item>
-          <a-card hoverable>
-            <a-statistic title="失败" :value="summary.failed" :value-style="{ color: 'rgb(var(--red-6))' }" />
-          </a-card>
-        </a-grid-item>
-        <a-grid-item>
-          <a-card hoverable>
-            <a-statistic title="成功率" :value="summary.passRate" suffix="%" :precision="1" />
-          </a-card>
-        </a-grid-item>
-      </a-grid>
-
-      <a-divider>近 7 天趋势</a-divider>
-      <div v-if="!trend.length" class="empty">最近 7 天没有执行记录</div>
-      <div v-else class="trend-chart">
-        <div v-for="d in trend" :key="d.date" class="trend-col">
-          <div class="bars">
-            <div class="bar passed" :style="{ height: barHeight(d.passed) + 'px' }" :title="`通过 ${d.passed}`"></div>
-            <div class="bar failed" :style="{ height: barHeight(d.failed) + 'px' }" :title="`失败 ${d.failed}`"></div>
-          </div>
-          <div class="date">{{ d.date.slice(5) }}</div>
-        </div>
-      </div>
-
+      <!-- 数据统计(累计/通过/失败/成功率、趋势)首页已有,此处不再重复;仅保留报告专属的按接口聚合 -->
       <a-divider>按接口聚合（执行次数 Top 10）</a-divider>
       <a-table
         :data="byCase"
@@ -113,14 +78,13 @@
 import { computed, ref, watch } from 'vue'
 import { apiRecordApi } from '../api'
 import { BATCH_STATUS_LABELS, STATUS_LABELS, unwrapData, unwrapPage } from '../types'
-import type { ApiBatchExecutionRecord, ApiExecutionRecord } from '../types'
+import type { ApiBatchExecutionRecord } from '../types'
 import { Message } from '@arco-design/web-vue'
 
 const props = defineProps<{ projectId: number | undefined; reloadKey?: number }>()
 
 const loading = ref(false)
 const batchesLoading = ref(false)
-const records = ref<ApiExecutionRecord[]>([])
 const batches = ref<ApiBatchExecutionRecord[]>([])
 
 const detailVisible = ref(false)
@@ -142,50 +106,7 @@ async function openBatchDetail(record: ApiBatchExecutionRecord) {
   }
 }
 
-const summary = computed(() => {
-  const total = records.value.length
-  const passed = records.value.filter((r) => r.status === 2).length
-  const failed = records.value.filter((r) => r.status === 3).length
-  const passRate = total ? Math.round((passed / total) * 1000) / 10 : 0
-  return { total, passed, failed, passRate }
-})
-
-const trend = computed(() => {
-  const now = new Date()
-  const days: { date: string; passed: number; failed: number }[] = []
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
-    days.push({ date: d.toISOString().slice(0, 10), passed: 0, failed: 0 })
-  }
-  const idx: Record<string, { passed: number; failed: number }> = {}
-  days.forEach((d) => (idx[d.date] = d))
-  records.value.forEach((r) => {
-    const start = (r as any).start_time || (r as any).created_at
-    if (!start) return
-    const date = new Date(start).toISOString().slice(0, 10)
-    if (idx[date]) {
-      if (r.status === 2) idx[date].passed += 1
-      else if (r.status === 3) idx[date].failed += 1
-    }
-  })
-  return days
-})
-
-const byCase = computed(() => {
-  const map = new Map<string, { name: string; method: string; path: string; total: number; passed: number; failed: number; passRate: number }>()
-  records.value.forEach((r: any) => {
-    const name = r.test_case_name || `case#${r.test_case}`
-    const cur = map.get(name) || { name, method: r.test_case_method || '-', path: r.test_case_path || '-', total: 0, passed: 0, failed: 0, passRate: 0 }
-    cur.total += 1
-    if (r.status === 2) cur.passed += 1
-    if (r.status === 3) cur.failed += 1
-    map.set(name, cur)
-  })
-  const arr = [...map.values()]
-  arr.forEach((it) => (it.passRate = it.total ? (it.passed / it.total) * 100 : 0))
-  arr.sort((a, b) => b.total - a.total)
-  return arr.slice(0, 10)
-})
+const byCase = ref<{ name: string; method: string; path: string; total: number; passed: number; failed: number; passRate: number }[]>([])
 
 const recentBatches = computed(() => batches.value.slice(0, 10))
 
@@ -221,15 +142,8 @@ function batchStatusColor(s: number) {
   return 'gray'
 }
 
-function barHeight(v: number) {
-  const all: number[] = []
-  trend.value.forEach((d) => { all.push(d.passed); all.push(d.failed) })
-  const max = Math.max(1, ...all)
-  return Math.max(2, (v / max) * 80)
-}
-
 // 批次列表很小、且“查看详情”依赖它，独立加载使其立即渲染；
-// 执行记录(汇总/趋势/按接口)数据量大(可能十几 MB)，单独加载，不阻塞批次表。
+// 按接口聚合走后端 DB 聚合(execution-records/stats),不再把全部执行记录拉到前端。
 async function loadBatches() {
   if (!props.projectId) return
   batchesLoading.value = true
@@ -241,12 +155,13 @@ async function loadBatches() {
   }
 }
 
-async function loadRecords() {
+async function loadStats() {
   if (!props.projectId) return
   loading.value = true
   try {
-    const recordRes = await apiRecordApi.list({ project: props.projectId })
-    records.value = unwrapPage<ApiExecutionRecord>(recordRes).items
+    const res = await apiRecordApi.stats({ project: props.projectId })
+    const data = unwrapData<any>(res) ?? {}
+    byCase.value = data.by_case ?? []
   } finally {
     loading.value = false
   }
@@ -256,7 +171,7 @@ function load() {
   if (!props.projectId) return
   // 两者并行但互不阻塞，各自独立的 loading 状态
   loadBatches()
-  loadRecords()
+  loadStats()
 }
 
 watch(() => [props.projectId, props.reloadKey], load, { immediate: true })

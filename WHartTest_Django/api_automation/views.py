@@ -1,7 +1,7 @@
 import httpx
 from collections import defaultdict, deque
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -583,6 +583,41 @@ class ApiExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
             module_ids = _expand_module_ids(module_id, project_id)
             queryset = queryset.filter(test_case__module_id__in=module_ids or [-1])
         return queryset
+
+    @action(detail=False, methods=["get"])
+    def stats(self, request):
+        """报告页统计:汇总数 + 按接口聚合 Top10,全部走 DB 聚合,
+        避免把上万条执行记录拉到前端再算(曾达 16.8s)。"""
+        project_id = request.query_params.get("project")
+        qs = ApiExecutionRecord.objects.all()
+        if project_id:
+            qs = qs.filter(project_id=project_id)
+        module_id = request.query_params.get("module")
+        if module_id:
+            module_ids = _expand_module_ids(module_id, project_id)
+            qs = qs.filter(test_case__module_id__in=module_ids or [-1])
+        total = qs.count()
+        passed = qs.filter(status=2).count()
+        failed = qs.filter(status=3).count()
+        by_case = list(
+            qs.values("test_case__name", "test_case__method", "test_case__path")
+            .annotate(
+                total=Count("id"),
+                passed=Count("id", filter=Q(status=2)),
+                failed=Count("id", filter=Q(status=3)),
+            )
+            .order_by("-total")[:10]
+        )
+        for item in by_case:
+            item["name"] = item.pop("test_case__name") or "-"
+            item["method"] = item.pop("test_case__method") or "-"
+            item["path"] = item.pop("test_case__path") or "-"
+            item["passRate"] = round((item["passed"] / item["total"]) * 100, 1) if item["total"] else 0
+        pass_rate = round((passed / total) * 100, 1) if total else 0
+        return Response({
+            "total": total, "passed": passed, "failed": failed, "passRate": pass_rate,
+            "by_case": by_case,
+        })
 
 
 class ApiBatchExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
