@@ -24,6 +24,7 @@ from .models import (
     ApiTestCase,
 )
 from .serializers import (
+    ApiBatchExecutionRecordListSerializer,
     ApiBatchExecutionRecordSerializer,
     ApiDefinitionSerializer,
     ApiEnvironmentConfigSerializer,
@@ -31,6 +32,7 @@ from .serializers import (
     ApiExecutionRecordListSerializer,
     ApiModuleSerializer,
     ApiPublicDataSerializer,
+    ApiScenarioExecutionRecordListSerializer,
     ApiScenarioExecutionRecordSerializer,
     ApiScenarioSerializer,
     ApiScriptSerializer,
@@ -588,6 +590,17 @@ class ApiBatchExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ApiBatchExecutionRecordSerializer
     filterset_fields = ["project", "status", "trigger_type"]
 
+    def get_queryset(self):
+        # 列表不需要内嵌 execution_records，避免 prefetch 拉大字段
+        if self.action == "list":
+            return ApiBatchExecutionRecord.objects.select_related("project", "executor")
+        return super().get_queryset()
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ApiBatchExecutionRecordListSerializer
+        return ApiBatchExecutionRecordSerializer
+
 
 
 def _expand_module_ids(module_id, project_id=None):
@@ -709,14 +722,48 @@ class ApiScenarioViewSet(CreatorMixin, viewsets.ModelViewSet):
         execute_api_scenario_task.delay(record.id)
         return Response({"record_id": record.id, "message": "接口场景已提交执行"})
 
+    @action(detail=False, methods=["post"], url_path="batch-execute")
+    def batch_execute(self, request):
+        """批量执行多个接口场景：为每个场景各创建一条执行记录并异步提交。"""
+        scenario_ids = request.data.get("scenario_ids") or []
+        if not scenario_ids:
+            return Response({"error": "请选择接口场景"}, status=status.HTTP_400_BAD_REQUEST)
+        scenarios = list(ApiScenario.objects.filter(id__in=scenario_ids).select_related("project"))
+        if not scenarios:
+            return Response({"error": "未找到接口场景"}, status=status.HTTP_400_BAD_REQUEST)
+        env_id = request.data.get("environment")
+        trigger_type = request.data.get("trigger_type") or "manual"
+        executor = request.user if request.user.is_authenticated else None
+        results = []
+        for scenario in scenarios:
+            record = ApiScenarioExecutionRecord.objects.create(
+                project=scenario.project,
+                scenario=scenario,
+                environment_id=env_id,
+                status=0,
+                trigger_type=trigger_type,
+                executor=executor,
+            )
+            execute_api_scenario_task.delay(record.id)
+            results.append({"scenario_id": scenario.id, "record_id": record.id})
+        return Response({"submitted": len(results), "records": results, "message": f"已提交 {len(results)} 个接口场景执行"})
+
 
 class ApiScenarioExecutionRecordViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ApiScenarioExecutionRecord.objects.select_related("project", "scenario", "environment", "executor").prefetch_related("step_records__test_case", "step_records__step")
     serializer_class = ApiScenarioExecutionRecordSerializer
     filterset_fields = ["project", "scenario", "status", "trigger_type"]
 
+    def get_serializer_class(self):
+        if self.action == "list":
+            return ApiScenarioExecutionRecordListSerializer
+        return ApiScenarioExecutionRecordSerializer
+
     def get_queryset(self):
-        queryset = super().get_queryset()
+        if self.action == "list":
+            queryset = ApiScenarioExecutionRecord.objects.select_related("project", "scenario", "environment", "executor")
+        else:
+            queryset = super().get_queryset()
         module_id = self.request.query_params.get("module")
         project_id = self.request.query_params.get("project")
         if module_id:

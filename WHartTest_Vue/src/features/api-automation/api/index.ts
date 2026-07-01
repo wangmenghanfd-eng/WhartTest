@@ -90,6 +90,8 @@ export const apiScenarioApi = {
     request.patch<ApiScenario>(`${BASE_URL}/scenarios/${id}/`, data),
   delete: (id: number) => request.delete(`${BASE_URL}/scenarios/${id}/`),
   execute: (id: number, data?: { environment?: number }) => request.post(`${BASE_URL}/scenarios/${id}/execute/`, data || {}),
+  batchExecute: (scenarioIds: number[], data?: { environment?: number }) =>
+    request.post(`${BASE_URL}/scenarios/batch-execute/`, { scenario_ids: scenarioIds, ...(data || {}) }),
 }
 
 export const apiScriptApi = {

@@ -3,9 +3,27 @@
     <div class="toolbar">
       <a-input-search v-model="search" placeholder="搜索场景名称/描述" allow-clear @search="fetchScenarios" @clear="fetchScenarios" />
       <a-button type="primary" @click="openScenarioModal()">新增接口场景</a-button>
+      <a-button
+        type="primary"
+        status="success"
+        :loading="batchExecuting"
+        :disabled="selectedScenarioKeys.length === 0"
+        @click="handleBatchExecute"
+      >
+        批量执行{{ selectedScenarioKeys.length ? `(${selectedScenarioKeys.length})` : '' }}
+      </a-button>
     </div>
 
-    <a-table :columns="scenarioColumns" :data="scenarios" :loading="loading" :pagination="{ pageSize: 20, showTotal: true }" :scroll="{ x: 1000 }">
+    <a-table
+      :columns="scenarioColumns"
+      :data="scenarios"
+      :loading="loading"
+      :pagination="{ pageSize: 20, showTotal: true }"
+      :scroll="{ x: 1000 }"
+      row-key="id"
+      :row-selection="{ type: 'checkbox', showCheckedAll: true }"
+      v-model:selectedKeys="selectedScenarioKeys"
+    >
       <template #scenario_status="{ record }">
         <a-tag :color="record.status === 2 ? 'green' : record.status === 3 ? 'red' : record.status === 1 ? 'arcoblue' : 'gray'">
           {{ STATUS_LABELS[record.status] }}
@@ -179,6 +197,8 @@ const props = defineProps<{
 const loading = ref(false)
 const recordLoading = ref(false)
 const submitting = ref(false)
+const batchExecuting = ref(false)
+const selectedScenarioKeys = ref<(string | number)[]>([])
 const search = ref('')
 const scenarios = ref<ApiScenario[]>([])
 const scenarioRecords = ref<ApiScenarioExecutionRecord[]>([])
@@ -477,6 +497,28 @@ const handleDeleteScenario = async (record: ApiScenario) => {
   await apiScenarioApi.delete(record.id)
   Message.success('接口场景已删除')
   await Promise.all([fetchScenarios(), fetchRecords()])
+}
+
+const handleBatchExecute = async () => {
+  const ids = selectedScenarioKeys.value.map((k) => Number(k))
+  if (ids.length === 0) return
+  batchExecuting.value = true
+  try {
+    const res = await apiScenarioApi.batchExecute(ids)
+    const submitted = unwrapData<any>(res)?.submitted ?? res.data?.submitted ?? ids.length
+    Message.success(`已提交 ${submitted} 个接口场景执行，请在下方场景执行记录查看结果`)
+    selectedScenarioKeys.value = []
+    // 轮询刷新记录,让用户看到进度
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, 2000))
+      await fetchRecords()
+    }
+    await fetchScenarios()
+  } catch (e) {
+    Message.error('批量执行提交失败')
+  } finally {
+    batchExecuting.value = false
+  }
 }
 
 watch(() => [props.projectId, props.selectedModuleId], () => {

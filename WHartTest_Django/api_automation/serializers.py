@@ -112,10 +112,25 @@ class ApiExecutionRecordListSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "start_time", "end_time"]
 
 
+class ApiBatchExecutionRecordListSerializer(serializers.ModelSerializer):
+    """列表用轻量序列化器：不内嵌 execution_records，避免报告页一次拉全部
+    批次时把每条执行记录的 request_data/response_data 也带出来(曾达 32MB→502)。"""
+
+    executor_name = serializers.CharField(source="executor.username", read_only=True)
+    success_rate = serializers.FloatField(read_only=True)
+
+    class Meta:
+        model = ApiBatchExecutionRecord
+        fields = "__all__"
+        read_only_fields = ["created_at", "start_time", "end_time", "success_rate"]
+
+
 class ApiBatchExecutionRecordSerializer(serializers.ModelSerializer):
     executor_name = serializers.CharField(source="executor.username", read_only=True)
     success_rate = serializers.FloatField(read_only=True)
-    execution_records = ApiExecutionRecordSerializer(many=True, read_only=True)
+    # 详情内嵌执行记录也用轻量序列化器(不含 request/response 大字段);
+    # 查看单条记录详情时前端再单独拉 execution-records/{id}/。
+    execution_records = ApiExecutionRecordListSerializer(many=True, read_only=True)
 
     class Meta:
         model = ApiBatchExecutionRecord
@@ -158,6 +173,19 @@ class ApiScenarioStepRecordSerializer(serializers.ModelSerializer):
 
     def get_step_name(self, obj):
         return obj.step.name or obj.test_case_name or ""
+
+
+class ApiScenarioExecutionRecordListSerializer(serializers.ModelSerializer):
+    """列表用轻量序列化器：不内嵌 step_records,列表只需汇总字段。"""
+
+    scenario_name = serializers.CharField(source="scenario.name", read_only=True)
+    environment_name = serializers.CharField(source="environment.name", read_only=True)
+    executor_name = serializers.CharField(source="executor.username", read_only=True)
+
+    class Meta:
+        model = ApiScenarioExecutionRecord
+        fields = "__all__"
+        read_only_fields = ["created_at", "start_time", "end_time"]
 
 
 class ApiScenarioExecutionRecordSerializer(serializers.ModelSerializer):
