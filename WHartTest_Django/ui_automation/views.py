@@ -369,6 +369,11 @@ class UiExecutionRecordViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(test_case__project_id=project_id)
         if module_id:
             queryset = queryset.filter(test_case__module_id=module_id)
+        # has_trace=true: 只返回有 trace 的执行记录(UI Trace 转接口用例弹窗用,
+        # 否则会把大量没有 trace、无法转换的登录/普通执行都列出来)
+        has_trace = self.request.query_params.get('has_trace')
+        if has_trace in ('1', 'true', 'True'):
+            queryset = queryset.exclude(trace_data__isnull=True).exclude(trace_data={})
         if self.action == 'list':
             return queryset.defer(
                 'step_results', 'screenshots', 'trace_data', 'log',

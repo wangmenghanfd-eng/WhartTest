@@ -9,19 +9,21 @@
     @cancel="handleCancel"
   >
     <a-form layout="vertical">
-      <a-form-item label="UI 执行记录" required>
+      <a-form-item label="UI 用例(含 Trace 的执行)" required>
         <a-select
           v-model="form.executionRecordId"
-          placeholder="选择有 trace 的执行记录"
+          placeholder="选择带 Trace 的 UI 用例执行(需先跑一次并采集 Trace)"
           allow-search
           allow-clear
           :loading="recordLoading"
           @change="onRecordChange"
         >
           <a-option v-for="rec in executionRecords" :key="rec.id" :value="rec.id">
-            #{{ rec.id }} · {{ rec.test_case_name || rec.test_case_id }} ·
-            {{ STATUS_LABELS[rec.status] }} · {{ formatTime(rec.created_at) }}
+            {{ rec.test_case_name || ('用例#' + rec.test_case_id) }} · {{ STATUS_LABELS[rec.status] }} · {{ formatTime(rec.created_at) }}
           </a-option>
+          <template #empty>
+            <div style="padding: 8px 12px; color: var(--color-text-3);">暂无带 Trace 的执行记录 —— 请先执行一条采集了 Trace 的 UI 用例</div>
+          </template>
         </a-select>
       </a-form-item>
 
@@ -175,7 +177,7 @@ async function fetchExecutionRecords() {
   recordLoading.value = true
   try {
     const res = await request.get('/ui-automation/execution-records/', {
-      params: { project: props.projectId },
+      params: { project: props.projectId, has_trace: true },
     })
     const items = unwrapPage<Record<string, any>>(res).items
     executionRecords.value = items
