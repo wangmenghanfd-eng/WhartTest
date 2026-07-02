@@ -224,39 +224,66 @@
       </a-form>
     </a-modal>
 
-    <a-modal v-model:visible="caseModalVisible" :title="editingCaseId ? '编辑接口用例' : '新增接口用例'" :width="720" @before-ok="submitCase">
-      <a-form layout="vertical">
-        <a-form-item label="用例名称"><a-input v-model="caseForm.name" /></a-form-item>
-        <a-form-item label="请求方法">
-          <a-select v-model="caseForm.method">
-            <a-option v-for="m in methods" :key="m" :value="m">{{ m }}</a-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="路径">
-          <a-input v-model="caseForm.path" placeholder="/api/users" />
-        </a-form-item>
-        <a-form-item>
-          <template #label>
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%">
-              <span>断言</span>
-              <a-button
-                size="mini"
-                type="outline"
-                :loading="debugging"
-                :disabled="!editingCaseId"
-                @click="debugCase"
-              >调试运行（取响应供“取值”）</a-button>
+    <a-modal v-model:visible="caseModalVisible" :title="editingCaseId ? '编辑接口用例' : '新增接口用例'" :width="900" @before-ok="submitCase">
+      <!-- 固定头部：身份信息 + 调试运行 常显 -->
+      <div class="case-head">
+        <a-input v-model="caseForm.name" placeholder="用例名称" class="ch-name" allow-clear />
+        <a-select v-model="caseForm.method" class="ch-method">
+          <a-option v-for="m in methods" :key="m" :value="m">{{ m }}</a-option>
+        </a-select>
+        <a-input v-model="caseForm.path" placeholder="/api/users" class="ch-path" allow-clear />
+        <a-tooltip :content="editingCaseId ? '' : '请先保存用例再调试'">
+          <a-button type="primary" :loading="debugging" :disabled="!editingCaseId" @click="debugCase">调试运行</a-button>
+        </a-tooltip>
+      </div>
+
+      <a-tabs v-model:active-key="caseActiveTab" type="rounded" class="case-tabs">
+        <a-tab-pane key="request" title="请求">
+          <div class="tab-body">
+            <div class="field-label">请求头 Headers</div>
+            <KeyValueEditor v-model="caseHeaders" key-placeholder="如 Content-Type" value-placeholder="如 application/json" empty-text="暂无请求头" />
+            <div class="field-label">Query 参数</div>
+            <KeyValueEditor v-model="caseQuery" key-placeholder="参数名" value-placeholder="参数值" empty-text="暂无 Query 参数" />
+            <div class="field-label field-label-row">
+              <span>请求体 Body（JSON）</span>
+              <a-button size="mini" type="text" @click="formatBody">格式化</a-button>
             </div>
-          </template>
-          <AssertionEditor v-model="caseAssertions" />
-        </a-form-item>
-        <a-form-item label="变量提取">
-          <ExtractorEditor v-model="caseExtractors" />
-        </a-form-item>
-        <a-form-item label="参数化（数据驱动）">
-          <ParametersEditor v-model="caseParameters" />
-        </a-form-item>
-      </a-form>
+            <a-textarea
+              v-model="caseBodyText"
+              :auto-size="{ minRows: 4, maxRows: 14 }"
+              placeholder='{"key": "value"}'
+              class="body-area"
+            />
+          </div>
+        </a-tab-pane>
+
+        <a-tab-pane key="assert" title="断言">
+          <div class="tab-body"><AssertionEditor v-model="caseAssertions" /></div>
+        </a-tab-pane>
+
+        <a-tab-pane key="extract" title="提取">
+          <div class="tab-body"><ExtractorEditor v-model="caseExtractors" /></div>
+        </a-tab-pane>
+
+        <a-tab-pane key="params" title="参数化">
+          <div class="tab-body"><ParametersEditor v-model="caseParameters" /></div>
+        </a-tab-pane>
+
+        <a-tab-pane key="response" title="响应">
+          <div class="tab-body">
+            <div v-if="debugResponse === null || debugResponse === undefined" class="empty-tip">
+              暂无响应。点上方【调试运行】跑一次，即可在此查看响应，并在“断言/提取”里用“取值”点选字段。
+            </div>
+            <div v-else>
+              <div class="resp-meta">
+                状态码：<b>{{ debugMeta?.status ?? '-' }}</b>
+                <span v-if="debugMeta?.duration != null"> · 耗时 {{ debugMeta.duration.toFixed(2) }} s</span>
+              </div>
+              <a-textarea :model-value="debugResponseText" readonly :auto-size="{ minRows: 6, maxRows: 20 }" class="body-area" />
+            </div>
+          </div>
+        </a-tab-pane>
+      </a-tabs>
     </a-modal>
 
     <a-modal v-model:visible="publicDataModalVisible" :title="editingPublicDataId ? '编辑公共数据' : '新增公共数据'" @before-ok="submitPublicData">
@@ -337,6 +364,7 @@ import {
 import AssertionEditor from '../components/AssertionEditor.vue'
 import ExtractorEditor from '../components/ExtractorEditor.vue'
 import ParametersEditor from '../components/ParametersEditor.vue'
+import KeyValueEditor from '../components/KeyValueEditor.vue'
 import ApiAutomationFunctions from '../components/ApiAutomationFunctions.vue'
 import TraceImportModal from '../components/TraceImportModal.vue'
 import FunctionalCaseAiModal from '../components/FunctionalCaseAiModal.vue'
@@ -438,10 +466,35 @@ const caseAssertions = ref<Array<Record<string, any>>>([
 ])
 const caseExtractors = ref<Array<Record<string, any>>>([])
 const caseParameters = ref<Record<string, unknown>>({})
+const caseHeaders = ref<Record<string, string>>({})
+const caseQuery = ref<Record<string, string>>({})
+const caseBodyText = ref('')
+const caseActiveTab = ref('request')
 // 用例调试后的响应体，供断言/提取编辑器的“取值”取值器使用
 const debugResponse = ref<unknown>(null)
+const debugMeta = ref<{ status?: number | null; duration?: number | null } | null>(null)
 const debugging = ref(false)
 provide('apiDebugResponse', debugResponse)
+
+const debugResponseText = computed(() => {
+  const v = debugResponse.value
+  if (v === null || v === undefined) return ''
+  try {
+    return JSON.stringify(v, null, 2)
+  } catch {
+    return String(v)
+  }
+})
+
+function formatBody() {
+  const text = caseBodyText.value.trim()
+  if (!text) return
+  try {
+    caseBodyText.value = JSON.stringify(JSON.parse(text), null, 2)
+  } catch (e) {
+    Message.warning('Body 不是合法 JSON，无法格式化')
+  }
+}
 const publicDataForm = reactive({ key: '', value: '', is_enabled: true })
 const scriptForm = reactive({
   name: '',
@@ -652,9 +705,24 @@ const openEnvModal = (record?: ApiEnvironmentConfig) => {
   envModalVisible.value = true
 }
 
+const asStringMap = (obj: unknown): Record<string, string> => {
+  const out: Record<string, string> = {}
+  if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      out[k] = v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v)
+    }
+  }
+  return out
+}
+
 const openCaseModal = async (record?: ApiTestCase) => {
   caseParameters.value = {}
+  caseHeaders.value = {}
+  caseQuery.value = {}
+  caseBodyText.value = ''
+  caseActiveTab.value = 'request'
   debugResponse.value = null
+  debugMeta.value = null
   if (record) {
     editingCaseId.value = record.id
     Object.assign(caseForm, {
@@ -670,13 +738,18 @@ const openCaseModal = async (record?: ApiTestCase) => {
       ? (record.extractors as Array<Record<string, any>>).map((it) => ({ ...it }))
       : []
     caseModalVisible.value = true
-    // 拉全量用例：参数化配置 + 上次执行响应（供取值器）
+    // 拉全量用例：请求头/Query/Body + 参数化 + 上次执行响应（供取值器）
     try {
       const res = await apiCaseApi.retrieve(record.id)
-      const full = unwrapData<ApiTestCase>(res)
+      const full = unwrapData<ApiTestCase & Record<string, any>>(res)
       caseParameters.value = (full?.parameters as Record<string, unknown>) || {}
+      caseHeaders.value = asStringMap(full?.headers)
+      caseQuery.value = asStringMap(full?.query_params)
+      const body = full?.body
+      caseBodyText.value = body && Object.keys(body).length ? JSON.stringify(body, null, 2) : ''
       const result = full?.result_data as Record<string, any> | undefined
       debugResponse.value = result?.json ?? null
+      if (result) debugMeta.value = { status: result?.status_code ?? null, duration: null }
     } catch {
       /* 拉全量失败不阻断编辑 */
     }
@@ -831,6 +904,18 @@ const submitCase = async (done: (closed: boolean) => void) => {
   const extractors = caseExtractors.value
     .filter((it) => it && (it.name || '').trim())
     .map((it) => ({ ...it }))
+  // 解析 Body 文本为对象；空则 {}；非法 JSON 阻断保存
+  let body: Record<string, unknown> = {}
+  const bodyText = caseBodyText.value.trim()
+  if (bodyText) {
+    try {
+      body = JSON.parse(bodyText)
+    } catch {
+      Message.warning('请求体 Body 不是合法 JSON，请修正后再保存')
+      caseActiveTab.value = 'request'
+      return done(false)
+    }
+  }
   const payload = {
     project: projectId.value,
     module: moduleId,
@@ -838,6 +923,9 @@ const submitCase = async (done: (closed: boolean) => void) => {
     method: caseForm.method,
     path: caseForm.path,
     environment: selectedEnvId.value,
+    headers: caseHeaders.value || {},
+    query_params: caseQuery.value || {},
+    body,
     assertions,
     extractors,
     parameters: caseParameters.value || {},
@@ -997,6 +1085,8 @@ const debugCase = async () => {
     }
     const resp = rec?.response_data as Record<string, any> | undefined
     debugResponse.value = resp?.json ?? null
+    debugMeta.value = { status: resp?.status_code ?? null, duration: rec?.duration ?? null }
+    caseActiveTab.value = 'response'
     if (debugResponse.value !== null && debugResponse.value !== undefined) {
       Message.success({ id: msgId, content: '调试完成，可在断言/提取里点“取值”', duration: 3000 })
     } else {
@@ -1221,5 +1311,57 @@ watch(publicDataSearch, () => _debounced('pub', fetchPublicData))
     flex-basis: auto;
     max-height: 220px;
   }
+}
+
+/* 用例编辑弹框：固定头部 + 分 Tab */
+.case-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.case-head .ch-name {
+  flex: 1 1 200px;
+}
+.case-head .ch-method {
+  flex: 0 0 110px;
+  width: 110px;
+}
+.case-head .ch-path {
+  flex: 2 1 280px;
+}
+.case-tabs .tab-body {
+  padding: 4px 2px 8px;
+  max-height: 52vh;
+  overflow: auto;
+}
+.field-label {
+  font-size: 13px;
+  color: var(--color-text-2);
+  font-weight: 600;
+  margin: 10px 0 6px;
+}
+.field-label:first-child {
+  margin-top: 0;
+}
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.body-area {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12.5px;
+}
+.resp-meta {
+  font-size: 13px;
+  color: var(--color-text-2);
+  margin-bottom: 8px;
+}
+.empty-tip {
+  color: var(--color-text-3);
+  font-size: 13px;
+  padding: 12px 4px;
+  line-height: 1.6;
 }
 </style>
