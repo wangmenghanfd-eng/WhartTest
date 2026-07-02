@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from .models import (
     ApiBatchExecutionRecord,
+    ApiCustomFunction,
     ApiDefinition,
     ApiEnvironmentConfig,
     ApiExecutionRecord,
@@ -96,6 +97,15 @@ class ApiScriptSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ApiScript
+        fields = "__all__"
+        read_only_fields = ["creator", "created_at", "updated_at"]
+
+
+class ApiCustomFunctionSerializer(serializers.ModelSerializer):
+    creator_name = serializers.CharField(source="creator.username", read_only=True)
+
+    class Meta:
+        model = ApiCustomFunction
         fields = "__all__"
         read_only_fields = ["creator", "created_at", "updated_at"]
 

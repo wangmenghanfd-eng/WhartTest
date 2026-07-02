@@ -12,6 +12,7 @@ from projects.models import Project
 
 from .models import (
     ApiBatchExecutionRecord,
+    ApiCustomFunction,
     ApiDefinition,
     ApiEnvironmentConfig,
     ApiExecutionRecord,
@@ -26,6 +27,7 @@ from .models import (
 from .serializers import (
     ApiBatchExecutionRecordListSerializer,
     ApiBatchExecutionRecordSerializer,
+    ApiCustomFunctionSerializer,
     ApiDefinitionSerializer,
     ApiEnvironmentConfigSerializer,
     ApiExecutionRecordSerializer,
@@ -556,6 +558,19 @@ class ApiPublicDataViewSet(CreatorMixin, viewsets.ModelViewSet):
         keyword = (self.request.query_params.get("search") or "").strip()
         if keyword:
             queryset = queryset.filter(Q(key__icontains=keyword) | Q(value__icontains=keyword))
+        return queryset
+
+
+class ApiCustomFunctionViewSet(CreatorMixin, viewsets.ModelViewSet):
+    queryset = ApiCustomFunction.objects.select_related("project", "creator")
+    serializer_class = ApiCustomFunctionSerializer
+    filterset_fields = ["project", "is_active"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        keyword = (self.request.query_params.get("search") or "").strip()
+        if keyword:
+            queryset = queryset.filter(Q(name__icontains=keyword) | Q(description__icontains=keyword))
         return queryset
 
 

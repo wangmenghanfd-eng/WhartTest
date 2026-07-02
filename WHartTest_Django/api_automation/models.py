@@ -134,6 +134,12 @@ class ApiTestCase(models.Model):
     post_script = models.TextField(_("后置脚本"), blank=True, default="")
     assertions = models.JSONField(_("断言"), default=list, blank=True)
     extractors = models.JSONField(_("变量提取"), default=list, blank=True)
+    parameters = models.JSONField(
+        _("参数化数据"),
+        default=dict,
+        blank=True,
+        help_text=_('数据驱动：{"ver":["v1","v2"], "user-pwd":[["u1","p1"],["u2","p2"]]}，多参数取笛卡尔积'),
+    )
     status = models.SmallIntegerField(_("状态"), choices=STATUS_CHOICES, default=0)
     result_data = models.JSONField(_("最近执行结果"), default=dict, blank=True)
     error_message = models.TextField(_("错误信息"), blank=True, default="")
@@ -303,3 +309,27 @@ class ApiScenarioStepRecord(models.Model):
         ordering = ["order", "id"]
         verbose_name = _("接口场景步骤执行记录")
         verbose_name_plural = _("接口场景步骤执行记录")
+
+
+class ApiCustomFunction(models.Model):
+    """项目级自定义 Python 函数库。函数体在执行时编译，供接口用例的
+    ${{func(args)}} 表达式在渲染阶段调用（如动态加签、时间戳、随机数）。"""
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="api_custom_functions", verbose_name=_("所属项目"))
+    name = models.CharField(_("函数名"), max_length=100)
+    code = models.TextField(_("Python 代码"), help_text=_("使用 def 定义函数；模块内所有函数均会被注册，函数名即调用名"))
+    description = models.TextField(_("描述"), blank=True, default="")
+    is_active = models.BooleanField(_("启用"), default=True)
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="created_api_custom_functions", verbose_name=_("创建人"))
+    created_at = models.DateTimeField(_("创建时间"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("更新时间"), auto_now=True)
+
+    class Meta:
+        db_table = "api_custom_function"
+        ordering = ["-id"]
+        unique_together = ("project", "name")
+        verbose_name = _("接口自定义函数")
+        verbose_name_plural = _("接口自定义函数")
+
+    def __str__(self) -> str:
+        return f"{self.name} (project={self.project_id})"

@@ -276,6 +276,10 @@ uvicorn[standard]==0.34.0
 # https://github.com/encode/httpx/blob/master/LICENSE.md
 httpx==0.28.1
 
+# JMESPath JSON查询语言 - MIT许可证 (接口自动化提取/断言的取值引擎)
+# https://github.com/jmespath/jmespath.py/blob/develop/LICENSE.txt
+jmespath==1.0.1
+
 # Pytest测试框架 - MIT许可证 (用于自动化脚本执行)
 # https://github.com/pytest-dev/pytest/blob/main/LICENSE
 pytest>=8.0.0

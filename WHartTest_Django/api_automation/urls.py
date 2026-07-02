@@ -2,6 +2,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     ApiBatchExecutionRecordViewSet,
+    ApiCustomFunctionViewSet,
     ApiDefinitionViewSet,
     ApiEnvironmentConfigViewSet,
     ApiExecutionRecordViewSet,
@@ -19,6 +20,7 @@ router.register("env-configs", ApiEnvironmentConfigViewSet, basename="api-env-co
 router.register("definitions", ApiDefinitionViewSet, basename="api-definitions")
 router.register("testcases", ApiTestCaseViewSet, basename="api-testcases")
 router.register("scripts", ApiScriptViewSet, basename="api-scripts")
+router.register("custom-functions", ApiCustomFunctionViewSet, basename="api-custom-functions")
 router.register("public-data", ApiPublicDataViewSet, basename="api-public-data")
 router.register("scenarios", ApiScenarioViewSet, basename="api-scenarios")
 router.register("scenario-records", ApiScenarioExecutionRecordViewSet, basename="api-scenario-records")

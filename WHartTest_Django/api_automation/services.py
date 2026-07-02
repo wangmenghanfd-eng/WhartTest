@@ -1,3 +1,4 @@
+import ast
 import base64
 import json
 import subprocess
@@ -6,16 +7,20 @@ import time
 import uuid
 from copy import deepcopy
 from pathlib import Path
-from typing import Any
+from types import FunctionType, ModuleType
+from typing import Any, Callable
 from urllib.parse import urljoin
 
 import httpx
+import jmespath
 import yaml
+from jmespath.exceptions import JMESPathError
 from django.db import models, transaction
 from django.utils import timezone
 
 from .models import (
     ApiBatchExecutionRecord,
+    ApiCustomFunction,
     ApiDefinition,
     ApiEnvironmentConfig,
     ApiExecutionRecord,
@@ -31,6 +36,8 @@ from .models import (
 
 HTTP_METHODS = {"get", "post", "put", "patch", "delete", "head", "options"}
 VAR_RE = re.compile(r"\$\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
+# 自定义函数调用：${{ func(arg1, arg2) }}。与 VAR_RE 互斥(变量后无括号)。
+FUNC_RE = re.compile(r"\$\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\((.*?)\)\s*\}\}")
 BROWSER_LIKE_HEADERS = {
     "Accept-Language": "zh-CN,zh;q=0.9",
     "Sec-Fetch-Dest": "empty",
@@ -156,18 +163,98 @@ def _public_variables(project) -> dict[str, str]:
     }
 
 
-def _render_value(value: Any, variables: dict[str, str]) -> Any:
+def _split_call_args(arg_str: str) -> list[str]:
+    """按顶层逗号切分函数实参，尊重引号与括号嵌套。"""
+    parts: list[str] = []
+    depth = 0
+    quote: str | None = None
+    buf: list[str] = []
+    for ch in arg_str:
+        if quote:
+            buf.append(ch)
+            if ch == quote:
+                quote = None
+        elif ch in ("'", '"'):
+            quote = ch
+            buf.append(ch)
+        elif ch in "([{":
+            depth += 1
+            buf.append(ch)
+        elif ch in ")]}":
+            depth -= 1
+            buf.append(ch)
+        elif ch == "," and depth == 0:
+            parts.append("".join(buf))
+            buf = []
+        else:
+            buf.append(ch)
+    parts.append("".join(buf))
+    return [p.strip() for p in parts if p.strip() != ""]
+
+
+def _eval_call_arg(token: str, variables: dict[str, Any]) -> Any:
+    """求值单个函数实参：支持 ${{var}} / $var 变量引用与 Python 字面量。"""
+    token = token.strip()
+    if not token:
+        return None
+    m = VAR_RE.fullmatch(token)
+    if m:
+        return variables.get(m.group(1))
+    if re.fullmatch(r"\$[A-Za-z_][A-Za-z0-9_]*", token):
+        return variables.get(token[1:])
+    try:
+        return ast.literal_eval(token)
+    except (ValueError, SyntaxError):
+        return variables.get(token, token)
+
+
+def _call_custom_function(name: str, arg_str: str, variables: dict[str, Any], functions: dict[str, Callable]) -> Any:
+    fn = functions.get(name)
+    if fn is None:
+        # 显式报错，不静默保留原字符串（避免掩盖配置错误）
+        raise ValueError(f"自定义函数未定义: {name}()")
+    args = [_eval_call_arg(a, variables) for a in _split_call_args(arg_str)]
+    return fn(*args)
+
+
+def _load_custom_functions(project_id: int) -> dict[str, Callable]:
+    """编译项目内启用的自定义函数为 {函数名: 可调用}。编译失败即报错。"""
+    functions: dict[str, Callable] = {}
+    for fn in ApiCustomFunction.objects.filter(project_id=project_id, is_active=True):
+        try:
+            module = ModuleType(f"api_custom_fn_{fn.id}")
+            exec(compile(fn.code, f"<api_custom_function:{fn.name}>", "exec"), module.__dict__)
+        except Exception as exc:  # noqa: BLE001 - 编译/执行错误统一上抛
+            raise ValueError(f"自定义函数[{fn.name}]编译失败: {exc}") from exc
+        for attr, obj in module.__dict__.items():
+            if isinstance(obj, FunctionType):
+                functions[attr] = obj
+    return functions
+
+
+def _render_value(value: Any, variables: dict[str, str], functions: dict[str, Callable] | None = None) -> Any:
     if isinstance(value, str):
+        text = value
+        # 先求值自定义函数 ${{func(args)}}（functions 非 None 即视为执行上下文）
+        if functions is not None and "${{" in text and "(" in text:
+            whole_fn = FUNC_RE.fullmatch(text.strip())
+            if whole_fn:
+                # 整串是单个函数调用时保留返回值原始类型
+                return _call_custom_function(whole_fn.group(1), whole_fn.group(2), variables, functions)
+            text = FUNC_RE.sub(
+                lambda m: str(_call_custom_function(m.group(1), m.group(2), variables, functions)),
+                text,
+            )
         # 整串恰好是单个占位符时,保留变量原始类型(number/bool/对象),
         # 避免 {"crisisId": "${{crisisId}}"} 把数字渲染成字符串导致后端 500
-        whole = VAR_RE.fullmatch(value.strip())
+        whole = VAR_RE.fullmatch(text.strip())
         if whole and whole.group(1) in variables:
             return variables[whole.group(1)]
-        return VAR_RE.sub(lambda m: str(variables.get(m.group(1), m.group(0))), value)
+        return VAR_RE.sub(lambda m: str(variables.get(m.group(1), m.group(0))), text)
     if isinstance(value, dict):
-        return {k: _render_value(v, variables) for k, v in value.items()}
+        return {k: _render_value(v, variables, functions) for k, v in value.items()}
     if isinstance(value, list):
-        return [_render_value(item, variables) for item in value]
+        return [_render_value(item, variables, functions) for item in value]
     return value
 
 
@@ -218,6 +305,33 @@ def _get_by_path(data: Any, path: str) -> Any:
     return current
 
 
+def _resolve_path(data: Any, expr: str) -> Any:
+    """从响应体按表达式取值。优先用 JMESPath；仅当表达式 JMESPath 无法解析
+    (JMESPathError)时回退到旧的点路径解析 `_get_by_path`，保证历史用例平滑升级。
+
+    - 空表达式 / 仅根标记 -> 返回整体 data
+    - 兼容旧写法：剥掉前导 `$` 或 `$.`
+    """
+    if data is None or expr is None:
+        return None
+    raw = str(expr).strip()
+    if not raw:
+        return data
+    normalized = raw
+    if normalized.startswith("$."):
+        normalized = normalized[2:]
+    elif normalized.startswith("$"):
+        normalized = normalized[1:]
+    normalized = normalized.lstrip(".")
+    if not normalized:
+        return data
+    try:
+        return jmespath.search(normalized, data)
+    except JMESPathError:
+        # 含连字符键名/数字开头键等 JMESPath 不支持的写法 -> 回退旧解析器
+        return _get_by_path(data, raw)
+
+
 def _json_type_name(value: Any) -> str:
     """返回值的 JSON 类型名:null/boolean/number/string/array/object。"""
     if value is None:
@@ -242,23 +356,73 @@ def _safe_response_json(response: httpx.Response) -> Any:
         return None
 
 
+# 算子别名归一：把 httprunner 风格 / 简写统一到二开内部算子名。
+# 内部规范算子（与前端 AssertionEditor 保持一致）：
+#   eq neq contains not_contains regex in not_in lt lte gt gte is_empty is_not_empty
+# 本次新增：str_eq length_eq/gt/lt/ge/le type_match startswith endswith contained_by
+_OPERATOR_ALIASES = {
+    "equal": "eq", "equals": "eq", "==": "eq",
+    "not_equal": "neq", "ne": "neq", "!=": "neq",
+    "greater_than": "gt", ">": "gt",
+    "greater_or_equals": "gte", "ge": "gte", ">=": "gte",
+    "less_than": "lt", "<": "lt",
+    "less_or_equals": "lte", "le": "lte", "<=": "lte",
+    "include": "contains",
+    "exclude": "not_contains",
+    "exists": "is_not_empty",
+    "regex_match": "regex",
+    "string_equals": "str_eq",
+    "length_equal": "length_eq", "len_eq": "length_eq",
+    "length_greater_than": "length_gt", "len_gt": "length_gt",
+    "length_less_than": "length_lt", "len_lt": "length_lt",
+    "length_greater_or_equals": "length_ge", "len_ge": "length_ge",
+    "length_less_or_equals": "length_le", "len_le": "length_le",
+}
+
+
+def _loose_equal(actual: Any, expected: Any) -> bool:
+    """类型感知的相等比较：同类型直接比，跨数值类型按数值比，
+    其余回退字符串比较——保证历史用例(如 "200" 对 200)仍然通过。"""
+    if type(actual) is type(expected):
+        return actual == expected
+    actual_is_num = isinstance(actual, (int, float)) and not isinstance(actual, bool)
+    expected_is_num = isinstance(expected, (int, float)) and not isinstance(expected, bool)
+    if actual_is_num and expected_is_num:
+        return float(actual) == float(expected)
+    return str(actual) == str(expected)
+
+
 def _compare(actual: Any, operator: str, expected: Any) -> bool:
     """通用断言运算符。actual/expected 都可能为 None。"""
     op = (operator or "eq").lower()
+    op = _OPERATOR_ALIASES.get(op, op)
 
-    if op in ("is_empty",):
+    if op == "is_empty":
         return actual in (None, "", [], {})
-    if op in ("is_not_empty", "exists"):
+    if op == "is_not_empty":
         return actual not in (None, "", [], {})
 
     if op == "eq":
-        return str(actual) == str(expected)
+        return _loose_equal(actual, expected)
     if op == "neq":
-        return str(actual) != str(expected)
+        return not _loose_equal(actual, expected)
+    if op == "str_eq":
+        return str(actual) == str(expected)
+    if op == "type_match":
+        return _json_type_name(actual) == str(expected).lower()
     if op in ("contains", "include"):
         return str(expected) in str(actual or "")
     if op in ("not_contains", "exclude"):
         return str(expected) not in str(actual or "")
+    if op == "contained_by":
+        try:
+            return actual in expected
+        except TypeError:
+            return str(actual or "") in str(expected or "")
+    if op == "startswith":
+        return str(actual or "").startswith(str(expected))
+    if op == "endswith":
+        return str(actual or "").endswith(str(expected))
     if op == "regex":
         try:
             return re.search(str(expected), str(actual or "")) is not None
@@ -272,6 +436,24 @@ def _compare(actual: Any, operator: str, expected: Any) -> bool:
             return actual in (expected or [])
     if op == "not_in":
         return not _compare(actual, "in", expected)
+
+    # 长度类算子：对 actual 取长度，与 int(expected) 比较
+    if op in ("length_eq", "length_gt", "length_lt", "length_ge", "length_le"):
+        try:
+            actual_len = len(actual)
+            expected_len = int(expected)
+        except (TypeError, ValueError):
+            return False
+        if op == "length_eq":
+            return actual_len == expected_len
+        if op == "length_gt":
+            return actual_len > expected_len
+        if op == "length_lt":
+            return actual_len < expected_len
+        if op == "length_ge":
+            return actual_len >= expected_len
+        if op == "length_le":
+            return actual_len <= expected_len
 
     # 数值比较：尝试转 float，失败则降级为字符串比较
     try:
@@ -352,20 +534,20 @@ def _assert_response(response: httpx.Response, assertions: list[dict[str, Any]])
         elif typ == "json_path":
             if parsed_body is None:
                 parsed_body = _safe_response_json(response)
-            actual = _get_by_path(parsed_body, assertion.get("path") or "")
+            actual = _resolve_path(parsed_body, assertion.get("path") or "")
             passed = _compare(actual, operator, expected)
         elif typ == "json_path_type":
             if parsed_body is None:
                 parsed_body = _safe_response_json(response)
             path = assertion.get("path") or ""
-            value = parsed_body if not path.strip().lstrip("$").lstrip(".") else _get_by_path(parsed_body, path)
+            value = parsed_body if not path.strip().lstrip("$").lstrip(".") else _resolve_path(parsed_body, path)
             actual = _json_type_name(value)
             passed = _compare(actual, operator, expected)
         elif typ == "json_path_length":
             if parsed_body is None:
                 parsed_body = _safe_response_json(response)
             path = assertion.get("path") or ""
-            value = parsed_body if not path.strip().lstrip("$").lstrip(".") else _get_by_path(parsed_body, path)
+            value = parsed_body if not path.strip().lstrip("$").lstrip(".") else _resolve_path(parsed_body, path)
             try:
                 actual = len(value) if value is not None else 0
             except TypeError:
@@ -406,7 +588,7 @@ def _extract_variables(response: httpx.Response, extractors: list[dict[str, Any]
             if source == "json_path":
                 if parsed_body is None:
                     parsed_body = _safe_response_json(response)
-                extracted[name] = _get_by_path(parsed_body, path)
+                extracted[name] = _resolve_path(parsed_body, path)
             elif source == "header":
                 target = path.lower()
                 extracted[name] = next(
@@ -644,14 +826,169 @@ def _apply_browser_like_headers(headers: dict[str, Any]) -> dict[str, Any]:
     return headers
 
 
+def _gen_cartesian_product(*pools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """多个参数池取笛卡尔积并合并为参数组列表。"""
+    if not pools:
+        return []
+    result: list[dict[str, Any]] = [{}]
+    for pool in pools:
+        result = [{**base, **item} for base in result for item in pool]
+    return result
+
+
+def _expand_parameters(parameters: Any) -> list[dict[str, Any]]:
+    """把用例的 parameters 配置展开为参数组列表(笛卡尔积)。
+    支持：{"ver": ["v1","v2"]} 单参内联；{"user-pwd": [["u1","p1"],["u2","p2"]]} 复合名按 '-' 拆分。
+    空/非法配置返回 []（表示不做参数化，按普通单次执行）。"""
+    if not parameters or not isinstance(parameters, dict):
+        return []
+    pools: list[list[dict[str, Any]]] = []
+    for raw_name, values in parameters.items():
+        names = [n.strip() for n in str(raw_name).split("-") if n.strip()]
+        if not names or not isinstance(values, (list, tuple)) or not values:
+            continue
+        pool: list[dict[str, Any]] = []
+        for row in values:
+            if len(names) == 1:
+                pool.append({names[0]: row})
+            else:
+                row_seq = list(row) if isinstance(row, (list, tuple)) else [row]
+                pool.append({name: (row_seq[i] if i < len(row_seq) else None) for i, name in enumerate(names)})
+        if pool:
+            pools.append(pool)
+    if not pools:
+        return []
+    return _gen_cartesian_product(*pools)
+
+
+def _run_case_once(
+    case: ApiTestCase,
+    env: ApiEnvironmentConfig | None,
+    variables: dict[str, Any],
+    functions: dict[str, Callable],
+) -> dict[str, Any]:
+    """执行一次接口请求(含前后置脚本与 401/403 重试)。variables 为该次运行的变量池
+    (调用方保证已并入环境/公共/参数化变量)。返回 {passed, request_data, response_data}，不落库。"""
+    env_headers = deepcopy(env.headers if env else {})
+    if env:
+        env_headers, _ = _refresh_env_auth_headers(env)
+    case_headers = _render_value(case.headers or {}, variables, functions)
+    request_context = {
+        "method": case.method,
+        "url": _build_url(env, _render_value(case.path, variables, functions)),
+        "headers": {**deepcopy(env_headers), **deepcopy(case_headers)},
+        "query_params": _render_value(case.query_params or {}, variables, functions),
+        "body": _render_value(case.body or {}, variables, functions),
+    }
+
+    for content in [*_collect_module_scripts(case, "pre"), str(case.pre_script or "").strip()]:
+        if not content:
+            continue
+        state = _run_js_script(
+            content,
+            {"request": request_context, "variables": variables},
+            label=f"前置脚本[{case.name}]",
+        )
+        request_context = deepcopy(state["request"])
+        variables = deepcopy(state["variables"])
+
+    headers = _apply_browser_like_headers(deepcopy(request_context.get("headers") or {}))
+    query_params = deepcopy(request_context.get("query_params") or {})
+    body = deepcopy(request_context.get("body") or {})
+    url = str(request_context.get("url") or "")
+    if not url:
+        raise RuntimeError("请求 URL 不能为空")
+
+    if "X-XSRF-Token" in headers and "X-CSRF-Token" not in headers:
+        headers["X-CSRF-Token"] = headers["X-XSRF-Token"]
+    if case.path.startswith("/api/v1/admin/dashboard/tactical-overview") and env and env.base_url:
+        headers["Referer"] = f"{env.base_url.rstrip('/')}/dashboard"
+
+    request_data = {
+        "method": str(request_context.get("method") or case.method),
+        "url": url,
+        "headers": headers,
+        "query_params": query_params,
+        "body": body,
+    }
+    dashboard_page_url = (
+        urljoin(f"{env.base_url.rstrip('/')}/", "dashboard")
+        if case.path.startswith("/api/v1/admin/dashboard/tactical-overview") and env and env.base_url
+        else ""
+    )
+
+    def _send(current_headers: dict[str, Any]):
+        with httpx.Client(timeout=30.0, follow_redirects=True) as client:
+            if dashboard_page_url:
+                client.get(dashboard_page_url, headers=current_headers)
+            return client.request(
+                str(request_data["method"] or case.method),
+                url,
+                headers=current_headers,
+                params=query_params,
+                json=body if body not in ({}, None, "") else None,
+            )
+
+    response = _send(headers)
+    if response.status_code == 403 and "not allowed for portal" in (response.text or "") and dashboard_page_url:
+        time.sleep(0.15)
+        response = _send(headers)
+    if response.status_code == 401 and env:
+        refreshed_headers, refreshed = _refresh_env_auth_headers(env, force=True)
+        if refreshed:
+            headers = deepcopy(refreshed_headers)
+            headers.update(case_headers)
+            headers = _apply_browser_like_headers(headers)
+            if case.path.startswith("/api/v1/admin/dashboard/tactical-overview") and env and env.base_url:
+                headers["Referer"] = f"{env.base_url.rstrip('/')}/dashboard"
+            request_data["headers"] = headers
+            response = _send(headers)
+    rendered_assertions = _render_value(deepcopy(case.assertions or []), variables, functions)
+    passed, assertion_results = _assert_response(response, rendered_assertions)
+    extracted = _extract_variables(response, case.extractors or [])
+    response_data = {
+        "status_code": response.status_code,
+        "headers": dict(response.headers),
+        "json": _safe_response_json(response),
+        "text": response.text[:20000],
+        "assertions": assertion_results,
+        "extracted": extracted,
+    }
+    for content in [*_collect_module_scripts(case, "post"), str(case.post_script or "").strip()]:
+        if not content:
+            continue
+        state = _run_js_script(
+            content,
+            {
+                "request": request_data,
+                "response": response_data,
+                "variables": variables,
+                "extracted": extracted,
+                "assertions": assertion_results,
+            },
+            label=f"后置脚本[{case.name}]",
+        )
+        request_data = deepcopy(state["request"])
+        response_data = deepcopy(state["response"])
+        variables = deepcopy(state["variables"])
+        extracted = deepcopy(state["extracted"])
+        assertion_results = deepcopy(state["assertions"])
+
+    response_data["assertions"] = assertion_results
+    response_data["extracted"] = extracted
+    response_data["runtime_variables"] = deepcopy(variables)
+    passed = all(bool(item.get("passed", True)) for item in assertion_results) if assertion_results else passed
+    return {"passed": passed, "request_data": request_data, "response_data": response_data}
+
+
 def _execute_api_record(record: ApiExecutionRecord, inherited_variables: dict[str, Any] | None = None) -> dict[str, Any]:
     case = record.test_case
     env = record.environment or case.environment or ApiEnvironmentConfig.objects.filter(project=case.project, is_default=True).first()
-    variables = _public_variables(case.project)
+    base_variables = _public_variables(case.project)
     if env:
-        variables.update({str(k): str(v) for k, v in (env.variables or {}).items()})
+        base_variables.update({str(k): str(v) for k, v in (env.variables or {}).items()})
     if inherited_variables:
-        variables.update({str(k): v for k, v in inherited_variables.items() if v is not None})
+        base_variables.update({str(k): v for k, v in inherited_variables.items() if v is not None})
 
     record.status = 1
     record.start_time = timezone.now()
@@ -659,116 +996,43 @@ def _execute_api_record(record: ApiExecutionRecord, inherited_variables: dict[st
 
     start = time.perf_counter()
     try:
-        env_headers = deepcopy(env.headers if env else {})
-        if env:
-            env_headers, _ = _refresh_env_auth_headers(env)
-        case_headers = _render_value(case.headers or {}, variables)
-        request_context = {
-            "method": case.method,
-            "url": _build_url(env, _render_value(case.path, variables)),
-            "headers": {**deepcopy(env_headers), **deepcopy(case_headers)},
-            "query_params": _render_value(case.query_params or {}, variables),
-            "body": _render_value(case.body or {}, variables),
-        }
+        functions = _load_custom_functions(case.project_id)
+        param_sets = _expand_parameters(case.parameters or {})
+        if param_sets:
+            # 数据驱动：每组参数并入变量池跑一次，聚合为迭代结果
+            iterations: list[dict[str, Any]] = []
+            all_passed = True
+            for idx, param_set in enumerate(param_sets):
+                iter_vars = dict(base_variables)
+                iter_vars.update({str(k): v for k, v in param_set.items()})
+                try:
+                    once = _run_case_once(case, env, iter_vars, functions)
+                    iterations.append({
+                        "index": idx,
+                        "parameters": param_set,
+                        "passed": once["passed"],
+                        "request": once["request_data"],
+                        "response": once["response_data"],
+                    })
+                    all_passed = all_passed and once["passed"]
+                except Exception as iter_exc:  # noqa: BLE001 - 单组失败不影响其余组
+                    all_passed = False
+                    iterations.append({"index": idx, "parameters": param_set, "passed": False, "error": str(iter_exc)})
+            passed = all_passed
+            request_data = iterations[0].get("request", {}) if iterations else {}
+            response_data = {
+                "parametrized": True,
+                "parameters_count": len(iterations),
+                "passed_count": sum(1 for it in iterations if it.get("passed")),
+                "iterations": iterations,
+            }
+        else:
+            once = _run_case_once(case, env, dict(base_variables), functions)
+            passed = once["passed"]
+            request_data = once["request_data"]
+            response_data = once["response_data"]
 
-        for content in [*_collect_module_scripts(case, "pre"), str(case.pre_script or "").strip()]:
-            if not content:
-                continue
-            state = _run_js_script(
-                content,
-                {"request": request_context, "variables": variables},
-                label=f"前置脚本[{case.name}]",
-            )
-            request_context = deepcopy(state["request"])
-            variables = deepcopy(state["variables"])
-
-        headers = _apply_browser_like_headers(deepcopy(request_context.get("headers") or {}))
-        query_params = deepcopy(request_context.get("query_params") or {})
-        body = deepcopy(request_context.get("body") or {})
-        url = str(request_context.get("url") or "")
-        if not url:
-            raise RuntimeError("请求 URL 不能为空")
-
-        if "X-XSRF-Token" in headers and "X-CSRF-Token" not in headers:
-            headers["X-CSRF-Token"] = headers["X-XSRF-Token"]
-        if case.path.startswith("/api/v1/admin/dashboard/tactical-overview") and env and env.base_url:
-            headers["Referer"] = f"{env.base_url.rstrip('/')}/dashboard"
-
-        request_data = {
-            "method": str(request_context.get("method") or case.method),
-            "url": url,
-            "headers": headers,
-            "query_params": query_params,
-            "body": body,
-        }
-        dashboard_page_url = (
-            urljoin(f"{env.base_url.rstrip('/')}/", "dashboard")
-            if case.path.startswith("/api/v1/admin/dashboard/tactical-overview") and env and env.base_url
-            else ""
-        )
-
-        def _send(current_headers: dict[str, Any]):
-            with httpx.Client(timeout=30.0, follow_redirects=True) as client:
-                if dashboard_page_url:
-                    client.get(dashboard_page_url, headers=current_headers)
-                return client.request(
-                    str(request_data["method"] or case.method),
-                    url,
-                    headers=current_headers,
-                    params=query_params,
-                    json=body if body not in ({}, None, "") else None,
-                )
-
-        response = _send(headers)
-        if response.status_code == 403 and "not allowed for portal" in (response.text or "") and dashboard_page_url:
-            time.sleep(0.15)
-            response = _send(headers)
-        if response.status_code == 401 and env:
-            refreshed_headers, refreshed = _refresh_env_auth_headers(env, force=True)
-            if refreshed:
-                headers = deepcopy(refreshed_headers)
-                headers.update(case_headers)
-                headers = _apply_browser_like_headers(headers)
-                if case.path.startswith("/api/v1/admin/dashboard/tactical-overview") and env and env.base_url:
-                    headers["Referer"] = f"{env.base_url.rstrip('/')}/dashboard"
-                request_data["headers"] = headers
-                response = _send(headers)
-        rendered_assertions = _render_value(deepcopy(case.assertions or []), variables)
-        passed, assertion_results = _assert_response(response, rendered_assertions)
-        extracted = _extract_variables(response, case.extractors or [])
         duration = time.perf_counter() - start
-        response_data = {
-            "status_code": response.status_code,
-            "headers": dict(response.headers),
-            "json": _safe_response_json(response),
-            "text": response.text[:20000],
-            "assertions": assertion_results,
-            "extracted": extracted,
-        }
-        for content in [*_collect_module_scripts(case, "post"), str(case.post_script or "").strip()]:
-            if not content:
-                continue
-            state = _run_js_script(
-                content,
-                {
-                    "request": request_data,
-                    "response": response_data,
-                    "variables": variables,
-                    "extracted": extracted,
-                    "assertions": assertion_results,
-                },
-                label=f"后置脚本[{case.name}]",
-            )
-            request_data = deepcopy(state["request"])
-            response_data = deepcopy(state["response"])
-            variables = deepcopy(state["variables"])
-            extracted = deepcopy(state["extracted"])
-            assertion_results = deepcopy(state["assertions"])
-
-        response_data["assertions"] = assertion_results
-        response_data["extracted"] = extracted
-        response_data["runtime_variables"] = deepcopy(variables)
-        passed = all(bool(item.get("passed", True)) for item in assertion_results) if assertion_results else passed
         status = 2 if passed else 3
         error = "" if passed else "接口断言未通过"
         record.status = status
