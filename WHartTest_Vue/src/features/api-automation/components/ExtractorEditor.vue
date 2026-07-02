@@ -22,9 +22,6 @@
         size="small"
         class="col-path"
       />
-      <a-tooltip v-if="item.source === 'json_path'" content="从响应取值">
-        <a-button size="small" type="text" class="pick-btn" @click="openPicker(idx)">取值</a-button>
-      </a-tooltip>
       <a-button
         type="text"
         status="danger"
@@ -37,13 +34,11 @@
     <a-button size="small" type="outline" long class="add-btn" @click="add">
       + 添加变量提取
     </a-button>
-    <ResponseJsonViewer v-model:visible="pickerVisible" :json="debugResponse" @select="onPick" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue'
-import ResponseJsonViewer from './ResponseJsonViewer.vue'
+import { computed } from 'vue'
 
 type Extractor = Record<string, any>
 
@@ -55,28 +50,6 @@ const items = computed<Extractor[]>({
   set: (value) => emit('update:modelValue', value),
 })
 
-const debugResponse = inject<{ value: unknown }>('apiDebugResponse', ref(null))
-const pickerVisible = ref(false)
-const pickIdx = ref(-1)
-
-function openPicker(idx: number) {
-  pickIdx.value = idx
-  pickerVisible.value = true
-}
-
-function onPick(path: string) {
-  if (pickIdx.value < 0 || pickIdx.value >= items.value.length) return
-  const next = [...items.value]
-  const item: Extractor = { ...next[pickIdx.value], path }
-  if (!String(item.name ?? '').trim()) {
-    // 用路径末段自动生成变量名：data.items[0].name -> name
-    const seg = path.split('.').pop() || path
-    item.name = seg.replace(/\[(\d+)\]/g, '_$1').replace(/[^A-Za-z0-9_]/g, '')
-  }
-  next[pickIdx.value] = item
-  items.value = next
-}
-
 const SOURCE_OPTIONS = [
   { label: 'JSON 字段', value: 'json_path' },
   { label: '响应头', value: 'header' },
@@ -86,7 +59,7 @@ const SOURCE_OPTIONS = [
 function pathPlaceholder(source: string) {
   if (source === 'header') return '响应头名（如 X-Request-Id）'
   if (source === 'regex') return '正则表达式（首个分组为提取值）'
-  return 'JMESPath，如 data.token / items[0].id / data[?vip].name'
+  return '如 data.token / items[0].id'
 }
 
 function add() {

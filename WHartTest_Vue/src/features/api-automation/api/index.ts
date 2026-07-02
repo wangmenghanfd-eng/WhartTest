@@ -1,7 +1,6 @@
 import request from '@/utils/request'
 import type {
   ApiBatchExecutionRecord,
-  ApiCustomFunction,
   ApiDefinition,
   ApiEnvironmentConfig,
   ApiExecutionRecord,
@@ -93,15 +92,6 @@ export const apiScenarioApi = {
   execute: (id: number, data?: { environment?: number }) => request.post(`${BASE_URL}/scenarios/${id}/execute/`, data || {}),
   batchExecute: (scenarioIds: number[], data?: { environment?: number }) =>
     request.post(`${BASE_URL}/scenarios/batch-execute/`, { scenario_ids: scenarioIds, ...(data || {}) }),
-}
-
-export const apiCustomFunctionApi = {
-  list: (params?: { project?: number; is_active?: boolean; search?: string; page_size?: number }) =>
-    request.get<PaginatedResponse<ApiCustomFunction>>(`${BASE_URL}/custom-functions/`, { params }),
-  create: (data: Partial<ApiCustomFunction>) => request.post<ApiCustomFunction>(`${BASE_URL}/custom-functions/`, data),
-  update: (id: number, data: Partial<ApiCustomFunction>) =>
-    request.patch<ApiCustomFunction>(`${BASE_URL}/custom-functions/${id}/`, data),
-  delete: (id: number) => request.delete(`${BASE_URL}/custom-functions/${id}/`),
 }
 
 export const apiScriptApi = {

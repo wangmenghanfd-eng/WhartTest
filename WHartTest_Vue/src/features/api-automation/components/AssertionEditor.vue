@@ -17,9 +17,6 @@
         size="small"
         class="col-path"
       />
-      <a-tooltip v-if="item.type === 'json_path'" content="从响应取值">
-        <a-button size="small" type="text" class="pick-btn" @click="openPicker(idx)">取值</a-button>
-      </a-tooltip>
       <a-select
         v-if="needsOperator(item.type)"
         v-model="item.operator"
@@ -30,7 +27,7 @@
       <a-input
         v-if="needsExpected(item.type, item.operator)"
         v-model="item.expected"
-        :placeholder="expectedPlaceholder(item.type, item.operator)"
+        :placeholder="expectedPlaceholder(item.type)"
         size="small"
         class="col-expected"
       />
@@ -47,13 +44,11 @@
     <a-button size="small" type="outline" long class="add-btn" @click="add">
       + 添加断言
     </a-button>
-    <ResponseJsonViewer v-model:visible="pickerVisible" :json="debugResponse" @select="onPick" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue'
-import ResponseJsonViewer from './ResponseJsonViewer.vue'
+import { computed } from 'vue'
 
 type Assertion = Record<string, any>
 
@@ -64,39 +59,6 @@ const items = computed<Assertion[]>({
   get: () => props.modelValue ?? [],
   set: (value) => emit('update:modelValue', value),
 })
-
-// 由 ApiAutomationView 在用例模态里 provide 当前用例的调试响应体
-const debugResponse = inject<{ value: unknown }>('apiDebugResponse', ref(null))
-const pickerVisible = ref(false)
-const pickIdx = ref(-1)
-
-function openPicker(idx: number) {
-  pickIdx.value = idx
-  pickerVisible.value = true
-}
-
-function inferValueLabel(value: unknown): string {
-  if (value === null) return 'null'
-  if (Array.isArray(value)) return 'array'
-  return typeof value
-}
-
-function onPick(path: string, value: unknown) {
-  if (pickIdx.value < 0 || pickIdx.value >= items.value.length) return
-  const next = [...items.value]
-  const item: Assertion = { ...next[pickIdx.value], path }
-  // 期望值为空时按取到的值类型预填
-  const emptyExpected = item.expected === undefined || item.expected === null || String(item.expected).trim() === ''
-  if (emptyExpected && item.operator !== 'is_empty' && item.operator !== 'is_not_empty') {
-    if (item.operator === 'type_match') {
-      item.expected = inferValueLabel(value)
-    } else if (value === null || typeof value !== 'object') {
-      item.expected = value as any
-    }
-  }
-  next[pickIdx.value] = item
-  items.value = next
-}
 
 const TYPE_OPTIONS = [
   { label: '状态码', value: 'status_code' },
@@ -116,23 +78,13 @@ const STATUS_CODE_OPS = [
 const COMMON_OPS = [
   { label: '=', value: 'eq' },
   { label: '!=', value: 'neq' },
-  { label: '字符串相等', value: 'str_eq' },
   { label: '包含', value: 'contains' },
   { label: '不包含', value: 'not_contains' },
-  { label: '被包含于', value: 'contained_by' },
-  { label: '以…开头', value: 'startswith' },
-  { label: '以…结尾', value: 'endswith' },
   { label: '正则', value: 'regex' },
-  { label: '类型匹配', value: 'type_match' },
   { label: '<', value: 'lt' },
   { label: '<=', value: 'lte' },
   { label: '>', value: 'gt' },
   { label: '>=', value: 'gte' },
-  { label: '长度 =', value: 'length_eq' },
-  { label: '长度 >', value: 'length_gt' },
-  { label: '长度 <', value: 'length_lt' },
-  { label: '长度 >=', value: 'length_ge' },
-  { label: '长度 <=', value: 'length_le' },
   { label: '为空', value: 'is_empty' },
   { label: '不为空', value: 'is_not_empty' },
 ]
@@ -160,17 +112,15 @@ function operatorOptions(type: string) {
 }
 
 function pathPlaceholder(type: string) {
-  if (type === 'json_path') return 'JMESPath，如 data.token / items[0].id / data[?vip].name'
+  if (type === 'json_path') return '如 data.token / items[0].id'
   if (type === 'header_value') return '响应头名（如 X-Total）'
   return ''
 }
 
-function expectedPlaceholder(type: string, operator?: string) {
+function expectedPlaceholder(type: string) {
   if (type === 'status_code') return '如 200 或 200,201'
   if (type === 'header_exists') return '响应头名（如 Content-Type）'
   if (type === 'body_contains' || type === 'body_not_contains') return '响应体子串'
-  if (operator === 'type_match') return '类型名：string/number/boolean/array/object/null'
-  if (operator && operator.startsWith('length_')) return '长度（整数）'
   return '期望值'
 }
 
