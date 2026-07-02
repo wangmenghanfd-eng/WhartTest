@@ -177,6 +177,10 @@
         <a-tab-pane key="scheduled" title="定时任务">
           <ApiAutomationScheduledTasks v-if="activeTab === 'scheduled'" :project-id="projectId" :reload-key="scheduledReloadKey" />
         </a-tab-pane>
+
+        <a-tab-pane key="custom-functions" title="自定义函数">
+          <ApiAutomationFunctions v-if="activeTab === 'custom-functions'" :project-id="projectId" />
+        </a-tab-pane>
       </a-tabs>
     </section>
 
@@ -231,11 +235,26 @@
         <a-form-item label="路径">
           <a-input v-model="caseForm.path" placeholder="/api/users" />
         </a-form-item>
-        <a-form-item label="断言">
+        <a-form-item>
+          <template #label>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%">
+              <span>断言</span>
+              <a-button
+                size="mini"
+                type="outline"
+                :loading="debugging"
+                :disabled="!editingCaseId"
+                @click="debugCase"
+              >调试运行（取响应供“取值”）</a-button>
+            </div>
+          </template>
           <AssertionEditor v-model="caseAssertions" />
         </a-form-item>
         <a-form-item label="变量提取">
           <ExtractorEditor v-model="caseExtractors" />
+        </a-form-item>
+        <a-form-item label="参数化（数据驱动）">
+          <ParametersEditor v-model="caseParameters" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -303,7 +322,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, provide, reactive, ref, watch } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { useProjectStore } from '@/store/projectStore'
 import {
@@ -317,6 +336,8 @@ import {
 } from '../api'
 import AssertionEditor from '../components/AssertionEditor.vue'
 import ExtractorEditor from '../components/ExtractorEditor.vue'
+import ParametersEditor from '../components/ParametersEditor.vue'
+import ApiAutomationFunctions from '../components/ApiAutomationFunctions.vue'
 import TraceImportModal from '../components/TraceImportModal.vue'
 import FunctionalCaseAiModal from '../components/FunctionalCaseAiModal.vue'
 import AiEnhanceDrawer from '../components/AiEnhanceDrawer.vue'
@@ -416,6 +437,11 @@ const caseAssertions = ref<Array<Record<string, any>>>([
   { type: 'status_code', operator: 'lt', expected: 500 },
 ])
 const caseExtractors = ref<Array<Record<string, any>>>([])
+const caseParameters = ref<Record<string, unknown>>({})
+// 用例调试后的响应体，供断言/提取编辑器的“取值”取值器使用
+const debugResponse = ref<unknown>(null)
+const debugging = ref(false)
+provide('apiDebugResponse', debugResponse)
 const publicDataForm = reactive({ key: '', value: '', is_enabled: true })
 const scriptForm = reactive({
   name: '',
@@ -626,7 +652,9 @@ const openEnvModal = (record?: ApiEnvironmentConfig) => {
   envModalVisible.value = true
 }
 
-const openCaseModal = (record?: ApiTestCase) => {
+const openCaseModal = async (record?: ApiTestCase) => {
+  caseParameters.value = {}
+  debugResponse.value = null
   if (record) {
     editingCaseId.value = record.id
     Object.assign(caseForm, {
@@ -641,13 +669,24 @@ const openCaseModal = (record?: ApiTestCase) => {
     caseExtractors.value = Array.isArray(record.extractors)
       ? (record.extractors as Array<Record<string, any>>).map((it) => ({ ...it }))
       : []
+    caseModalVisible.value = true
+    // 拉全量用例：参数化配置 + 上次执行响应（供取值器）
+    try {
+      const res = await apiCaseApi.retrieve(record.id)
+      const full = unwrapData<ApiTestCase>(res)
+      caseParameters.value = (full?.parameters as Record<string, unknown>) || {}
+      const result = full?.result_data as Record<string, any> | undefined
+      debugResponse.value = result?.json ?? null
+    } catch {
+      /* 拉全量失败不阻断编辑 */
+    }
   } else {
     editingCaseId.value = null
     Object.assign(caseForm, { name: '', method: 'GET', path: '', module: selectedModuleId.value })
     caseAssertions.value = [{ type: 'status_code', operator: 'lt', expected: 500 }]
     caseExtractors.value = []
+    caseModalVisible.value = true
   }
-  caseModalVisible.value = true
 }
 
 const openPublicDataModal = (record?: ApiPublicData) => {
@@ -801,6 +840,7 @@ const submitCase = async (done: (closed: boolean) => void) => {
     environment: selectedEnvId.value,
     assertions,
     extractors,
+    parameters: caseParameters.value || {},
   }
   try {
     if (editingCaseId.value) {
@@ -931,6 +971,46 @@ const executeCase = async (record: ApiTestCase) => {
     reportsReloadKey.value += 1
   }
 }
+
+// 用例模态内“调试”：跑一次并把响应体载入 debugResponse，供取值器点选
+const debugCase = async () => {
+  if (!editingCaseId.value) {
+    Message.warning('请先保存用例，再调试取值')
+    return
+  }
+  debugging.value = true
+  const msgId = `debug-${editingCaseId.value}-${Date.now()}`
+  Message.loading({ id: msgId, content: '正在调试运行...', duration: 0 })
+  try {
+    const res = await apiCaseApi.execute(editingCaseId.value, { environment: selectedEnvId.value })
+    const data = unwrapData<any>(res) || {}
+    const recordId = data?.record_id
+    let rec: any = null
+    if (recordId) {
+      for (let i = 0; i < 40; i++) {
+        await new Promise((r) => setTimeout(r, 1500))
+        try {
+          rec = unwrapData<any>(await apiRecordApi.getRecord(recordId))
+        } catch { /* 继续轮询 */ }
+        if (rec && (rec.status === 2 || rec.status === 3)) break
+      }
+    }
+    const resp = rec?.response_data as Record<string, any> | undefined
+    debugResponse.value = resp?.json ?? null
+    if (debugResponse.value !== null && debugResponse.value !== undefined) {
+      Message.success({ id: msgId, content: '调试完成，可在断言/提取里点“取值”', duration: 3000 })
+    } else {
+      Message.warning({ id: msgId, content: '已执行，但响应体非 JSON，无法点选取值', duration: 3500 })
+    }
+    fetchRecords()
+    reportsReloadKey.value += 1
+  } catch (err: any) {
+    Message.error({ id: msgId, content: err?.error || '调试失败', duration: 4000 })
+  } finally {
+    debugging.value = false
+  }
+}
+
 const batchExecute = async () => {
   if (!projectId.value || !selectedCaseIds.value.length) return
   const msgId = `batch-${Date.now()}`

@@ -57,8 +57,22 @@ export interface ApiTestCase {
   body: Record<string, unknown>
   assertions: Array<Record<string, unknown>>
   extractors: Array<Record<string, unknown>>
+  parameters?: Record<string, unknown>
   status: number
   source?: string
+  result_data?: Record<string, unknown>
+}
+
+export interface ApiCustomFunction {
+  id: number
+  project: number
+  name: string
+  code: string
+  description?: string
+  is_active: boolean
+  creator_name?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface ApiPublicData {
